@@ -3,8 +3,6 @@ import streamlit as st
 
 
 from scipy.constants import epsilon_0, elementary_charge
-from scipy.integrate import trapz
-from scipy.optimize import show_options
 
 # Other constants - for model of water
 
@@ -23,9 +21,6 @@ q_o = -2 * q_h
 # Solving for t(z) = ln g + b \phi(z)
 # Newton-GMRES algorithm
 
-# so.newton_krylov
-
-so.anderson()
 
 def read_render_markdown_file(markdown_file):
     try:
