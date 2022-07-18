@@ -1,0 +1,1 @@
+$$ \rho_{wi}(z) \left / \bar{\rho}_i \right . ~=~ g_{wi}(z) ~=~ \left [ 1 + h_{wi}(z)\right] $$

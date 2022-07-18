@@ -1,8 +1,10 @@
 # Docs: https://just.systems/man/en/
 
 project_name := "phd-thesis"
+app_py := "src/app_main.py"
+server_port := "8080"
 
-# set dotenv-load
+set dotenv-load
 
 # show available commands
 help:
@@ -21,9 +23,14 @@ setup-python-venv:
 
 update-reqs:
     pip-compile requirements.in
+    pip install -r requirements.txt --upgrade
 
 rm-python-venv:
 	rm -rf .venv/
+
+# run app.py (in Streamlit) locally
+run: 
+    streamlit run {{app_py}} --server.port={{server_port}} --server.address=localhost
 
 
 foo-can-remove-test-only:

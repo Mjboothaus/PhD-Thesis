@@ -1,3 +1,4 @@
 notebook
 scipy
-pandas
+streamlit
+watchdog
