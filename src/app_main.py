@@ -4,7 +4,7 @@ import streamlit as st
 
 from scipy.constants import epsilon_0, elementary_charge
 from scipy.integrate import trapz
-import scipy.optimize as so
+from scipy.optimize import show_options
 
 # Other constants - for model of water
 
