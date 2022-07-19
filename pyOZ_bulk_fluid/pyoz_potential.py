@@ -52,6 +52,17 @@ def def_potential(ctrl, syst, parm, const, dft, r, k):
        pmf (potential of mean force calculated by some other method)
     """
 
+    print(ctrl)
+    print("\n")
+    print(syst)
+    print('\n') 
+    print(parm)
+    print("\n")
+    print(const)
+    print(dft)
+    print(r) 
+    print(k)
+
     # pre-initialize array with discretized total potential to zero
     U_ij = zeros((syst['ncomponents'], syst['ncomponents'], ctrl['npoints']))
 
