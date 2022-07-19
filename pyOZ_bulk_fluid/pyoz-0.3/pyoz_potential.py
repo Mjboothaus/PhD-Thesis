@@ -111,11 +111,9 @@ def def_potential(ctrl, syst, parm, const, dft, r, k):
 
         # Coulomb potential
         elif (pot_type == 'coulomb'):
-            print(type(r), r)
-            r_inv = 1.0 / r
             for i in range(syst['ncomponents']):
                 for j in range(syst['ncomponents']):
-                    U_ij_individual[pot_index][i, j, :] = potential['chg_ij'][i, j] * r_inv
+                    U_ij_individual[pot_index][i, j, :] = potential['chg_ij'][i, j] / r
                     U_ij[i, j, :] += U_ij_individual[pot_index][i, j, :]
                     # modified 1/r potential function according to Ng
                     # this factor is constant throughout the calculation
