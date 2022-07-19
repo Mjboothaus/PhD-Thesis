@@ -1,0 +1,1 @@
+$$ \large \kappa^2 = \frac{4 \pi}{\varepsilon kT} \sum_{i=+,-} \bar{\rho}_i q_i^2 $$
