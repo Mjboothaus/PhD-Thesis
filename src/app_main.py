@@ -1,8 +1,9 @@
 from pathlib import Path
+
 import streamlit as st
+from scipy.constants import elementary_charge, epsilon_0
 
-
-from scipy.constants import epsilon_0, elementary_charge
+from helper_functions import read_render_markdown_file
 
 # Other constants - for model of water
 
@@ -20,16 +21,6 @@ q_o = -2 * q_h
 
 # Solving for t(z) = ln g + b \phi(z)
 # Newton-GMRES algorithm
-
-
-def read_render_markdown_file(markdown_file):
-    try:
-        md_text = Path(markdown_file).read_text()
-        st.markdown(md_text, unsafe_allow_html=False)
-        return markdown_file
-    except Exception:
-        st.error(f"Error with markdown file: {markdown_file}")
-        return None
 
 
 def create_app_header(app_title, subtitle=None):

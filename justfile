@@ -1,7 +1,7 @@
 # Docs: https://just.systems/man/en/
 
 project_name := "phd-thesis"
-app_py := "src/app_main.py"
+app_py := "src/Main.py"
 server_port := "8080"
 
 set dotenv-load
@@ -31,10 +31,3 @@ rm-python-venv:
 # run app.py (in Streamlit) locally
 run: 
     streamlit run {{app_py}} --server.port={{server_port}} --server.address=localhost
-
-
-foo-can-remove-test-only:
-	#!/usr/bin/env bash
-	set -euxo pipefail
-	x=hello
-	echo $x
