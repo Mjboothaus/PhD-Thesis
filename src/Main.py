@@ -34,6 +34,8 @@ def create_app_header(app_title, subtitle=None):
     return None
 
 
-create_app_header(APP_TITLE, "Michael J. Booth")
+create_app_header(APP_TITLE, "Michael J. Booth - Ph.D (Science)")
 
 # "Charged fluids near interfaces: Integral equation theory"
+
+read_render_markdown_file("docs/app_main.md", output="streamlit")

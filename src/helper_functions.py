@@ -22,7 +22,7 @@ def read_render_markdown_file(markdown_file, output="jupyter"):
         if output == "jupyter":
             display(Markdown(md_text))
         else:
-            markdown(md_text, unsafe_allow_html=False)
+            markdown(md_text, unsafe_allow_html=True)
     except Exception:
         print(f"Error with markdown file: {markdown_file}")
-        return None
+    return None
