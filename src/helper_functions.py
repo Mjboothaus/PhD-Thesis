@@ -1,19 +1,6 @@
 from pathlib import Path
-
-import matplotlib.pyplot as plt
 from IPython.display import Markdown, display
 from streamlit import markdown
-
-
-def make_simple_plot(x, y, xlabel, ylabel, title, xliml=[0, 10], yliml=[-20, 40]):
-    _, ax = plt.subplots()
-    ax.plot(x, y)
-    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
-    plt.xlim(xliml)
-    plt.ylim(yliml)
-    ax.grid()
-    plt.show()
-    return title
 
 
 def read_render_markdown_file(markdown_file, output="jupyter"):
