@@ -66,7 +66,7 @@ gcloud-setup:
 gcloud-deploy-cloud-run: 
     gcloud run deploy --source . {{project_name}}
     # --image
-	# gcloud run deploy {{project_name}} --image [IMAGE]
+    # gcloud run deploy {{project_name}} --image [IMAGE]
 
 
 # gloud init - other stuff?
