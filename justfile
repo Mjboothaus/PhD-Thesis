@@ -31,8 +31,8 @@ setup-deploy-venv:
 	echo -e '\n' source .venv_deploy_{{project_name}}/bin/activate '\n'
 
 update-reqs:
-    pip-compile requirements.in
-    pip install -r requirements.txt --upgrade
+    #pip-compile requirements.in
+    #pip install -r requirements.txt --upgrade
 
 rm-python-venv:
 	rm -rf .venv/
