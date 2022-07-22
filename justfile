@@ -3,6 +3,7 @@
 project_name := "michael-booth-phd-thesis"
 app_py := "src/Main.py"
 server_port := "8080"
+gcp_region := "asia-southeast2"
 
 set dotenv-load
 
@@ -64,7 +65,7 @@ gcloud-setup:
 
 # deploy container to Google Cloud (Cloud Run)
 gcloud-deploy-cloud-run: 
-    gcloud run deploy --source . {{project_name}}
+    gcloud run deploy --source . {{project_name}} --region {{gcp_region}}
     # --image
     # gcloud run deploy {{project_name}} --image [IMAGE]
 
