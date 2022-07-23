@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-def make_simple_plot(x, y, xlabel, ylabel, title, xliml = None, yliml = None):
+def make_simple_plot(x, y, xlabel=None, ylabel=None, title=None, xliml = None, yliml = None):
     if xliml is None:
         xliml = [0, 10]
     if yliml is None:
@@ -17,4 +17,4 @@ def make_simple_plot(x, y, xlabel, ylabel, title, xliml = None, yliml = None):
 
 
 def fast_plot(x, y):
-    return make_simple_plot(x=x, y=y, xlabel="", ylabel="", title="Fast plot")
+    return make_simple_plot(x=x, y=y)
