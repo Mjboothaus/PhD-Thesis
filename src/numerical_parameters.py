@@ -7,6 +7,7 @@ import streamlit as st
 @dataclass
 class Discretisation:
     n_point: int
+    n_component: int
     n_pair: int
     z_cutoff: float
     grid_size: float
@@ -27,7 +28,7 @@ def create_sidebar(fluid):
     st.sidebar.text("Inputs:")
     psi_0 = st.sidebar.number_input(label=r"$\psi_0$ (mV):", value=0, min_value=-1000, max_value=1000)
 
-    st.markdown("Numerical parameters:")
+    st.sidebar.markdown("Numerical parameters:")
 
     z_cutoff = st.sidebar.number_input("z_cutoff (A)", value=25, min_value=20, max_value=50)
     n_point = st.sidebar.number_input("nPoint:", value=2001)
@@ -37,8 +38,8 @@ def create_sidebar(fluid):
     return z_cutoff, int(n_point), psi_0
 
 
-def set_num_parameters(n_point, z_cutoff, n_pair):
+def set_num_parameters(n_point, z_cutoff, n_component, n_pair):
     grid_size = z_cutoff / (n_point - 1)
-    return Discretisation(n_point, n_pair, z_cutoff, grid_size,
+    return Discretisation(n_point, n_component, n_pair, z_cutoff, grid_size,
         np.linspace(0.0, z_cutoff, n_point), np.arange(0, n_point, dtype=int), 
         np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)))

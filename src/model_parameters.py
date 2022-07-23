@@ -47,8 +47,11 @@ def set_fluid_parameters(symbol):
 
 def fluid_specific_parameters(symbol):
     if symbol == "kcl":
-        other_params = dict({"kcl": dict({"n_outer_shell": np.array([8., 8.])})})
-        
+        other_params = dict({"kcl": dict({"n_outer_shell": np.array([8., 8.]), "alpha": 1.0 / 0.337,
+                                          "b": 0.338e-19, "sigma": [1.463, 1.585],
+                                          "cap_c": np.array([24.3, 48.0, 124.5]) * 1e-19,
+                                          "cap_d": np.array([24.0, 73.0, 250.0]) * 1e-19})})
+
     return other_params
 
 
@@ -57,12 +60,12 @@ def calc_beta(temperature):
 
 
 def calc_epsilon(epsilon_r):
-     # units same as $\epsilon_0$ (need to allow for distances in angstrom)
-    return 4.0 * np.pi * epsilon_r * epsilon_0 
+    # units same as $\epsilon_0$ (need to allow for distances in angstrom)
+    return 4.0 * np.pi * epsilon_r * epsilon_0
 
 
 def calc_l_index(i, j):
-    return i + j    
+    return i + j
 
 
 def calc_beta_pauling(valence, n_outer_shell, n_component, n_pair):
@@ -70,5 +73,35 @@ def calc_beta_pauling(valence, n_outer_shell, n_component, n_pair):
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            beta_pauling[l] = 1.0 + valence[i] / n_outer_shell[i] + valence[j] / n_outer_shell[j]
+            beta_pauling[l] = 1.0 + valence[i] / \
+                n_outer_shell[i] + valence[j] / n_outer_shell[j]
     return beta_pauling
+
+
+def calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair):
+    cap_b = np.zeros(n_pair)
+    for i in range(n_component):
+        for j in range(i, n_component):
+            l = calc_l_index(i, j)
+            cap_b[l] = beta_pauling[l] * b * np.exp(alpha * (sigma[i] + sigma[j]))
+    return cap_b
+
+
+def calc_charge(valence):
+    return valence * elementary_charge
+
+
+def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, epsilon, r):
+    u = np.zeros((n_point, n_pair))
+    for i in range(n_component):
+        for j in range(i, n_component):
+            l = calc_l_index(i, j)
+            u[1:, l] = (charge[i] * charge[j]) / (r[1:] * 1e-10 * epsilon) + cap_c[l] / \
+                r[1:]**6 + cap_d[l]/r[1:]**8 + \
+                cap_b[l] * np.exp(-alpha * r[1:])
+            u[0, l] = u[1, l]
+    return u
+
+
+def calc_rho(concentration):
+    return np.array(concentration) / 1.0e27 * Avogadro
