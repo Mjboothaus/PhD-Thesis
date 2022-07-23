@@ -2,7 +2,7 @@
 
 #### Michael Julian Booth, Ph. D. (Science)
 
-#### The University of Sydney, 1998
+##### The University of Sydney, 1998
 
 <!-- Supervisor: G. B. Bacskay
 
