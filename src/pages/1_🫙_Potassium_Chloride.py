@@ -68,7 +68,9 @@ psi_0 = psi_0 * 1e-3     # 100 mV (in Volts)
 
 # Bulk-fluid inputs (direct correlation function
 
-cr_path = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+# cr_path = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+
+cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 c_short, r_short = load_and_intepolate_cr(Path(cr_path), n_point, n_pair, z)
 
 

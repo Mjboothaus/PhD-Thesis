@@ -13,6 +13,7 @@ RUN pip install -r requirements.txt
 RUN mkdir -p /app
 COPY docs app/docs
 COPY src app/src
+COPY data app/data
 WORKDIR /app
 
 # run it!
