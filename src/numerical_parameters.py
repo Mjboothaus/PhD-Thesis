@@ -1,3 +1,4 @@
+from ctypes import c_short
 from dataclasses import dataclass
 
 import numpy as np
@@ -15,6 +16,10 @@ class Discretisation:
     z_index: np.array
     hw: np.array
     tw: np.array
+    phiw: np.array
+    c_short: np.array
+    f1: np.array
+    f2: np.array
 
     # etc
 
@@ -25,6 +30,7 @@ def create_sidebar(fluid):
     st.sidebar.text(fluid.name)
     st.sidebar.text(f"Temperature (K): {fluid.temperature}")
     st.sidebar.text(f"Concentration (m/dm3): {fluid.concentration[0]}")
+
     st.sidebar.text("Inputs:")
     psi_0 = st.sidebar.number_input(label=r"$\psi_0$ (mV):", value=0, min_value=-1000, max_value=1000)
 
@@ -42,4 +48,6 @@ def set_num_parameters(n_point, z_cutoff, n_component, n_pair):
     grid_size = z_cutoff / (n_point - 1)
     return Discretisation(n_point, n_component, n_pair, z_cutoff, grid_size,
         np.linspace(0.0, z_cutoff, n_point), np.arange(0, n_point, dtype=int), 
-        np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)))
+        np.zeros((n_point, n_component)), np.zeros((n_point, n_component)),
+        np.zeros((n_point, n_component)),
+        np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)))

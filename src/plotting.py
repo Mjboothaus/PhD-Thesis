@@ -27,7 +27,7 @@ def fast_plot(x, y):
     return make_simple_plot(x=x, y=y)
 
 
-def plot_plotly_line(x, y, column_names, y_label="", legend_label="", title=None, xliml=None, yliml=None):
+def plotly_line(x, y, column_names, y_label="", legend_label="", title=None, xliml=None, yliml=None):
     df = pd.DataFrame(data=np.column_stack((x, y)), columns=column_names)
     #df = pd.DataFrame(data=np.c_[x, y], columns=column_names)
     fig = px.line(df, x=column_names[0], y=column_names[1:], title=title, 

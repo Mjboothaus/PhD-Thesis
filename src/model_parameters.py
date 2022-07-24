@@ -2,10 +2,11 @@
 from dataclasses import dataclass
 from scipy.constants import epsilon_0, elementary_charge, Boltzmann, Avogadro
 import numpy as np
+import pandas as pd
 from dacite import from_dict
+from scipy import interpolate
 
 # from helper_functions import read_render_markdown_file
-
 
 @dataclass
 class Fluid:
@@ -105,3 +106,36 @@ def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, eps
 
 def calc_rho(concentration):
     return np.array(concentration) / 1.0e27 * Avogadro
+
+
+def calc_kappa(beta, charge, rho, epsilon):
+    return np.sqrt(4.0 * np.pi * beta / epsilon * 1e10 *
+    sum(np.multiply(charge**2, rho)))
+
+
+def calc_phiw(z, n_component, phiw):
+    capital_a = 16.274e-19 # joules
+    wall_d = 2.97  # inverse Angstrom
+    for i in range(n_component):
+        phiw[:, i] = np.exp(-wall_d * z) * capital_a * (wall_d * z + 2)
+    return phiw
+
+#TODO: Fix up choice of c(r)
+# Read in some c(r) -- currently LJ fluid (assuming c_short ~= c_LJ(r))
+
+def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
+    cr = np.zeros((n_point, n_pair))
+    for l in range(n_pair):
+        f = interpolate.interp1d(r_in, cr_in[:, l])
+        r = z
+        cr[:, l] = f(r)
+    return cr, r
+
+
+def load_and_intepolate_cr(cr_path, n_point, n_pair, z):
+    # CR_PATH = "../pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+    cr_df = pd.read_csv(cr_path, header=None, delim_whitespace=True)
+    cr_df.set_index(0, inplace=True)
+    r = cr_df.index.to_numpy()
+    cr = cr_df.to_numpy()
+    return interpolate_cr(r, cr, n_point, n_pair, z)
