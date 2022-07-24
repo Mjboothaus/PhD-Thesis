@@ -1,8 +1,8 @@
 import streamlit as st
 from model_parameters import *
 from numerical_parameters import create_sidebar, set_num_parameters
-from plotting import make_simple_plot
-import altair as alt
+from plotting import make_simple_plot, plotly_line
+import pandas as pd
 
 # from helper_functions import read_render_markdown_file
 
@@ -57,21 +57,12 @@ u = calc_u(charge, cap_b, alpha, cap_c, cap_d,
 #fig = make_simple_plot(r, beta*u, xliml=[0, 10], yliml=[-100, 200])
 #st.pyplot(fig)
 
-import plotly.graph_objects as go
+
 import numpy as np
 
-#define synthetic data, somehow similar with yours
-#x = np.arange(1000)
-#y = np.sin(x)
-#data = np.zeros((7, 1000))
-#a= 0.95  #in your case set the value of a by trial and error or calculating the min/max of each row
-#for k in range(7):
-#    data[k, :] = 0.5*np.sin(0.3*x)+ a*k # a*k is the vertical translation to avoid line overlapping
-#plot data 
+import plotly.express as px
 
-fig = go.Figure(go.Scatter(x=r, y = u, name=f"corr{1}", mode ="lines")) 
-
-st.plotly_chart(fig)
+fig = plotly_line(x, y, x_header, y_header, title=None)
 
 psi_0 = psi_0 * 1e-3     # 100 mV (in Volts) 
 
