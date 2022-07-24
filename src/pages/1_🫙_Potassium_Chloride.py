@@ -28,7 +28,8 @@ sigma = other_params["kcl"]["sigma"]
 cap_c = other_params["kcl"]["cap_c"]
 cap_d = other_params["kcl"]["cap_d"]
 
-discrete = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair)
+discrete = set_num_parameters(
+    n_point, z_cutoff, fluid.n_component, fluid.n_pair)
 n_component = discrete.n_component
 n_pair = discrete.n_pair
 
@@ -51,9 +52,9 @@ u = calc_u(charge, cap_b, alpha, cap_c, cap_d,
 # fig = make_simple_plot(r, beta * u, "r", "u", "Dimensionless ion-ion potential", xliml=[0, 10], yliml=[-100, 200])
 # st.pyplot(fig)
 
-fig = plot_plotly_line(r, beta*u, ["r", "u0", "u1", "u2"], xliml=[0, 10], yliml=[-100, 200])
+fig = plot_plotly_line(r, beta*u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="", 
+        xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
 st.plotly_chart(fig)
 
 
-psi_0 = psi_0 * 1e-3     # 100 mV (in Volts) 
-
+psi_0 = psi_0 * 1e-3     # 100 mV (in Volts)
