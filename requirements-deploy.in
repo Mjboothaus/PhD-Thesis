@@ -2,3 +2,5 @@ scipy
 streamlit
 watchdog
 dacite
+matplotlib
+plotly

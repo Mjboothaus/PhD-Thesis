@@ -11,6 +11,9 @@ set dotenv-load
 help:
   @just -l
 
+deploy-reqs:
+    pip-compile requirements-deploy.in
+
 # create the local Python venv (.venv_{{project_name}}) and install requirements(.txt)
 setup-python-venv:
 	#!/usr/bin/env bash
@@ -64,7 +67,7 @@ gcloud-setup:
 #    gcloud config set project {{project_name}}
 
 # deploy container to Google Cloud (Cloud Run)
-gcloud-deploy-cloud-run: 
+gcloud-deploy: 
     gcloud run deploy --source . {{project_name}} --region {{gcp_region}}
     # --image
     # gcloud run deploy {{project_name}} --image [IMAGE]
