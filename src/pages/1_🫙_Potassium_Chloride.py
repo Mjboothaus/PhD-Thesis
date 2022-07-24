@@ -71,16 +71,48 @@ psi_0 = psi_0 * 1e-3     # 100 mV (in Volts)
 cr_path = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 c_short, r_short = load_and_intepolate_cr(Path(cr_path), n_point, n_pair, z)
 
+
+f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, discrete.f1)
+f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, discrete.f2)
+
+# initial guess of zero - maybe should be \beta \phi
+tw_initial = np.zeros((n_point, n_component))
+
+hw = calc_hw(tw_initial, n_component, phiw, discrete.hw)
+
+beta_psi =  beta * psi_0
+
+
+
+
+
 # Output to main page
 
-fig = plotly_line(r, u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="", 
-        xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
+fig = plotly_line(r, u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
+                  xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
 st.plotly_chart(fig)
 
-fig = plotly_line(z, phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="", 
-        xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
+
+fig = plotly_line(z, phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
+                  xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
 st.plotly_chart(fig)
 
-fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="", 
-        xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+
+fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
+                  xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+st.plotly_chart(fig)
+
+
+fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
+                  xliml=[0, 10], yliml=[-15, 5], title="f1 function")
+st.plotly_chart(fig)
+
+
+fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
+                  xliml=[0, 10], yliml=[-40, 5], title="f2 function")
+st.plotly_chart(fig)
+
+
+fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+                  xliml=[0, 10], yliml=[-2, 2], title="hw for tw = tw_initial (zero guess)")
 st.plotly_chart(fig)

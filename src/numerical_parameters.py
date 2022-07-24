@@ -20,6 +20,8 @@ class Discretisation:
     c_short: np.array
     f1: np.array
     f2: np.array
+    integral_0_z: np.array 
+    integral_z_infty: np.array
 
     # etc
 
@@ -50,4 +52,5 @@ def set_num_parameters(n_point, z_cutoff, n_component, n_pair):
         np.linspace(0.0, z_cutoff, n_point), np.arange(0, n_point, dtype=int), 
         np.zeros((n_point, n_component)), np.zeros((n_point, n_component)),
         np.zeros((n_point, n_component)),
-        np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)))
+        np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)), np.zeros((n_point, n_pair)),
+        np.zeros((n_point, n_component)), np.zeros((n_point, n_component)))

@@ -1,12 +1,15 @@
 
 from dataclasses import dataclass
-from scipy.constants import epsilon_0, elementary_charge, Boltzmann, Avogadro
+
 import numpy as np
 import pandas as pd
 from dacite import from_dict
 from scipy import interpolate
+from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
+from scipy.integrate import trapezoid
 
 # from helper_functions import read_render_markdown_file
+
 
 @dataclass
 class Fluid:
@@ -84,7 +87,8 @@ def calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair):
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            cap_b[l] = beta_pauling[l] * b * np.exp(alpha * (sigma[i] + sigma[j]))
+            cap_b[l] = beta_pauling[l] * b * \
+                np.exp(alpha * (sigma[i] + sigma[j]))
     return cap_b
 
 
@@ -110,18 +114,19 @@ def calc_rho(concentration):
 
 def calc_kappa(beta, charge, rho, epsilon):
     return np.sqrt(4.0 * np.pi * beta / epsilon * 1e10 *
-    sum(np.multiply(charge**2, rho)))
+                   sum(np.multiply(charge**2, rho)))
 
 
 def calc_phiw(z, n_component, phiw):
-    capital_a = 16.274e-19 # joules
+    capital_a = 16.274e-19  # joules
     wall_d = 2.97  # inverse Angstrom
     for i in range(n_component):
         phiw[:, i] = np.exp(-wall_d * z) * capital_a * (wall_d * z + 2)
     return phiw
 
-#TODO: Fix up choice of c(r)
+# TODO: Fix up choice of c(r)
 # Read in some c(r) -- currently LJ fluid (assuming c_short ~= c_LJ(r))
+
 
 def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     cr = np.zeros((n_point, n_pair))
@@ -139,3 +144,49 @@ def load_and_intepolate_cr(cr_path, n_point, n_pair, z):
     r = cr_df.index.to_numpy()
     cr = cr_df.to_numpy()
     return interpolate_cr(r, cr, n_point, n_pair, z)
+
+
+def integral_z_infty_dr_r_c_short(c_short, n_pair, z, f1):
+    for ij in range(n_pair):
+        for k, _ in enumerate(z):
+            f1[k, ij] = trapezoid(y=z[:k] * c_short[k, ij], x=z[:k])
+    return f1
+
+
+def integral_z_infty_dr_r2_c_short(c_short, n_pair, z, f2):
+    for ij in range(n_pair):
+        for k, _ in enumerate(z):
+            f2[k, ij] = trapezoid(y=z[:k] * z[:k] * c_short[k, ij], x=z[:k])
+    return f2
+
+
+def calc_hw(tw, n_component, beta_phiw, hw):
+    for i in range(n_component):
+        hw[:, i] = np.exp(tw[:, i] - beta_phiw[:, i]) - 1.0
+    return hw
+
+
+# TODO: Continue from here and pre-calculate constants so they don't need to be passed separately
+
+def calc_tw(tw_in, beta_phiw, beta_psi, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
+    hw = calc_hw(tw_in, beta_phiw)
+
+    for i in range(n_component):
+        for k in range(n_point):
+            integral_0_z[k, i] = trapezoid(y=hw[:k, i], x=z[:k])
+            integral_z_infty[k, i] = trapezoid(y=z[k:] * hw[k:, i], x=z[k:])
+
+    for i in range(n_component):
+        beta_psi_charge[:, i] = -beta_psi * charge[i]
+        for k in range(n_point):
+            z_minus_t = np.flip(z_indices[:k])
+            t_minus_z = z_indices[k:] - k
+            for j in range(n_component):
+                l = calc_l_index(i, j)
+                tw[k, i] = beta_psi_charge[k, i] + 2.0 * np.pi * rho[j] * (z[k] * f1[k, l] - f2[k, l] +
+                                                                           (2.0 * beta * charge[i] * charge[j] / epsilon / 1e10) *
+                                                                           (integral_z_infty[k, j] +
+                                                                            z[k] * integral_0_z[k, j])
+                                                                           + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
+                                                                           + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
+    return tw
