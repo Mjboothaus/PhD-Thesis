@@ -1,7 +1,7 @@
 import streamlit as st
 from model_parameters import *
 from numerical_parameters import create_sidebar, set_num_parameters
-from plotting import make_simple_plot, plotly_line
+from plotting import make_simple_plot, plot_plotly_line
 import pandas as pd
 
 # from helper_functions import read_render_markdown_file
@@ -28,19 +28,12 @@ sigma = other_params["kcl"]["sigma"]
 cap_c = other_params["kcl"]["cap_c"]
 cap_d = other_params["kcl"]["cap_d"]
 
-discrete = set_num_parameters(
-    n_point, z_cutoff, fluid.n_component, fluid.n_pair)
-
+discrete = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair)
 n_component = discrete.n_component
 n_pair = discrete.n_pair
 
 beta = calc_beta(fluid.temperature)
-
 epsilon = calc_epsilon(fluid.epsilon_r)
-
-# for i in range(2):
-#     for j in range(i, 2):
-#         st.write(i, j, calc_l_index(i, j))
 
 beta_pauling = calc_beta_pauling(
     fluid.valence, n_outer_shell, n_component, n_pair)
@@ -54,15 +47,11 @@ r = discrete.z
 u = calc_u(charge, cap_b, alpha, cap_c, cap_d,
            n_point, n_component, n_pair, epsilon, r)
 
-#fig = make_simple_plot(r, beta*u, xliml=[0, 10], yliml=[-100, 200])
-#st.pyplot(fig)
+st.write(beta*u, )
 
 
-import numpy as np
-
-import plotly.express as px
-
-fig = plotly_line(x, y, x_header, y_header, title=None)
+fig = plot_plotly_line(r, beta*u, ["r", "u0", "u1", "u2"])
+st.plotly_chart(fig)
 
 psi_0 = psi_0 * 1e-3     # 100 mV (in Volts) 
 

@@ -26,11 +26,8 @@ def fast_plot(x, y):
 
 import plotly.express as px
 
-def plotly_line(x, y, x_header, y_header, title=None):
-    df = pd.DataFrame(data=np.column_stack((x, y)), columns=["r", "u1", "u2", "u3"])
-    df = pd.melt(df, id_vars='r', value_vars=df.columns[:-1])
-    st.write(df)
-    #fig = px.line(x=df.r, y=df.u1)
+def plot_plotly_line(x, y, column_names):
+    df = pd.DataFrame(data=np.column_stack((x, y)), columns=column_names)
+    #df = pd.DataFrame(data=np.c_[x, y], columns=column_names)
+    fig = px.line(df, x=column_names[0], y=column_names[1:])
     return fig
-
-# df = pd.DataFrame(data=np.column_stack((r, beta*u)), columns=["r", "u1", "u2", "u3"])
