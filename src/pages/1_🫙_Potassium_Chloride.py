@@ -47,11 +47,13 @@ r = discrete.z
 u = calc_u(charge, cap_b, alpha, cap_c, cap_d,
            n_point, n_component, n_pair, epsilon, r)
 
-st.write(beta*u, )
 
+# fig = make_simple_plot(r, beta * u, "r", "u", "Dimensionless ion-ion potential", xliml=[0, 10], yliml=[-100, 200])
+# st.pyplot(fig)
 
-fig = plot_plotly_line(r, beta*u, ["r", "u0", "u1", "u2"])
+fig = plot_plotly_line(r, beta*u, ["r", "u0", "u1", "u2"], xliml=[0, 10], yliml=[-100, 200])
 st.plotly_chart(fig)
+
 
 psi_0 = psi_0 * 1e-3     # 100 mV (in Volts) 
 
