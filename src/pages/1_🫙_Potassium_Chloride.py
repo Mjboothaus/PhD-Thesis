@@ -14,7 +14,7 @@ fluid = set_fluid_parameters(fluid_symbol)
 st.write(fluid.charge_pair)
 
 if fluid is not None:
-    z_cutoff, n_point, psi_0 = create_sidebar(fluid)
+    z_cutoff, n_point, psi_0, tolerance, max_iteration = create_sidebar(fluid)
 else:
     st.error("Invalid choice of fluid")
 
@@ -33,8 +33,8 @@ d = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair)
 n_component = d.n_component
 n_pair = d.n_pair
 
-beta = calc_beta(fluid.temperature)
-epsilon = calc_epsilon(fluid.epsilon_r)
+fluid.beta = calc_beta(fluid.temperature)
+fluid.epsilon = calc_epsilon(fluid.epsilon_r)
 
 beta_pauling = calc_beta_pauling(
     fluid.valence, n_outer_shell, n_component, n_pair)
@@ -42,8 +42,9 @@ beta_pauling = calc_beta_pauling(
 cap_b = calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair)
 
 charge = calc_charge(fluid.valence)
+fluid.charge_pair = calc_charge_pair(fluid.beta, charge, fluid.epsilon, n_component, n_pair)
 
-charge_pair = calc_charge_pair(beta, charge, epsilon, n_component, n_pair)
+fluid.rho = calc_rho(fluid.concentration)
 
 z = np.linspace(0.0, z_cutoff, n_point)
 z_index = np.arange(0, n_point, dtype=int)
@@ -51,25 +52,23 @@ wall_zeros = np.zeros((n_point, n_component))
 fluid_zeros = np.zeros((n_point, n_pair))
 
 r = z    # r on same discretisation as z
+beta_u = fluid.beta * calc_u(charge, cap_b, alpha, cap_c, cap_d,
+           n_point, n_component, n_pair, fluid.epsilon, r)
 
-beta_u = beta * calc_u(charge, cap_b, alpha, cap_c, cap_d,
-           n_point, n_component, n_pair, epsilon, r)
-
-oz = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, phiw=wall_zeros,
+model = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, phiw=wall_zeros,
     c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros,
-    integral_0_z=wall_zeros, integral_z_infty=wall_zeros,
-    beta_u=beta_u)
+    integral_0_z=wall_zeros, integral_z_infty=wall_zeros)
 
 
 
 
-rho = calc_rho(fluid.concentration)
 
-kappa = calc_kappa(beta, charge, rho, epsilon)
+
+kappa = calc_kappa(fluid.beta, charge, fluid.rho, fluid.epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
-beta_phiw = beta * calc_phiw(z, n_component, phiw)
-beta_psi =  beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
+beta_phiw = fluid.beta * calc_phiw(z, n_component)
+beta_psi =  fluid.beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
 beta_psi_charge = -beta_psi * charge
 
 # Bulk-fluid inputs (direct correlation function
@@ -77,28 +76,30 @@ beta_psi_charge = -beta_psi * charge
 # cr_path = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 
 cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
-c_short, r_short = load_and_intepolate_cr(Path(cr_path), n_point, n_pair, z)
+c_short, r_short = load_and_interpolate_cr(Path(cr_path), n_point, n_pair, z)
 
 
 f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, d.f1)
 f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, d.f2)
 
 # initial guess of zero - maybe should be \beta \phi
-tw_initial = np.zeros((n_point, n_component))
 
+tw_initial = np.zeros((n_point, n_component))
 hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
-integral_z_0 = calc_in
 
-tw = calc_tw(tw_initial, d.tw, beta_phiw, beta_psi_charge, charge_pair, 
-            rho, f1, f2, z, n_component, n_point, d.z_index, 
-            d.integral_z_infty, d.integral_0_z)
+# tw = calc_tw(tw_initial, fluid, model, d)
+# hw = calc_hw(tw, n_component, beta_phiw)
+
+# Solve equation
+
+solution = solve_model(opt_func, tw_initial, tolerance, max_iteration)
 
 
 
-hw = calc_hw(tw, n_component, beta_phiw)
 
 # Output to main page
+
 
 
 

@@ -12,6 +12,8 @@ class Discretisation:
     n_pair: int
     z_cutoff: float
     grid_size: float
+    tolerance: float
+    max_iterations: int
 
 # sidebar doesn't strictly belong with numerics... might be convenient though
 
@@ -31,7 +33,11 @@ def create_sidebar(fluid):
     grid_size = z_cutoff / (n_point - 1)
     st.sidebar.text(f"Grid size (A): {grid_size}")
 
-    return z_cutoff, int(n_point), psi_0
+    st.sidebar.markdown("Optimisation parameters:")
+    tolerance = st.number_input("Convergence tolerance", min_value=1e-12, max_value=1e-6, value=1e-9)
+    max_iteration = st.number_input("Maximum iterations", min_value=10, max_value=1000, value=100)
+
+    return z_cutoff, int(n_point), psi_0, tolerance, max_iteration
 
 
 def set_num_parameters(n_point, z_cutoff, n_component, n_pair):

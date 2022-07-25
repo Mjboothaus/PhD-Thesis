@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from scipy import interpolate
+import scipy.optimize as optim
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
 from streamlit import cache
@@ -23,7 +24,6 @@ class Model:
     f2: np.array
     integral_0_z: np.array
     integral_z_infty: np.array
-    beta_u: np.array
 
 
 @dataclass
@@ -40,11 +40,16 @@ class Fluid:
     index: int
     charge_pair: np.array
     rho: np.array
+    beta: float
+    epsilon: float
+
+# Note: charge & rho need to be calculate and then inserted into the Fluid instance
+#       np.array([0]) is a placeholder (which has the right type)
 
 
 fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
     1.0, -1.0]), "temperature": 1075.0, "concentration": np.array([19.265, 19.265]),
-    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0, 0]), "rho": np.array([0, 0])})})
+    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0, "epsilon": 0})})
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
     1.0, -1.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
@@ -172,7 +177,7 @@ def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
 
 
 @cache
-def load_and_intepolate_cr(cr_path, n_point, n_pair, z):
+def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
     # CR_PATH = "../pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
     cr_df = pd.read_csv(cr_path, header=None, delim_whitespace=True)
     cr_df.set_index(0, inplace=True)
@@ -205,7 +210,21 @@ def calc_hw(tw, n_component, beta_phiw):
 # TODO: Continue from here - check units
 # TODO: move arguments into Fluid / Discretisation classes to shorten function call arg list
 
-def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
+def calc_tw(tw_in, fluid, model, discrete):
+    tw = model.tw
+    beta_phiw = model.beta_phiw
+    beta_psi_charge = model.beta_psi_charge
+    charge_pair = fluid.charge_pair
+    rho = fluid.rho
+    f1 = model.f1
+    f2 = model.f2
+    z = model.z
+    n_component = fluid.n_component
+    n_point = discrete.n_point
+    z_index = model.z_index
+    integral_z_infty = model.integral_z_infty
+    integral_0_z = model.integral_0_z
+
     TWO_PI = 2.0 * np.pi
     hw = calc_hw(tw_in, n_component, beta_phiw)
 
@@ -216,18 +235,23 @@ def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, 
 
     for i in range(n_component):
         for k in range(n_point):
-            z_minus_t = np.flip(z_indices[:k])
-            t_minus_z = z_indices[k:] - k
+            z_minus_t = np.flip(z_index[:k])
+            t_minus_z = z_index[k:] - k
             for j in range(n_component):
                 l = calc_l_index(i, j)
-                tw[k, i] = beta_psi_charge[i] + TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l] +
-                                                                   charge_pair[l] *
-                                                                   (integral_z_infty[k, j] +
-                                                                       z[k] * integral_0_z[k, j])
+                tw[k, i] = beta_psi_charge[i] + TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l]
+                                                                   + charge_pair[l] * (integral_z_infty[k, j] + z[k] * integral_0_z[k, j])
                                                                    + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
                                                                    + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
     return tw
 
 
-def opt_func(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
-    return tw - calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z)
+# Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
+
+def opt_func(tw_in, fluid, model, discrete):
+    return tw_in - calc_tw(tw_in, fluid, model, discrete)
+
+
+def solve_model(opt_func, tw_initial, tolerance, max_iteration):
+    return optim.root(opt_func, tw_initial, method="krylov", jac=None,
+                      tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
