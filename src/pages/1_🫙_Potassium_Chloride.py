@@ -19,9 +19,6 @@ if fluid is not None:
 else:
     st.error("Invalid choice of fluid")
 
-st.markdown(
-    "Molten potassium chloride at a charged interface: Now in progress...")
-
 
 other_params = fluid_specific_parameters(fluid_symbol)
 
@@ -47,24 +44,22 @@ beta_pauling = calc_beta_pauling(
 cap_b = calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair)
 
 charge = calc_charge(fluid.valence)
+charge_pair = calc_charge_pair(beta, charge, epsilon, n_component, n_pair)
 
 z = discrete.z
 r = discrete.z    # r on same discretisation as z
 
-u = calc_u(charge, cap_b, alpha, cap_c, cap_d,
+beta_u = beta * calc_u(charge, cap_b, alpha, cap_c, cap_d,
            n_point, n_component, n_pair, epsilon, r)
-u = beta * u
-
 
 rho = calc_rho(fluid.concentration)
 
 kappa = calc_kappa(beta, charge, rho, epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
-phiw = calc_phiw(z, n_component, discrete.phiw)
-phiw = beta * phiw
-
-psi_0 = psi_0 * 1e-3     # 100 mV (in Volts)
+beta_phiw = beta * calc_phiw(z, n_component, discrete.phiw)
+beta_psi =  beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
+beta_psi_charge = -beta_psi * charge
 
 # Bulk-fluid inputs (direct correlation function
 
@@ -80,9 +75,12 @@ f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, discrete.f2)
 # initial guess of zero - maybe should be \beta \phi
 tw_initial = np.zeros((n_point, n_component))
 
-hw = calc_hw(tw_initial, n_component, phiw, discrete.hw)
+hw_initial = calc_hw(tw_initial, n_component, beta_phiw, discrete.hw)
 
-beta_psi =  beta * psi_0
+
+tw = calc_tw(tw_initial, discrete.hw, discrete.tw, beta_phiw, beta_psi_charge, charge_pair, 
+            rho, f1, f2, z, n_component, n_point, discrete.z_index, 
+            discrete.integral_z_infty, discrete.integral_0_z)
 
 
 
@@ -90,12 +88,14 @@ beta_psi =  beta * psi_0
 
 # Output to main page
 
-fig = plotly_line(r, u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
+
+
+fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
                   xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
 st.plotly_chart(fig)
 
 
-fig = plotly_line(z, phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
+fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
                   xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
 st.plotly_chart(fig)
 
@@ -115,6 +115,6 @@ fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", lege
 st.plotly_chart(fig)
 
 
-fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-                  xliml=[0, 10], yliml=[-2, 2], title="hw for tw = tw_initial (zero guess)")
+fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+                  xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
 st.plotly_chart(fig)
