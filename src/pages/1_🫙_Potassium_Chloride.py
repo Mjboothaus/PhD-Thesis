@@ -1,5 +1,5 @@
 import streamlit as st
-from model_parameters import *
+from modelling import *
 from numerical_parameters import create_sidebar, set_num_parameters
 from plotting import plotly_line
 import pandas as pd
@@ -10,8 +10,6 @@ from pathlib import Path
 fluid_symbol = "kcl"
 
 fluid = set_fluid_parameters(fluid_symbol)
-
-st.write(fluid.charge_pair)
 
 if fluid is not None:
     z_cutoff, n_point, psi_0, tolerance, max_iteration = create_sidebar(fluid)
@@ -28,7 +26,7 @@ sigma = other_params["kcl"]["sigma"]
 cap_c = other_params["kcl"]["cap_c"]
 cap_d = other_params["kcl"]["cap_d"]
 
-d = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair)
+d = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair, tolerance, max_iteration)
 
 n_component = d.n_component
 n_pair = d.n_pair
@@ -55,45 +53,37 @@ r = z    # r on same discretisation as z
 beta_u = fluid.beta * calc_u(charge, cap_b, alpha, cap_c, cap_d,
            n_point, n_component, n_pair, fluid.epsilon, r)
 
-model = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, phiw=wall_zeros,
-    c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros,
-    integral_0_z=wall_zeros, integral_z_infty=wall_zeros)
-
-
-
-
-
-
 kappa = calc_kappa(fluid.beta, charge, fluid.rho, fluid.epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
-beta_phiw = fluid.beta * calc_phiw(z, n_component)
+
+model = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, beta_phiw=wall_zeros, 
+    beta_psi_charge=np.zeros(n_component), c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros,
+    integral_0_z=wall_zeros, integral_z_infty=wall_zeros)
+
+beta_phiw = fluid.beta * calc_phiw(z, n_component, model.beta_phiw)
 beta_psi =  fluid.beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
 beta_psi_charge = -beta_psi * charge
 
 # Bulk-fluid inputs (direct correlation function
 
-# cr_path = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
-
 cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 c_short, r_short = load_and_interpolate_cr(Path(cr_path), n_point, n_pair, z)
 
-
-f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, d.f1)
-f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, d.f2)
+f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
+f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 
 # initial guess of zero - maybe should be \beta \phi
 
 tw_initial = np.zeros((n_point, n_component))
 hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
-
 # tw = calc_tw(tw_initial, fluid, model, d)
 # hw = calc_hw(tw, n_component, beta_phiw)
 
 # Solve equation
 
-solution = solve_model(opt_func, tw_initial, tolerance, max_iteration)
+solution = solve_model(opt_func, tw_initial, fluid, model, d)
 
 
 

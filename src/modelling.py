@@ -18,7 +18,8 @@ class Model:
     z_index: np.array
     hw: np.array
     tw: np.array
-    phiw: np.array
+    beta_phiw: np.array
+    beta_psi_charge: np.array
     c_short: np.array
     f1: np.array
     f2: np.array
@@ -49,7 +50,7 @@ class Fluid:
 
 fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
     1.0, -1.0]), "temperature": 1075.0, "concentration": np.array([19.265, 19.265]),
-    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0, "epsilon": 0})})
+    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0})})
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
     1.0, -1.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
@@ -73,7 +74,7 @@ def set_fluid_parameters(symbol):
                   concentration=parameters["concentration"], epsilon_r=parameters[
                       "epsilon_r"], n_component=parameters["n_component"],
                   n_pair=parameters["n_pair"], index=parameters["index"], charge_pair=parameters["charge_pair"],
-                  rho=parameters["rho"])
+                  rho=parameters["rho"], beta=parameters["beta"], epsilon=parameters["epsilon"])
     return fluid
 
 
@@ -252,6 +253,8 @@ def opt_func(tw_in, fluid, model, discrete):
     return tw_in - calc_tw(tw_in, fluid, model, discrete)
 
 
-def solve_model(opt_func, tw_initial, tolerance, max_iteration):
-    return optim.root(opt_func, tw_initial, method="krylov", jac=None,
+def solve_model(opt_func, tw_initial, fluid, model, discrete):
+    tolerance = discrete.tolerance
+    max_iteration = discrete.max_iteration
+    return optim.root(opt_func, tw_initial, args=(fluid, model, discrete), method="krylov", jac=None,
                       tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
