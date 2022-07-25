@@ -1,8 +1,8 @@
 from pathlib import Path
 from IPython.display import Markdown, display
-from streamlit import markdown
+from streamlit import markdown, cache
 
-
+@cache(suppress_st_warning=True)
 def read_render_markdown_file(markdown_file, output="jupyter"):
     try:
         md_text = Path(markdown_file).read_text()

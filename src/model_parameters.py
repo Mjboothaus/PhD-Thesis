@@ -101,7 +101,7 @@ def calc_charge_pair(beta, charge, epsilon, n_component, n_pair):
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            charge_pair[l] = (2.0e10 * beta * charge[i] * charge[j] / epsilon)
+            charge_pair[l] = (2.0e-10 * beta * charge[i] * charge[j] / epsilon)
     return charge_pair
 
 
@@ -172,7 +172,8 @@ def integral_z_infty_dr_r2_c_short(c_short, n_pair, z, f2):
     return f2
 
 
-def calc_hw(tw, n_component, beta_phiw, hw):
+def calc_hw(tw, n_component, beta_phiw):
+    hw = np.zeros((len(tw), n_component))
     for i in range(n_component):
         hw[:, i] = np.exp(tw[:, i] - beta_phiw[:, i]) - 1.0
     return hw
@@ -182,7 +183,7 @@ def calc_hw(tw, n_component, beta_phiw, hw):
 
 def calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
     TWO_PI = 2.0 * np.pi
-    hw = calc_hw(tw_in, n_component, beta_phiw, hw_in)
+    hw = calc_hw(tw_in, n_component, beta_phiw)
 
     for i in range(n_component):
         for k in range(n_point):
@@ -196,7 +197,7 @@ def calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, 
             for j in range(n_component):
                 l = calc_l_index(i, j)
                 tw[k, i] = beta_psi_charge[i] + TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l] +
-                                                                      charge_pair *
+                                                                      charge_pair[l] *
                                                                       (integral_z_infty[k, j] +
                                                                        z[k] * integral_0_z[k, j])
                                                                       + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
@@ -204,5 +205,5 @@ def calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, 
     return tw
 
 
-def opt_func(tw):
+def opt_func(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
     return tw - calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z)

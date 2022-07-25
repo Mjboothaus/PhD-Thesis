@@ -75,7 +75,7 @@ f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, discrete.f2)
 # initial guess of zero - maybe should be \beta \phi
 tw_initial = np.zeros((n_point, n_component))
 
-hw_initial = calc_hw(tw_initial, n_component, beta_phiw, discrete.hw)
+hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
 
 tw = calc_tw(tw_initial, discrete.hw, discrete.tw, beta_phiw, beta_psi_charge, charge_pair, 
@@ -84,7 +84,7 @@ tw = calc_tw(tw_initial, discrete.hw, discrete.tw, beta_phiw, beta_psi_charge, c
 
 
 
-
+hw = calc_hw(tw, n_component, beta_phiw)
 
 # Output to main page
 
@@ -117,4 +117,14 @@ st.plotly_chart(fig)
 
 fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
                   xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
+st.plotly_chart(fig)
+
+
+fig = plotly_line(z, tw, ["z", "tw0", "tw1"], y_label="tw", legend_label="",
+                  xliml=[0, 10], title="tw")
+st.plotly_chart(fig)
+
+
+fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+                  xliml=[0, 10], title="hw")
 st.plotly_chart(fig)
