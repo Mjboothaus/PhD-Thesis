@@ -1,6 +1,5 @@
+matplotlib
+plotly
 scipy
 streamlit
 watchdog
-dacite
-matplotlib
-plotly

@@ -1,9 +1,7 @@
-from ctypes import c_short
-from unicodedata import numeric
 import streamlit as st
 from model_parameters import *
 from numerical_parameters import create_sidebar, set_num_parameters
-from plotting import make_simple_plot, plotly_line
+from plotting import plotly_line
 import pandas as pd
 from pathlib import Path
 
@@ -13,6 +11,7 @@ fluid_symbol = "kcl"
 
 fluid = set_fluid_parameters(fluid_symbol)
 
+st.write(fluid.charge_pair)
 
 if fluid is not None:
     z_cutoff, n_point, psi_0 = create_sidebar(fluid)
@@ -29,11 +28,10 @@ sigma = other_params["kcl"]["sigma"]
 cap_c = other_params["kcl"]["cap_c"]
 cap_d = other_params["kcl"]["cap_d"]
 
-discrete = set_num_parameters(
-    n_point, z_cutoff, fluid.n_component, fluid.n_pair)
+d = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair)
 
-n_component = discrete.n_component
-n_pair = discrete.n_pair
+n_component = d.n_component
+n_pair = d.n_pair
 
 beta = calc_beta(fluid.temperature)
 epsilon = calc_epsilon(fluid.epsilon_r)
@@ -44,20 +42,33 @@ beta_pauling = calc_beta_pauling(
 cap_b = calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair)
 
 charge = calc_charge(fluid.valence)
+
 charge_pair = calc_charge_pair(beta, charge, epsilon, n_component, n_pair)
 
-z = discrete.z
-r = discrete.z    # r on same discretisation as z
+z = np.linspace(0.0, z_cutoff, n_point)
+z_index = np.arange(0, n_point, dtype=int)
+wall_zeros = np.zeros((n_point, n_component))
+fluid_zeros = np.zeros((n_point, n_pair))
+
+r = z    # r on same discretisation as z
 
 beta_u = beta * calc_u(charge, cap_b, alpha, cap_c, cap_d,
            n_point, n_component, n_pair, epsilon, r)
+
+oz = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, phiw=wall_zeros,
+    c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros,
+    integral_0_z=wall_zeros, integral_z_infty=wall_zeros,
+    beta_u=beta_u)
+
+
+
 
 rho = calc_rho(fluid.concentration)
 
 kappa = calc_kappa(beta, charge, rho, epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
-beta_phiw = beta * calc_phiw(z, n_component, discrete.phiw)
+beta_phiw = beta * calc_phiw(z, n_component, phiw)
 beta_psi =  beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
 beta_psi_charge = -beta_psi * charge
 
@@ -69,18 +80,19 @@ cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 c_short, r_short = load_and_intepolate_cr(Path(cr_path), n_point, n_pair, z)
 
 
-f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, discrete.f1)
-f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, discrete.f2)
+f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, d.f1)
+f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, d.f2)
 
 # initial guess of zero - maybe should be \beta \phi
 tw_initial = np.zeros((n_point, n_component))
 
 hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
+integral_z_0 = calc_in
 
-tw = calc_tw(tw_initial, discrete.hw, discrete.tw, beta_phiw, beta_psi_charge, charge_pair, 
-            rho, f1, f2, z, n_component, n_point, discrete.z_index, 
-            discrete.integral_z_infty, discrete.integral_0_z)
+tw = calc_tw(tw_initial, d.tw, beta_phiw, beta_psi_charge, charge_pair, 
+            rho, f1, f2, z, n_component, n_point, d.z_index, 
+            d.integral_z_infty, d.integral_0_z)
 
 
 

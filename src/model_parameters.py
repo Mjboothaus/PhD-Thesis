@@ -3,13 +3,28 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from dacite import from_dict
 from scipy import interpolate
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
 from streamlit import cache
 
 # from helper_functions import read_render_markdown_file
+
+
+@dataclass
+class Model:
+    z: np.array
+    z_index: np.array
+    hw: np.array
+    tw: np.array
+    phiw: np.array
+    c_short: np.array
+    f1: np.array
+    f2: np.array
+    integral_0_z: np.array
+    integral_z_infty: np.array
+    beta_u: np.array
+
 
 @dataclass
 class Fluid:
@@ -23,11 +38,13 @@ class Fluid:
     n_component: int
     n_pair: int
     index: int
+    charge_pair: np.array
+    rho: np.array
 
 
 fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
     1.0, -1.0]), "temperature": 1075.0, "concentration": np.array([19.265, 19.265]),
-    "epsilon_r": 1.0, "index": 1})})
+    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0, 0]), "rho": np.array([0, 0])})})
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
     1.0, -1.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
@@ -46,7 +63,13 @@ def set_fluid_parameters(symbol):
     parameters["symbol"] = "".join(parameters["component"])
     n_component = parameters["n_component"] = len(parameters["component"])
     parameters["n_pair"] = int((n_component+1) * (n_component) / 2)
-    return from_dict(data_class=Fluid, data=parameters)
+    fluid = Fluid(name=parameters["name"], symbol=parameters["symbol"],
+                  component=parameters["component"], valence=parameters["valence"], temperature=parameters["temperature"],
+                  concentration=parameters["concentration"], epsilon_r=parameters[
+                      "epsilon_r"], n_component=parameters["n_component"],
+                  n_pair=parameters["n_pair"], index=parameters["index"], charge_pair=parameters["charge_pair"],
+                  rho=parameters["rho"])
+    return fluid
 
 
 def fluid_specific_parameters(symbol):
@@ -179,9 +202,10 @@ def calc_hw(tw, n_component, beta_phiw):
     return hw
 
 
-# TODO: Continue from here and pre-calculate constants so they don't need to be passed separately
+# TODO: Continue from here - check units
+# TODO: move arguments into Fluid / Discretisation classes to shorten function call arg list
 
-def calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
+def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
     TWO_PI = 2.0 * np.pi
     hw = calc_hw(tw_in, n_component, beta_phiw)
 
@@ -197,13 +221,13 @@ def calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, 
             for j in range(n_component):
                 l = calc_l_index(i, j)
                 tw[k, i] = beta_psi_charge[i] + TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l] +
-                                                                      charge_pair[l] *
-                                                                      (integral_z_infty[k, j] +
+                                                                   charge_pair[l] *
+                                                                   (integral_z_infty[k, j] +
                                                                        z[k] * integral_0_z[k, j])
-                                                                      + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
-                                                                      + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
+                                                                   + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
+                                                                   + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
     return tw
 
 
-def opt_func(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
-    return tw - calc_tw(tw_in, hw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z)
+def opt_func(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z):
+    return tw - calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_indices, integral_z_infty, integral_0_z)
