@@ -241,6 +241,7 @@ def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
 def opt_func(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
              n_component, n_point, z_index, integral_z_infty, integral_0_z):
+
     return tw_in - calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                            n_component, n_point, z_index, integral_z_infty, integral_0_z)
 
@@ -268,6 +269,14 @@ def test_solve_model(opt_func, tw_initial, fluid, model, discrete):
 
     return tw_args, tolerance, max_iteration
 
+n_feval = 0
+
+def callback_func(x, tw_args):
+    global n_feval
+    print(n_feval, x)
+    # sum(opt_func(x, *tw_args))
+    n_feval += 1
+
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete):
     tw = model.tw
@@ -292,4 +301,4 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete):
 
     return optim.root(opt_func, tw_initial, args=tw_args,
                       method="krylov", jac=None,
-                      tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
+                      tol=tolerance, callback=callback_func(tw_args[0], tw_args), options={"disp": False, "maxiter": max_iteration})

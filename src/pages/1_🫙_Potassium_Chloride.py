@@ -136,12 +136,11 @@ with col1:
 # tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
 
 #st.write(tw_args[1])
-#st.write(tol, maxit)
-
 
 with col2:
-    st.text("Standard output message here:")
-    to_out = st.empty()
+    with st.container():
+        st.markdown("Newton-Krylov solver output:")
+        to_out = st.empty()
 
-    with rd.stdout(to=to_out, format='text'):
-        solution = solve_model(opt_func, tw_initial, fluid, model, d)
+        with rd.stdout(to=to_out, format='text'):
+            solution = solve_model(opt_func, tw_initial, fluid, model, d)

@@ -29,10 +29,10 @@ class _Redirect:
 
         if self.format not in ['text', 'markdown', 'latex', 'code', 'write']:
             raise ValueError(
-                f"format need oneof the following: {', '.join(['text', 'markdown', 'latex', 'code', 'write'])}")
+                f"format need one of the following: {', '.join(['text', 'markdown', 'latex', 'code', 'write'])}")
 
         if self.to and (not hasattr(self.to, 'text') or not hasattr(self.to, 'empty')):
-            raise ValueError(f"'to' is not a streamlit container object")
+            raise ValueError("'to' is not a streamlit container object")
 
     def __enter__(self):
         if self.st is not None:
@@ -51,7 +51,6 @@ class _Redirect:
         self.fun = getattr(self.st, self.format)
         for redirection in self.redirections:
             redirection.__enter__()
-
         return self.io
 
     def __call__(self, to=None, format=None):
