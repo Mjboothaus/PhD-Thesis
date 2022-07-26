@@ -1,5 +1,5 @@
-from modelling import calc_l_index
 import pytest
+from src.modelling import *
 
 # def test_calc_beta(temperature):
     # return 1.0 / (Boltzmann * temperature)
@@ -10,7 +10,7 @@ import pytest
     # return 4.0 * np.pi * epsilon_r * epsilon_0
 
 
-def test_calc_l_index(i, j):
+def test_calc_l_index():
     n_component = 2
     l_index = [0, 1, 2]
     for i in range(n_component):

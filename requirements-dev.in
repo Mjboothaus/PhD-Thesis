@@ -2,6 +2,7 @@ matplotlib
 notebook
 numericalunits
 pytest
+pytest-reqs
 scipy
 streamlit
 watchdog

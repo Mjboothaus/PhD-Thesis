@@ -15,17 +15,19 @@ deploy-reqs:
     pip-compile requirements-deploy.in
 
 # create the local Python venv (.venv_{{project_name}}) and install requirements(.txt)
-setup-python-venv:
+dev-venv:
 	#!/usr/bin/env bash
-	pip-compile requirements.in
-	python3 -m venv .venv_{{project_name}}
-	. .venv_{{project_name}}/bin/activate
-	python3 -m pip install --upgrade pip
+	pip-compile requirements-dev.in
+	python3 -m venv .venv_dev_{{project_name}}
+	. .venv_dev_{{project_name}}/bin/activate
+	pip install pip==18.1.0
+	# python3 -m pip install --upgrade pip
 	pip install -r requirements.txt
-	@python -m ipykernel install --user --name .venv_{{project_name}}
-	echo -e '\n' source .venv_{{project_name}}/bin/activate '\n'
+	@python -m ipykernel install --user --name .venv_dev_{{project_name}}
+	echo -e '\n' source .venv_dev_{{project_name}}/bin/activate '\n'
 
-setup-deploy-venv:
+# no Jupyter or pytest etc in deploy
+deploy-venv:
 	#!/usr/bin/env bash
 	pip-compile requirements-deploy.in -o requirements-deploy.txt
 	python3 -m venv .venv_deploy_{{project_name}}
@@ -38,8 +40,15 @@ update-reqs:
     #pip-compile requirements.in
     #pip install -r requirements.txt --upgrade
 
-rm-python-venv:
-	rm -rf .venv/
+# see dvenv custom fn defined in ~/.zshrc
+rm-dev-venv:
+	#!/usr/bin/env bash
+	dvenv
+	rm -rf .venv_dev_{{project_name}}
+
+test:
+    pytest
+
 
 # run app.py (in Streamlit) locally
 run: 
