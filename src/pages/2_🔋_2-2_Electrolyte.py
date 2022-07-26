@@ -1,6 +1,6 @@
 import streamlit as st
 from modelling import Fluid, set_fluid_parameters
-from numerical_parameters import create_sidebar
+from numerics import create_sidebar
 
 # from helper_functions import read_render_markdown_file
 

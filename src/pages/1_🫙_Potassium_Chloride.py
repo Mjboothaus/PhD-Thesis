@@ -1,9 +1,11 @@
+from datetime import time
 import streamlit as st
 from modelling import *
-from numerical_parameters import create_sidebar, set_num_parameters
+from numerics import create_sidebar, set_num_parameters
 from plotting import plotly_line
 import pandas as pd
 from pathlib import Path
+import st_redirect as rd
 
 # from helper_functions import read_render_markdown_file
 
@@ -39,8 +41,8 @@ beta_pauling = calc_beta_pauling(
 
 cap_b = calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair)
 
-charge = calc_charge(fluid.valence)
-fluid.charge_pair = calc_charge_pair(fluid.beta, charge, fluid.epsilon, n_component, n_pair)
+fluid.charge = calc_charge(fluid.valence)
+fluid.charge_pair = calc_charge_pair(fluid.beta, fluid.charge, fluid.epsilon, n_component, n_pair)
 
 fluid.rho = calc_rho(fluid.concentration)
 
@@ -50,10 +52,10 @@ wall_zeros = np.zeros((n_point, n_component))
 fluid_zeros = np.zeros((n_point, n_pair))
 
 r = z    # r on same discretisation as z
-beta_u = fluid.beta * calc_u(charge, cap_b, alpha, cap_c, cap_d,
+beta_u = fluid.beta * calc_u(fluid.charge, cap_b, alpha, cap_c, cap_d,
            n_point, n_component, n_pair, fluid.epsilon, r)
 
-kappa = calc_kappa(fluid.beta, charge, fluid.rho, fluid.epsilon)
+kappa = calc_kappa(fluid.beta, fluid.charge, fluid.rho, fluid.epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
 
@@ -63,7 +65,7 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, beta_phiw=wall
 
 beta_phiw = fluid.beta * calc_phiw(z, n_component, model.beta_phiw)
 beta_psi =  fluid.beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
-beta_psi_charge = -beta_psi * charge
+beta_psi_charge = -beta_psi * fluid.charge
 
 # Bulk-fluid inputs (direct correlation function
 
@@ -78,14 +80,32 @@ f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 tw_initial = np.zeros((n_point, n_component))
 hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
+model.tw = tw_initial
+model.beta_phiw = beta_phiw
+model.beta_psi_charge = beta_psi_charge
+model.f1 = f1
+model.f2 = f2
+
 # tw = calc_tw(tw_initial, fluid, model, d)
 # hw = calc_hw(tw, n_component, beta_phiw)
 
 # Solve equation
 
-solution = solve_model(opt_func, tw_initial, fluid, model, d)
+    # tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+    #             n_component, n_point, z_index, integral_z_infty, integral_0_z)
 
+# tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
 
+#st.write(tw_args[1])
+# st.write(tol, maxit)
+
+st.text("Standard output message here:")
+to_out = st.empty()
+
+with rd.stdout(to=to_out, format='markdown'):
+  solution = solve_model(opt_func, tw_initial, fluid, model, d)
+  print("\n")
+#  time.sleep(1)
 
 
 # Output to main page
@@ -123,11 +143,11 @@ fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label
 st.plotly_chart(fig)
 
 
-fig = plotly_line(z, tw, ["z", "tw0", "tw1"], y_label="tw", legend_label="",
-                  xliml=[0, 10], title="tw")
-st.plotly_chart(fig)
+#fig = plotly_line(z, tw, ["z", "tw0", "tw1"], y_label="tw", legend_label="",
+#                  xliml=[0, 10], title="tw")
+#st.plotly_chart(fig)
 
 
-fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-                  xliml=[0, 10], title="hw")
-st.plotly_chart(fig)
+#fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+#                  xliml=[0, 10], title="hw")
+#st.plotly_chart(fig)
