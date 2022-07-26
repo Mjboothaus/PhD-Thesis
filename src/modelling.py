@@ -33,6 +33,7 @@ class Fluid:
     symbol: str
     component: list[str]
     valence: np.ndarray
+    charge: np.ndarray
     temperature: float
     concentration: np.ndarray
     epsilon_r: float
@@ -49,7 +50,7 @@ class Fluid:
 
 
 fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
-    1.0, -1.0]), "temperature": 1075.0, "concentration": np.array([19.265, 19.265]),
+    1.0, -1.0]), "charge": np.array([0]), "temperature": 1075.0, "concentration": np.array([19.265, 19.265]),
     "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0})})
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
@@ -70,9 +71,10 @@ def set_fluid_parameters(symbol):
     n_component = parameters["n_component"] = len(parameters["component"])
     parameters["n_pair"] = int((n_component+1) * (n_component) / 2)
     fluid = Fluid(name=parameters["name"], symbol=parameters["symbol"],
-                  component=parameters["component"], valence=parameters["valence"], temperature=parameters["temperature"],
-                  concentration=parameters["concentration"], epsilon_r=parameters[
-                      "epsilon_r"], n_component=parameters["n_component"],
+                  component=parameters["component"], valence=parameters["valence"],
+                  charge=parameters["charge"], temperature=parameters["temperature"],
+                  concentration=parameters["concentration"], 
+                  epsilon_r=parameters["epsilon_r"], n_component=parameters["n_component"],
                   n_pair=parameters["n_pair"], index=parameters["index"], charge_pair=parameters["charge_pair"],
                   rho=parameters["rho"], beta=parameters["beta"], epsilon=parameters["epsilon"])
     return fluid
