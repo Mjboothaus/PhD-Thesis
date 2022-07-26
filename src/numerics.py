@@ -37,7 +37,7 @@ def create_sidebar(fluid):
     tolerance = st.sidebar.number_input("Convergence tolerance", min_value=1e-12, max_value=1e-6, value=1e-9)
     max_iteration = st.sidebar.number_input("Maximum iterations", min_value=10, max_value=1000, value=100)
 
-    return z_cutoff, int(n_point), psi_0, tolerance, max_iteration
+    return z_cutoff, int(n_point), psi_0, tolerance, int(max_iteration)
 
 
 def set_num_parameters(n_point, z_cutoff, n_component, n_pair, tolerance, max_iteration):

@@ -73,7 +73,7 @@ def set_fluid_parameters(symbol):
     fluid = Fluid(name=parameters["name"], symbol=parameters["symbol"],
                   component=parameters["component"], valence=parameters["valence"],
                   charge=parameters["charge"], temperature=parameters["temperature"],
-                  concentration=parameters["concentration"], 
+                  concentration=parameters["concentration"],
                   epsilon_r=parameters["epsilon_r"], n_component=parameters["n_component"],
                   n_pair=parameters["n_pair"], index=parameters["index"], charge_pair=parameters["charge_pair"],
                   rho=parameters["rho"], beta=parameters["beta"], epsilon=parameters["epsilon"])
@@ -213,20 +213,8 @@ def calc_hw(tw, n_component, beta_phiw):
 # TODO: Continue from here - check units
 # TODO: move arguments into Fluid / Discretisation classes to shorten function call arg list
 
-def calc_tw(tw_in, fluid, model, discrete):
-    tw = model.tw
-    beta_phiw = model.beta_phiw
-    beta_psi_charge = model.beta_psi_charge
-    charge_pair = fluid.charge_pair
-    rho = fluid.rho
-    f1 = model.f1
-    f2 = model.f2
-    z = model.z
-    n_component = fluid.n_component
-    n_point = discrete.n_point
-    z_index = model.z_index
-    integral_z_infty = model.integral_z_infty
-    integral_0_z = model.integral_0_z
+def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+            n_component, n_point, z_index, integral_z_infty, integral_0_z):
 
     TWO_PI = 2.0 * np.pi
     hw = calc_hw(tw_in, n_component, beta_phiw)
@@ -251,12 +239,57 @@ def calc_tw(tw_in, fluid, model, discrete):
 
 # Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
 
-def opt_func(tw_in, fluid, model, discrete):
-    return tw_in - calc_tw(tw_in, fluid, model, discrete)
+def opt_func(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+             n_component, n_point, z_index, integral_z_infty, integral_0_z):
+    return tw_in - calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+                           n_component, n_point, z_index, integral_z_infty, integral_0_z)
+
+
+def test_solve_model(opt_func, tw_initial, fluid, model, discrete):
+    tw = model.tw
+    beta_phiw = model.beta_phiw
+    beta_psi_charge = model.beta_psi_charge
+    charge_pair = fluid.charge_pair
+    rho = fluid.rho
+    f1 = model.f1
+    f2 = model.f2
+    z = model.z
+    n_component = fluid.n_component
+    n_point = discrete.n_point
+    z_index = model.z_index
+    integral_z_infty = model.integral_z_infty
+    integral_0_z = model.integral_0_z
+
+    tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+                n_component, n_point, z_index, integral_z_infty, integral_0_z)
+    
+    tolerance = discrete.tolerance
+    max_iteration = discrete.max_iteration
+
+    return tw_args, tolerance, max_iteration
 
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete):
+    tw = model.tw
+    beta_phiw = model.beta_phiw
+    beta_psi_charge = model.beta_psi_charge
+    charge_pair = fluid.charge_pair
+    rho = fluid.rho
+    f1 = model.f1
+    f2 = model.f2
+    z = model.z
+    n_component = fluid.n_component
+    n_point = discrete.n_point
+    z_index = model.z_index
+    integral_z_infty = model.integral_z_infty
+    integral_0_z = model.integral_0_z
+
+    tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+                n_component, n_point, z_index, integral_z_infty, integral_0_z)
+    
     tolerance = discrete.tolerance
     max_iteration = discrete.max_iteration
-    return optim.root(opt_func, tw_initial, args=(fluid, model, discrete), method="krylov", jac=None,
+
+    return optim.root(opt_func, tw_initial, args=tw_args,
+                      method="krylov", jac=None,
                       tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})

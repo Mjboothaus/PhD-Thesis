@@ -89,6 +89,57 @@ model.f2 = f2
 # tw = calc_tw(tw_initial, fluid, model, d)
 # hw = calc_hw(tw, n_component, beta_phiw)
 
+
+
+
+col1, col2 = st.columns([3, 2])
+
+# Output to main page
+
+
+
+with col1:
+    fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
+                    xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
+    st.plotly_chart(fig)
+
+
+    fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
+                    xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
+    st.plotly_chart(fig)
+
+
+    fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
+                    xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+    st.plotly_chart(fig)
+
+
+    fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
+                    xliml=[0, 10], yliml=[-15, 5], title="f1 function")
+    st.plotly_chart(fig)
+
+
+    fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
+                    xliml=[0, 10], yliml=[-40, 5], title="f2 function")
+    st.plotly_chart(fig)
+
+
+    fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+                    xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
+    st.plotly_chart(fig)
+
+
+    #fig = plotly_line(z, tw, ["z", "tw0", "tw1"], y_label="tw", legend_label="",
+    #                  xliml=[0, 10], title="tw")
+    #st.plotly_chart(fig)
+
+
+    #fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+    #                  xliml=[0, 10], title="hw")
+    #st.plotly_chart(fig)
+
+    # Solve equation
+
 # Solve equation
 
     # tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
@@ -99,55 +150,10 @@ model.f2 = f2
 #st.write(tw_args[1])
 # st.write(tol, maxit)
 
-st.text("Standard output message here:")
-to_out = st.empty()
 
-with rd.stdout(to=to_out, format='markdown'):
-  solution = solve_model(opt_func, tw_initial, fluid, model, d)
-  print("\n")
-#  time.sleep(1)
+with col2:
+    st.text("Standard output message here:")
+    to_out = st.empty()
 
-
-# Output to main page
-
-
-
-
-fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
-                  xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
-st.plotly_chart(fig)
-
-
-fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
-                  xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
-st.plotly_chart(fig)
-
-
-fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
-                  xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
-st.plotly_chart(fig)
-
-
-fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
-                  xliml=[0, 10], yliml=[-15, 5], title="f1 function")
-st.plotly_chart(fig)
-
-
-fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
-                  xliml=[0, 10], yliml=[-40, 5], title="f2 function")
-st.plotly_chart(fig)
-
-
-fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-                  xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
-st.plotly_chart(fig)
-
-
-#fig = plotly_line(z, tw, ["z", "tw0", "tw1"], y_label="tw", legend_label="",
-#                  xliml=[0, 10], title="tw")
-#st.plotly_chart(fig)
-
-
-#fig = plotly_line(z, hw, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-#                  xliml=[0, 10], title="hw")
-#st.plotly_chart(fig)
+    with rd.stdout(to=to_out, format='text'):
+        solution = solve_model(opt_func, tw_initial, fluid, model, d)
