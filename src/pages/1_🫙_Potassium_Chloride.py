@@ -10,9 +10,7 @@ import st_redirect as rd
 # from helper_functions import read_render_markdown_file
 
 fluid_symbol = "kcl"
-
 fluid = set_fluid_parameters(fluid_symbol)
-
 if fluid is not None:
     z_cutoff, n_point, psi_0, tolerance, max_iteration = create_sidebar(fluid)
 else:
@@ -94,52 +92,61 @@ model.f2 = f2
 
 # Output to main page
 
+
 col1, col2 = st.columns([1, 2])
 
-# Solve equation
-
 with col1:
-    with st.container():
-        st.markdown("Newton-Krylov solver output:")
-        to_out = st.empty()
+    run_calc = st.button("Run calculation")
 
-        with rd.stdout(to=to_out, format='text'):
-            solution = solve_model(opt_func, tw_initial, fluid, model, d)
+if run_calc:
 
-    tw_solution = solution.x
-    hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-    st.info("Finished")
+    # Solve equation
 
-with col2:
-    fig = plotly_line(z, hw_solution, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
-                    xliml=[0, 10], yliml=[-2, 2], title="hw_solution")
-    st.plotly_chart(fig)
-    
-    fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
-                    xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
-    st.plotly_chart(fig)
+    with col1:
+        
 
+        with st.container():
+            st.markdown("Newton-Krylov solver output:")
+            to_out = st.empty()
+            with rd.stdout(to=to_out, format='text'):
+                solution = solve_model(opt_func, tw_initial, fluid, model, d)
 
-    fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
-                    xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
-    st.plotly_chart(fig)
+        tw_solution = solution.x
+        hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+        st.info("Finished")
 
+        st.write(solution)
 
-    fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
-                    xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
-    st.plotly_chart(fig)
+    with col2:
+        fig = plotly_line(z, hw_solution, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
+                        xliml=[0, 10], yliml=[-2, 2], title="hw_solution")
+        st.plotly_chart(fig)
 
-
-    fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
-                    xliml=[0, 10], yliml=[-15, 5], title="f1 function")
-    st.plotly_chart(fig)
+        fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
+                        xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
+        st.plotly_chart(fig)
 
 
-    fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
-                    xliml=[0, 10], yliml=[-40, 5], title="f2 function")
-    st.plotly_chart(fig)
+        fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
+                        xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
+        st.plotly_chart(fig)
 
 
-    fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-                    xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
-    st.plotly_chart(fig)
+        fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
+                        xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+        st.plotly_chart(fig)
+
+
+        fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
+                        xliml=[0, 10], yliml=[-15, 5], title="f1 function")
+        st.plotly_chart(fig)
+
+
+        fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
+                        xliml=[0, 10], yliml=[-40, 5], title="f2 function")
+        st.plotly_chart(fig)
+
+
+        fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+                        xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
+        st.plotly_chart(fig)
