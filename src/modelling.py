@@ -17,14 +17,11 @@ class Model:
     z: np.array
     z_index: np.array
     hw: np.array
-    tw: np.array
     beta_phiw: np.array
     beta_psi_charge: np.array
     c_short: np.array
     f1: np.array
     f2: np.array
-    integral_0_z: np.array
-    integral_z_infty: np.array
 
 
 @dataclass
@@ -132,7 +129,7 @@ def calc_charge_pair(beta, charge, epsilon, n_component, n_pair):
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            charge_pair[l] = (2.0e-10 * beta * charge[i] * charge[j] / epsilon)
+            charge_pair[l] = (2.0e10 * beta * charge[i] * charge[j] / epsilon)
     return charge_pair
 
 
@@ -213,8 +210,12 @@ def calc_hw(tw, n_component, beta_phiw):
 # TODO: Continue from here - check units
 # TODO: move arguments into Fluid / Discretisation classes to shorten function call arg list
 
-def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-            n_component, n_point, z_index, integral_z_infty, integral_0_z):
+def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+            n_component, n_point, z_index):
+
+    tw = np.zeros((n_point, n_component))
+    integral_z_infty = np.zeros((n_point, n_component))
+    integral_0_z = np.zeros((n_point, n_component))
 
     TWO_PI = 2.0 * np.pi
     hw = calc_hw(tw_in, n_component, beta_phiw)
@@ -228,26 +229,34 @@ def calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
         for k in range(n_point):
             z_minus_t = np.flip(z_index[:k])
             t_minus_z = z_index[k:] - k
-            for j in range(n_component):
+            for j in range(i, n_component):
                 l = calc_l_index(i, j)
-                tw[k, i] = beta_psi_charge[i] + TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l]
-                                                                   + charge_pair[l] * (integral_z_infty[k, j] + z[k] * integral_0_z[k, j])
-                                                                   + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
-                                                                   + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
+                tw[k, i] = beta_psi_charge[i]
+                tw[k, i] += TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l]
+                                                + charge_pair[l] * (integral_z_infty[k, j] + z[k] * integral_0_z[k, j])
+                                                + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
+                                                + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
     return tw
 
 
 # Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
 
-def opt_func(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-             n_component, n_point, z_index, integral_z_infty, integral_0_z):
+# n_feval = 0
+# def callback_func(x, tw_args):
+#     global n_feval
+#     print(n_feval, x)
+#     # sum(opt_func(x, *tw_args))
+#     n_feval += 1
 
-    return tw_in - calc_tw(tw_in, tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-                           n_component, n_point, z_index, integral_z_infty, integral_0_z)
 
+def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+             n_component, n_point, z_index):
 
-def test_solve_model(opt_func, tw_initial, fluid, model, discrete):
-    tw = model.tw
+    tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+                 n_component, n_point, z_index)
+    return tw_in - tw
+
+def solve_model(opt_func, tw_initial, fluid, model, discrete):
     beta_phiw = model.beta_phiw
     beta_psi_charge = model.beta_psi_charge
     charge_pair = fluid.charge_pair
@@ -258,47 +267,40 @@ def test_solve_model(opt_func, tw_initial, fluid, model, discrete):
     n_component = fluid.n_component
     n_point = discrete.n_point
     z_index = model.z_index
-    integral_z_infty = model.integral_z_infty
-    integral_0_z = model.integral_0_z
+    tolerance = discrete.tolerance
+    max_iteration = discrete.max_iteration
 
-    tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-                n_component, n_point, z_index, integral_z_infty, integral_0_z)
+    tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+                n_component, n_point, z_index)
+    
+    return optim.root(opt_func, tw_initial, args=tw_args,
+                      method="krylov", jac=None,
+                      tol=tolerance, callback=None, 
+                      options={"disp": True, "maxiter": max_iteration})
+
+
+
+
+# callback_func(tw, tw_args) ?
+
+
+
+def test_solve_model(opt_func, tw_initial, fluid, model, discrete):
+    beta_phiw = model.beta_phiw
+    beta_psi_charge = model.beta_psi_charge
+    charge_pair = fluid.charge_pair
+    rho = fluid.rho
+    f1 = model.f1
+    f2 = model.f2
+    z = model.z
+    n_component = fluid.n_component
+    n_point = discrete.n_point
+    z_index = model.z_index
+
+    tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+                n_component, n_point, z_index)
     
     tolerance = discrete.tolerance
     max_iteration = discrete.max_iteration
 
     return tw_args, tolerance, max_iteration
-
-n_feval = 0
-
-def callback_func(x, tw_args):
-    global n_feval
-    print(n_feval, x)
-    # sum(opt_func(x, *tw_args))
-    n_feval += 1
-
-
-def solve_model(opt_func, tw_initial, fluid, model, discrete):
-    tw = model.tw
-    beta_phiw = model.beta_phiw
-    beta_psi_charge = model.beta_psi_charge
-    charge_pair = fluid.charge_pair
-    rho = fluid.rho
-    f1 = model.f1
-    f2 = model.f2
-    z = model.z
-    n_component = fluid.n_component
-    n_point = discrete.n_point
-    z_index = model.z_index
-    integral_z_infty = model.integral_z_infty
-    integral_0_z = model.integral_0_z
-
-    tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-                n_component, n_point, z_index, integral_z_infty, integral_0_z)
-    
-    tolerance = discrete.tolerance
-    max_iteration = discrete.max_iteration
-
-    return optim.root(opt_func, tw_initial, args=tw_args,
-                      method="krylov", jac=None,
-                      tol=tolerance, callback=callback_func(tw_args[0], tw_args), options={"disp": False, "maxiter": max_iteration})

@@ -59,9 +59,8 @@ kappa = calc_kappa(fluid.beta, fluid.charge, fluid.rho, fluid.epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
 
-model = Model(z=z, z_index=z_index, hw=wall_zeros, tw=wall_zeros, beta_phiw=wall_zeros, 
-    beta_psi_charge=np.zeros(n_component), c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros,
-    integral_0_z=wall_zeros, integral_z_infty=wall_zeros)
+model = Model(z=z, z_index=z_index, hw=wall_zeros, beta_phiw=wall_zeros, 
+    beta_psi_charge=np.zeros(n_component), c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros)
 
 beta_phiw = fluid.beta * calc_phiw(z, n_component, model.beta_phiw)
 beta_psi =  fluid.beta * psi_0 * 1.0e-3  # 100 mV (in Volts)
@@ -80,22 +79,42 @@ f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 tw_initial = np.zeros((n_point, n_component))
 hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
-model.tw = tw_initial
 model.beta_phiw = beta_phiw
 model.beta_psi_charge = beta_psi_charge
 model.f1 = f1
 model.f2 = f2
 
-# tw = calc_tw(tw_initial, fluid, model, d)
-# hw = calc_hw(tw, n_component, beta_phiw)
 
-# Main screen output
+# tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+#             n_component, n_point, z_index, integral_z_infty, integral_0_z)
 
-col1, col2 = st.columns([3, 2])
+# tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
+
+# st.write(tw_args[1])
 
 # Output to main page
 
+col1, col2 = st.columns([1, 2])
+
+# Solve equation
+
 with col1:
+    with st.container():
+        st.markdown("Newton-Krylov solver output:")
+        to_out = st.empty()
+
+        with rd.stdout(to=to_out, format='text'):
+            solution = solve_model(opt_func, tw_initial, fluid, model, d)
+
+    tw_solution = solution.x
+    hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+    st.info("Finished")
+
+with col2:
+    fig = plotly_line(z, hw_solution, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
+                    xliml=[0, 10], yliml=[-2, 2], title="hw_solution")
+    st.plotly_chart(fig)
+    
     fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
                     xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
     st.plotly_chart(fig)
@@ -124,23 +143,3 @@ with col1:
     fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
                     xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
     st.plotly_chart(fig)
-
-
-    # Solve equation
-
-# Solve equation
-
-    # tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-    #             n_component, n_point, z_index, integral_z_infty, integral_0_z)
-
-# tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
-
-#st.write(tw_args[1])
-
-with col2:
-    with st.container():
-        st.markdown("Newton-Krylov solver output:")
-        to_out = st.empty()
-
-        with rd.stdout(to=to_out, format='text'):
-            solution = solve_model(opt_func, tw_initial, fluid, model, d)
