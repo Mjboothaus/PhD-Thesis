@@ -1,7 +1,7 @@
+matplotlib
 notebook
+numericalunits
+pytest
 scipy
 streamlit
 watchdog
-matplotlib
-siunits
-numericalunits
