@@ -1,8 +1,9 @@
 import pytest
 from src.modelling import *
 
-# def test_calc_beta(temperature):
-    # return 1.0 / (Boltzmann * temperature)
+def test_calc_beta():
+    temperature = 1.0/Boltzmann
+    assert calc_beta(temperature) == pytest.approx(1.0, rel=1e-16)
 
 
 # def test_calc_epsilon(epsilon_r):
