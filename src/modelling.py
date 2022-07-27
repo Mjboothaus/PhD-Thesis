@@ -153,7 +153,7 @@ def calc_phiw(z, n_point, n_component):
         phiw[:, i] = np.exp(-wall_d * z) * capital_a * (wall_d * z + 2)
     return phiw
 
-# TODO: Fix up choice of c(r)
+# TODO: Fix up choice of c(r) - in progress
 # Read in some c(r) -- currently LJ fluid (assuming c_short ~= c_LJ(r))
 
 
@@ -164,7 +164,7 @@ def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
         r = z
         cr[:, l] = f(r)
         # TODO: Make general - were getting some kinks in c(r) near r=0
-        cr[:10, l] = cr[10, l]
+        # cr[:10, l] = cr[10, l]
     return cr, r
 
 
@@ -200,7 +200,7 @@ def calc_hw(tw, n_component, beta_phiw):
 
 
 # TODO: Continue from here - check units
-# TODO: move arguments into Fluid / Discretisation classes to shorten function call arg list
+# TODO: make initialisation of arrays consistent - not some in Class and others in "calc" functions
 
 def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
             n_component, n_point, z_index):

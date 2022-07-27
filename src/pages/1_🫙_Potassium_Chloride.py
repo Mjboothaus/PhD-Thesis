@@ -60,44 +60,49 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 
 # Bulk-fluid inputs (direct correlation function
 
-#cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+#CR_PATH = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+#CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
 
-# CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
+from time import sleep
 
-CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/data/nrcg-cr-approx-maybe.dat"
-c_short, r_short = load_and_interpolate_cr(Path(CR_PATH), n_point, n_pair, z)
+CR_PATH = f"{Path.cwd().as_posix()}/data/nrcg-cr-approx-maybe.dat"
 
-f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
-f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
+if run_calc := st.button("Run calculation"):
+    try:
+        c_short, r_short = load_and_interpolate_cr(Path(CR_PATH), n_point, n_pair, z)
+    except Exception as e:
+        st.error(f"Please ensure the c(r) data file is available here: {Path(CR_PATH).parent.as_posix()}")
+        st.info("Restarting in 10 seconds")
+        # st.exception(e)
+        sleep(10.0)
+        st.experimental_rerun()
 
-# initial guess of zero - maybe should be \beta \phi
+    f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
+    f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 
-tw_initial = np.zeros((n_point, n_component))
-hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
+    # initial guess of zero - maybe should be \beta \phi
 
-model.f1 = f1
-model.f2 = f2
+    tw_initial = np.zeros((n_point, n_component))
+    hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
+
+    model.f1 = f1
+    model.f2 = f2
 
 
-# tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-#             n_component, n_point, z_index, integral_z_infty, integral_0_z)
+    # tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+    #             n_component, n_point, z_index, integral_z_infty, integral_0_z)
 
-# tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
+    # tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
 
-# st.write(tw_args[1])
+    # st.write(tw_args[1])
 
-# Output to main page
+    # Output to main page
 
-#TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
-#TODO: Handle numerical (e.g. Jacobian) exceptions gracefully
-#TODO: Plot |F(x)| convergence - pull values out of st_redirect
+    #TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
+    #TODO: Handle numerical (e.g. Jacobian) exceptions gracefully
+    #TODO: Plot |F(x)| convergence - pull values out of st_redirect
 
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    run_calc = st.button("Run calculation")
-
-if run_calc:
+    col1, col2 = st.columns([1, 2])
 
     # Solve equation
 
@@ -110,7 +115,6 @@ if run_calc:
                                         beta_phiw, beta_psi_charge)
         tw_solution = solution.x
         hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-        # st.info("Finished")
         st.write(solution)
 
     with col2:
