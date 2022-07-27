@@ -11,10 +11,9 @@ set dotenv-load
 help:
   @just -l
 
-deploy-reqs:
-    pip-compile requirements-deploy.in
 
-# create the local Python venv (.venv_{{project_name}}) and install requirements(.txt)
+# Create the local Python venv (.venv_{{project_name}}) and install requirements(.txt)
+
 dev-venv:
 	#!/usr/bin/env bash
 	pip-compile requirements-dev.in
@@ -26,7 +25,8 @@ dev-venv:
 	@python -m ipykernel install --user --name .venv_dev_{{project_name}}
 	echo -e '\n' source .venv_dev_{{project_name}}/bin/activate '\n'
 
-# no Jupyter or pytest etc in deploy
+
+# Note: no Jupyter or pytest etc in deploy
 deploy-venv:
 	#!/usr/bin/env bash
 	pip-compile requirements-deploy.in -o requirements-deploy.txt
@@ -36,31 +36,42 @@ deploy-venv:
 	pip install -r requirements-deploy.txt
 	echo -e '\n' source .venv_deploy_{{project_name}}/bin/activate '\n'
 
-update-reqs:
-    #pip-compile requirements.in
-    #pip install -r requirements.txt --upgrade
 
-# see dvenv custom fn defined in ~/.zshrc
+update-dev-reqs:
+	pip-compile requirements-dev.in
+    pip install -r requirements-dev.txt --upgrade
+
+
+update-deploy-reqs:
+	pip-compile requirements-deploy.in
+    pip install -r requirements-deploy.txt --upgrade
+
+# See custom dvenv command defined in ~/.zshrc
+
 rm-dev-venv:
 	#!/usr/bin/env bash
 	dvenv
 	rm -rf .venv_dev_{{project_name}}
 
+
 test:
     pytest
 
 
-# run app.py (in Streamlit) locally
+# Run app.py (in Streamlit) locally
+
 run: 
     streamlit run {{app_py}} --server.port={{server_port}} --server.address=localhost
 
-# build and run app.py in a (local) docker container
-run-container: 
+# Build and run app.py in a (local) Docker container
+
+container: 
     docker build . -t {{project_name}}
     docker run -p {{server_port}}:{{server_port}} {{project_name}}
 
-# in progress
-gcloud-setup:
+
+# Still in progress - still not STP
+gcr-setup:
     gcloud components update
     # gcloud config set region asia-southeast2
     gcloud projects create {{project_name}}
@@ -69,28 +80,22 @@ gcloud-setup:
     gcloud config set project {{project_name}}
 
 
-# deploy container (including app.py) to Google Cloud (App Engine)
-#gcloud-deploy-app-engine:
-#    # gcloud projects delete {{project_name}}
-#    # gcloud projects create {{project_name}}
-#    gcloud config set project {{project_name}}
+# Deploy container to Google Cloud (Cloud Run)
 
-# deploy container to Google Cloud (Cloud Run)
-gcloud-deploy: 
+gcr-deploy: 
     gcloud run deploy --source . {{project_name}} --region {{gcp_region}}
     # --image
     # gcloud run deploy {{project_name}} --image [IMAGE]
 
 
-# gloud init - other stuff?
+gcr-list-deployed-url:
+    gcloud run services list --platform managed | awk 'NR==2 {print $4}'
 
 
-gcloud-view:
-    gcloud app browse
-
-
-gcloud-app-disable:   # deleting project does not delete app
+gcr-app-disable:   # deleting project does not delete app
     gcloud app versions list
 
-# gcloud app versions stop {{VERSION.ID}}
+
+#TODO: 
+# gloud init - other stuff?
 # gcloud projects list
