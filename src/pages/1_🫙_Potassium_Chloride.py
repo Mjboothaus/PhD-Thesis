@@ -87,7 +87,9 @@ model.f2 = f2
 
 # Output to main page
 
-#TODO: Save/write solution & params to disk
+#TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
+#TODO: Handle numerical (e.g. Jacobian) exceptions gracefully
+#TODO: Plot |F(x)| convergence - pull values out of st_redirect
 
 col1, col2 = st.columns([1, 2])
 
@@ -112,7 +114,7 @@ if run_calc:
 
     with col2:
         fig = plotly_line(z, hw_solution+1, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
-                        xliml=[0, 20], yliml=[0, 3], title="hw_solution")
+                        xliml=[0, 30], yliml=[0, 4], title="hw_solution")
         st.plotly_chart(fig)
 
         fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",

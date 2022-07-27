@@ -241,7 +241,7 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
     #dtw_dz = np.zeros((n_point, n_component))
     #for i in range(n_component):
-    #    dtw_dz += np.diff(tw[:, i], n=1) / np.diff(z, n=1)
+    #    dtw_dz += np.diff(tw[:, i], n=2) / np.diff(z, n=2)
     #print(dtw_dz.shape)
 
     return tw_in - tw # - 1e-11 * np.sum(np.abs(dtw_dz) * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
@@ -249,6 +249,9 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
     #- 0.05 * sum((tw[1:] - tw[:-1])**2 * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
 
 #TODO: Work out if regularisation works to keep solution smooth
+#TODO: Look at NITSOL and NKSOL parameters to see if any clues?
+
+# https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
     charge_pair = fluid.charge_pair
