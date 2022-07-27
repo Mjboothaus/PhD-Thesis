@@ -1,11 +1,12 @@
-from datetime import time
+from pathlib import Path
+
+import pandas as pd
+#import st_redirect as rd
+import st_redirect_new as rd
 import streamlit as st
 from modelling import *
 from numerics import create_sidebar, set_num_parameters
 from plotting import plotly_line
-import pandas as pd
-from pathlib import Path
-import st_redirect as rd
 
 # from helper_functions import read_render_markdown_file
 
@@ -66,7 +67,8 @@ beta_psi_charge = -beta_psi * fluid.charge
 
 # Bulk-fluid inputs (direct correlation function
 
-cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+#cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
+cr_path = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
 c_short, r_short = load_and_interpolate_cr(Path(cr_path), n_point, n_pair, z)
 
 f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
@@ -92,6 +94,7 @@ model.f2 = f2
 
 # Output to main page
 
+#TODO: Save/write solution & params to disk
 
 col1, col2 = st.columns([1, 2])
 
@@ -103,23 +106,19 @@ if run_calc:
     # Solve equation
 
     with col1:
-        
-
-        with st.container():
-            st.markdown("Newton-Krylov solver output:")
+        with st.spinner("Finding optimal solution:"):
+            st.markdown("Solver output (Newton-Krylov)")
             to_out = st.empty()
-            with rd.stdout(to=to_out, format='text'):
+            with rd.stdout(to=to_out, format='markdown', max_buffer=20):
                 solution = solve_model(opt_func, tw_initial, fluid, model, d)
-
         tw_solution = solution.x
         hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-        st.info("Finished")
-
+        # st.info("Finished")
         st.write(solution)
 
     with col2:
-        fig = plotly_line(z, hw_solution, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
-                        xliml=[0, 10], yliml=[-2, 2], title="hw_solution")
+        fig = plotly_line(z, hw_solution+1, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
+                        xliml=[0, 20], yliml=[0, 3], title="hw_solution")
         st.plotly_chart(fig)
 
         fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
@@ -138,7 +137,7 @@ if run_calc:
 
 
         fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-15, 5], title="f1 function")
+                        xliml=[0, 10], yliml=[-40, 5], title="f1 function")
         st.plotly_chart(fig)
 
 

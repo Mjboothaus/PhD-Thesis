@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import streamlit as st
 
 
 def make_simple_plot(x, y, xlabel=None, ylabel=None, title=None, xliml=None, yliml=None, output="jupyter"):
@@ -29,7 +28,6 @@ def fast_plot(x, y):
 
 def plotly_line(x, y, column_names, y_label="", legend_label="", title=None, xliml=None, yliml=None):
     df = pd.DataFrame(data=np.column_stack((x, y)), columns=column_names)
-    #df = pd.DataFrame(data=np.c_[x, y], columns=column_names)
     fig = px.line(df, x=column_names[0], y=column_names[1:], title=title, 
         labels={column_names[0]: column_names[0],
         "value": y_label,

@@ -254,7 +254,9 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
-    return tw_in - tw
+    return tw_in - tw  # + 5 * sum((tw[1:] - tw[:-1])**2)
+
+#TODO: Work out if regularisation works to keep solution smooth
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete):
     beta_phiw = model.beta_phiw

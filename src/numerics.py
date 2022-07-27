@@ -18,7 +18,7 @@ class Discretisation:
 
 
 def create_sidebar(fluid):
-    st.sidebar.text(fluid.name)
+    # st.sidebar.text(fluid.name) - clear from menu bar
     st.sidebar.text(f"Temperature (K): {fluid.temperature}")
     st.sidebar.text(f"Concentration (m/dm3): {fluid.concentration[0]}")
 
