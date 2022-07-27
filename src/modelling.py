@@ -241,20 +241,12 @@ def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
 # Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
 
-# n_feval = 0
-# def callback_func(x, tw_args):
-#     global n_feval
-#     print(n_feval, x)
-#     # sum(opt_func(x, *tw_args))
-#     n_feval += 1
-
-
 def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
              n_component, n_point, z_index):
 
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
-    return tw_in - tw  # + 5 * sum((tw[1:] - tw[:-1])**2)
+    return tw_in - tw + 0.05 * sum((tw[1:] - tw[:-1])**2 * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
 
 #TODO: Work out if regularisation works to keep solution smooth
 
