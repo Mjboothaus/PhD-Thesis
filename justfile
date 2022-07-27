@@ -19,10 +19,10 @@ dev-venv:
 	pip-compile requirements-dev.in
 	python3 -m venv .venv_dev_{{project_name}}
 	. .venv_dev_{{project_name}}/bin/activate
-	pip install pip==18.1.0
-	# python3 -m pip install --upgrade pip
+	# pip install pip==18.1.0
+	python3 -m pip install --upgrade pip
 	pip install -r requirements.txt
-	@python -m ipykernel install --user --name .venv_dev_{{project_name}}
+	python -m ipykernel install --user --name .venv_dev_{{project_name}}
 	echo -e '\n' source .venv_dev_{{project_name}}/bin/activate '\n'
 
 
@@ -39,12 +39,12 @@ deploy-venv:
 
 update-dev-reqs:
 	pip-compile requirements-dev.in
-    pip install -r requirements-dev.txt --upgrade
+	pip install -r requirements-dev.txt --upgrade
 
 
 update-deploy-reqs:
 	pip-compile requirements-deploy.in
-    pip install -r requirements-deploy.txt --upgrade
+	pip install -r requirements-deploy.txt --upgrade
 
 # See custom dvenv command defined in ~/.zshrc
 
@@ -99,3 +99,7 @@ gcr-app-disable:   # deleting project does not delete app
 #TODO: 
 # gloud init - other stuff?
 # gcloud projects list
+
+
+# Resources:
+# - https://stackoverflow.com/questions/59423245/how-to-get-or-generate-deploy-url-for-google-cloud-run-services

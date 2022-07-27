@@ -17,8 +17,6 @@ class Model:
     z: np.array
     z_index: np.array
     hw: np.array
-    beta_phiw: np.array
-    beta_psi_charge: np.array
     c_short: np.array
     f1: np.array
     f2: np.array
@@ -47,7 +45,7 @@ class Fluid:
 
 
 fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
-    1.0, -1.0]), "charge": np.array([0]), "temperature": 1075.0, "concentration": np.array([19.265, 19.265]),
+    1.0, -1.0]), "charge": np.array([0]), "temperature": 1075.0, "concentration": np.array([19.5, 19.5]),
     "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0})})
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
@@ -67,14 +65,7 @@ def set_fluid_parameters(symbol):
     parameters["symbol"] = "".join(parameters["component"])
     n_component = parameters["n_component"] = len(parameters["component"])
     parameters["n_pair"] = int((n_component+1) * (n_component) / 2)
-    fluid = Fluid(name=parameters["name"], symbol=parameters["symbol"],
-                  component=parameters["component"], valence=parameters["valence"],
-                  charge=parameters["charge"], temperature=parameters["temperature"],
-                  concentration=parameters["concentration"],
-                  epsilon_r=parameters["epsilon_r"], n_component=parameters["n_component"],
-                  n_pair=parameters["n_pair"], index=parameters["index"], charge_pair=parameters["charge_pair"],
-                  rho=parameters["rho"], beta=parameters["beta"], epsilon=parameters["epsilon"])
-    return fluid
+    return Fluid(name=parameters["name"], symbol=parameters["symbol"], component=parameters["component"], valence=parameters["valence"], charge=parameters["charge"], temperature=parameters["temperature"], concentration=parameters["concentration"], epsilon_r=parameters["epsilon_r"], n_component=parameters["n_component"], n_pair=parameters["n_pair"], index=parameters["index"], charge_pair=parameters["charge_pair"], rho=parameters["rho"], beta=parameters["beta"], epsilon=parameters["epsilon"])
 
 
 def fluid_specific_parameters(symbol):
@@ -154,7 +145,8 @@ def calc_kappa(beta, charge, rho, epsilon):
                    sum(np.multiply(charge**2, rho)))
 
 
-def calc_phiw(z, n_component, phiw):
+def calc_phiw(z, n_point, n_component):
+    phiw = np.zeros((n_point, n_component))
     capital_a = 16.274e-19  # joules
     wall_d = 2.97  # inverse Angstrom
     for i in range(n_component):
@@ -246,21 +238,29 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
-    return tw_in - tw + 0.05 * sum((tw[1:] - tw[:-1])**2 * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
+
+    #dtw_dz = np.zeros((n_point, n_component))
+    #for i in range(n_component):
+    #    dtw_dz += np.diff(tw[:, i], n=1) / np.diff(z, n=1)
+    #print(dtw_dz.shape)
+
+    return tw_in - tw # - 1e-11 * np.sum(np.abs(dtw_dz) * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
+
+    #- 0.05 * sum((tw[1:] - tw[:-1])**2 * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
 
 #TODO: Work out if regularisation works to keep solution smooth
 
-def solve_model(opt_func, tw_initial, fluid, model, discrete):
-    beta_phiw = model.beta_phiw
-    beta_psi_charge = model.beta_psi_charge
+def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
     charge_pair = fluid.charge_pair
+    n_component = fluid.n_component
     rho = fluid.rho
+
     f1 = model.f1
     f2 = model.f2
     z = model.z
-    n_component = fluid.n_component
-    n_point = discrete.n_point
     z_index = model.z_index
+
+    n_point = discrete.n_point
     tolerance = discrete.tolerance
     max_iteration = discrete.max_iteration
 

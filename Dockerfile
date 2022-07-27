@@ -1,5 +1,5 @@
 FROM python:3.9.12
-RUN apt-get update -y
+RUN apt-get update && apt-get install -y
 
 # remember to expose the port your app'll be exposed on.
 EXPOSE 8080

@@ -184,6 +184,8 @@ pillow==9.2.0
     #   streamlit
 pip-api==0.0.30
     # via pytest-reqs
+plotly==5.9.0
+    # via -r requirements-dev.in
 pluggy==1.0.0
     # via pytest
 prometheus-client==0.14.1
@@ -264,6 +266,8 @@ stack-data==0.3.0
     # via ipython
 streamlit==1.11.0
     # via -r requirements-dev.in
+tenacity==8.0.1
+    # via plotly
 terminado==0.15.0
     # via notebook
 tinycss2==1.1.1

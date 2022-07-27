@@ -1,8 +1,11 @@
 matplotlib
 notebook
 numericalunits
+plotly
 pytest
 pytest-reqs
 scipy
 streamlit
 watchdog
+
+# Note: plotly is not installed with other packages - unsure why?
