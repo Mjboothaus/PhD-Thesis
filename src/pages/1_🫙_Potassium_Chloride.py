@@ -62,8 +62,9 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 
 #cr_path = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 
-CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
+# CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
 
+CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/data/nrcg-cr-approx-maybe.dat"
 c_short, r_short = load_and_interpolate_cr(Path(CR_PATH), n_point, n_pair, z)
 
 f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
