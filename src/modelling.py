@@ -39,6 +39,7 @@ class Fluid:
     rho: np.array
     beta: float
     epsilon: float
+    cr_path: str = ""
 
 # Note: charge & rho need to be calculate and then inserted into the Fluid instance
 #       np.array([0]) is a placeholder (which has the right type)
@@ -48,9 +49,16 @@ fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component":
     1.0, -1.0]), "charge": np.array([0]), "temperature": 1075.0, "concentration": np.array([19.5, 19.5]),
     "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0})})
 
+
+fluid_parameters["lj"] = dict({"name": "Lennard-Jones liquid", "component": ["LJ"], "valence": np.array([0.0]), 
+            "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([0.5]), "epsilon_r": 1, "index": 2,
+            "charge_pair": np.array([0.0]), "rho": np.array([0.0]), "beta": 0.0, "epsilon": 0.0})
+
+
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
     1.0, -1.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
     "epsilon_r": 1.0, "index": 2})
+
 
 fluid_parameters["2_2"] = dict({"name": "2-2 Aqueous electrolyte", "component": ["+2", "-2"], "valence": np.array([
     2.0, -2.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
@@ -69,11 +77,14 @@ def set_fluid_parameters(symbol):
 
 
 def fluid_specific_parameters(symbol):
+    symbol = symbol.lower()
     if symbol == "kcl":
         other_params = dict({"kcl": dict({"n_outer_shell": np.array([8., 8.]), "alpha": 1.0 / 0.337,
                                           "b": 0.338e-19, "sigma": [1.463, 1.585],
                                           "cap_c": np.array([24.3, 48.0, 124.5]) * 1e-19,
                                           "cap_d": np.array([24.0, 73.0, 250.0]) * 1e-19})})
+    elif symbol == "lj":
+        other_params = dict({"lj": dict({"epsilon_lj": np.array(1.0), "sigma_lj": np.array(0.5)})})
 
     return other_params
 
@@ -134,6 +145,16 @@ def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, eps
                 cap_b[l] * np.exp(-alpha * r[1:])
             u[0, l] = u[1, l]
     return u
+
+
+def calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r):
+    u = np.zeros((n_point, n_pair))
+    for i in range(n_component):
+        for j in range(i, n_component):
+            l = calc_l_index(i, j)
+            u[1:, l] = 4.0 * epsilon_lj * ((sigma_lj/r[1:])**12 - (sigma_lj/r[1:])**6)
+    return u
+
 
 
 def calc_rho(concentration):
@@ -239,12 +260,14 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
 
-    #dtw_dz = np.zeros((n_point, n_component))
-    #for i in range(n_component):
-    #    dtw_dz += np.diff(tw[:, i], n=2) / np.diff(z, n=2)
-    #print(dtw_dz.shape)
-
-    return tw_in - tw # - 1e-11 * np.sum(np.abs(dtw_dz) * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
+    d2tw_dz2 = np.zeros((n_point-2, n_component))
+    for i in range(n_component):
+        #print()
+        #print(np.diff(tw[:, i], n=2).shape)
+        d2tw_dz2[:, i] += np.diff(tw[:, i], n=2) # / np.diff(z, n=2)
+    #tmp =  np.sum(np.abs(d2tw_dz2) * np.repeat(np.sqrt(z[1:-1]), 2, axis=0).reshape(n_point-2, n_component))
+    return tw_in - tw #+ 5.0e-3 * tmp
+                
 
     #- 0.05 * sum((tw[1:] - tw[:-1])**2 * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
 

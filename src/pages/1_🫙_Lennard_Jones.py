@@ -7,10 +7,11 @@ import streamlit as st
 from modelling import *
 from numerics import create_sidebar, set_num_parameters
 from plotting import plotly_line
+from time import sleep
 
 # from helper_functions import read_render_markdown_file
 
-fluid_symbol = "kcl"
+fluid_symbol = "lj"
 fluid = set_fluid_parameters(fluid_symbol)
 if fluid is not None:
     z_cutoff, n_point, psi_0, tolerance, max_iteration = create_sidebar(fluid)
@@ -19,12 +20,8 @@ else:
 
 other_params = fluid_specific_parameters(fluid_symbol)
 
-n_outer_shell = other_params["kcl"]["n_outer_shell"]
-b = other_params["kcl"]["b"]
-alpha = other_params["kcl"]["alpha"]
-sigma = other_params["kcl"]["sigma"]
-cap_c = other_params["kcl"]["cap_c"]
-cap_d = other_params["kcl"]["cap_d"]
+epsilon_lj = other_params["lj"]["epsilon_lj"]
+sigma_lj = other_params["lj"]["sigma_lj"]
 
 d = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair, tolerance, max_iteration)
 
@@ -44,15 +41,12 @@ fluid.rho = calc_rho(fluid.concentration)
 kappa = calc_kappa(fluid.beta, fluid.charge, fluid.rho, fluid.epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
-beta_pauling = calc_beta_pauling(fluid.valence, n_outer_shell, n_component, n_pair)
-cap_b = calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair)
 
 r = z    # r on same discretisation as z
-beta_u = fluid.beta * calc_u(fluid.charge, cap_b, alpha, cap_c, cap_d,
-           n_point, n_component, n_pair, fluid.epsilon, r)
+beta_u = fluid.beta * calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r)
 
 beta_phiw = fluid.beta * calc_phiw(z, n_point, n_component)
-beta_psi =  fluid.beta * psi_0 * 1.0e-3  # Convert to mV (in Volts)
+beta_psi =  0.0
 beta_psi_charge = -beta_psi * fluid.charge
 
 model = Model(z=z, z_index=z_index, hw=wall_zeros, 
@@ -63,9 +57,8 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 #CR_PATH = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
 #CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
 
-from time import sleep
+CR_PATH = f"{Path.cwd().as_posix()}/src/pyoz/tests/lj/nrcg-cr.dat.orig"
 
-CR_PATH = f"{Path.cwd().as_posix()}/data/nrcg-cr-approx-maybe.dat"
 
 if run_calc := st.button("Run calculation"):
     try:
