@@ -1,4 +1,5 @@
-FROM python:3.9.12
+#FROM python:3.9.12
+FROM python:3.10-slim-bullseye
 RUN apt-get update && apt-get install -y
 
 # remember to expose the port your app'll be exposed on.
