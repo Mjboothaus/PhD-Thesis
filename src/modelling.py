@@ -255,8 +255,8 @@ def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
 # Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
 
-Nfeval=1
-fout = open(f"{Path.cwd()}/output/solver_output.txt", 'w')
+#Nfeval=1
+#fout = open(f"{Path.cwd()}/output/solver_output.txt", 'w')
 
 import streamlit as st
 from numpy.linalg import norm
@@ -298,7 +298,7 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
 # https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
 
-from functools import partial
+#from functools import partial
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
     charge_pair = fluid.charge_pair
@@ -319,7 +319,9 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_ps
 
     solution = optim.root(opt_func, tw_initial, args=tw_args,
                         method="krylov", jac=None,
-                        tol=tolerance, callback=partial(save_results, args=tw_args), 
+                        tol=tolerance, callback=None,
                         options={"disp": True, "maxiter": max_iteration})
-    fout.close()
+    # fout.close()
     return solution
+
+    # partial(save_results, args=tw_args
