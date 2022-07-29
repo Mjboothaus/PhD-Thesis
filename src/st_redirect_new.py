@@ -4,8 +4,6 @@
 import streamlit as st
 import io
 import contextlib
-import sys
-
 
 class _Redirect:
     class IOStuff(io.StringIO):
@@ -33,14 +31,16 @@ class _Redirect:
         def shallow_copy(self):
             return _Redirect.IOStuff(self._trigger, self._max_buffer, self._buffer_separator)
 
-    def __init__(self, stdout=None, stderr=False, format=None, to=None, max_buffer=None, buffer_separator='\n'):
+    def __init__(self, stdout=None, stderr=False, format=None, to=None, to_file=None, max_buffer=None, buffer_separator='\n'):
         self.io = _Redirect.IOStuff(self._write, max_buffer, buffer_separator)
         self.redirections = []
         self.st = None
+        self.file_text = ""
         self.stderr = stderr is True
         self.stdout = stdout is True or (stdout is None and not self.stderr)
         self.format = format or 'code'
         self.to = to
+        self.to_file = to_file
         self.fun = None
 
         if not self.stdout and not self.stderr:
@@ -53,14 +53,20 @@ class _Redirect:
         if self.to and (not hasattr(self.to, 'text') or not hasattr(self.to, 'empty')):
             raise ValueError("'to' is not a streamlit container object")
 
+        #if self.to_file and (not hasattr(self.to_file, 'text') or not hasattr(self.to_file, 'empty')):
+        #    raise ValueError("'to' is not a streamlit container object")
+
     def __enter__(self):
         if self.st is not None:
             raise Exception("Already entered")
         to = self.to or st
+        to_file = self.to_file
 
         to.text(
             f"Redirected output from {'stdout and stderr' if self.stdout and self.stderr else 'stdout' if self.stdout else 'stderr'}:")
         self.st = to.empty()
+
+        self.file_text = ""
 
         if self.stdout:
             self.redirections.append(contextlib.redirect_stdout(self.io))
@@ -68,13 +74,14 @@ class _Redirect:
             self.redirections.append(contextlib.redirect_stderr(self.io))
 
         self.fun = getattr(self.st, self.format)
+        #self.fun = getattr(self.file_text)
         for redirection in self.redirections:
             redirection.__enter__()
 
         return self.io
 
-    def __call__(self, to=None, format=None, max_buffer=None, buffer_separator='\n'):
-        return _Redirect(self.stdout, self.stderr, format=format, to=to, max_buffer=max_buffer, buffer_separator=buffer_separator)
+    def __call__(self, to=None, to_file=None, format=None, max_buffer=None, buffer_separator='\n'):
+        return _Redirect(self.stdout, self.stderr, format=format, to=to, to_file=to_file, max_buffer=max_buffer, buffer_separator=buffer_separator)
 
     def __exit__(self, *exc):
         res = None

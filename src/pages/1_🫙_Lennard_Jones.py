@@ -115,7 +115,7 @@ if run_calc := st.button("Run calculation"):
             with rd.stdout(to=to_out, to_file=to_out_file, format='text', max_buffer=200): # , rd.stdout(format='text', to=to_out_file):
                 solution = solve_model(opt_func, tw_initial, fluid, model, d, 
                                             beta_phiw, beta_psi_charge)
-                st.text(str(to_out))
+                # st.text(str(to_out))
 
             #print(to_out_file)
             #out_file.write(to_out_file)
@@ -124,37 +124,37 @@ if run_calc := st.button("Run calculation"):
         hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
         st.write(solution)
 
-
+    #TODO: Generalise plotting to cope with variable number of components - i.e. in y_label
     with col2:
-        fig = plotly_line(z, hw_solution+1, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
+        fig = plotly_line(z, hw_solution+1, ["z", "hw0"], y_label="hw_solution", legend_label="",
                         xliml=[0, 30], yliml=[0, 4], title="hw_solution")
         st.plotly_chart(fig)
 
-        fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
-                        xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
-        st.plotly_chart(fig)
+        # fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
+        #                 xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
+        # st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
-                        xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
-        st.plotly_chart(fig)
+        # fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
+        #                 xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
+        # st.plotly_chart(fig)
 
 
-        fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
-        st.plotly_chart(fig)
+        # fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
+        #                 xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+        # st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-40, 5], title="f1 function")
-        st.plotly_chart(fig)
+        # fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
+        #                 xliml=[0, 10], yliml=[-40, 5], title="f1 function")
+        # st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-40, 5], title="f2 function")
-        st.plotly_chart(fig)
+        # fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
+        #                 xliml=[0, 10], yliml=[-40, 5], title="f2 function")
+        # st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-                        xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
-        st.plotly_chart(fig)
+        # fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
+        #                 xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
+        # st.plotly_chart(fig)
