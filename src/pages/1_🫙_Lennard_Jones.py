@@ -104,22 +104,13 @@ if run_calc := st.button("Run calculation"):
     out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
 
 
-    
-
     with col1:
         with st.spinner("Finding optimal solution:"):
             st.markdown("Solver output (Newton-Krylov)")
             to_out = st.empty()
-            to_out_file = ""
-            out_file = open(out_filepath, 'w')
-            with rd.stdout(to=to_out, to_file=to_out_file, format='text', max_buffer=200): # , rd.stdout(format='text', to=to_out_file):
+            with rd.stdout(to=to_out, format='text', max_buffer=20): # , rd.stdout(format='text', to=to_out_file):
                 solution = solve_model(opt_func, tw_initial, fluid, model, d, 
                                             beta_phiw, beta_psi_charge)
-                # st.text(str(to_out))
-
-            #print(to_out_file)
-            #out_file.write(to_out_file)
-            #out_file.close()
         tw_solution = solution.x
         hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
         st.write(solution)

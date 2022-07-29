@@ -8,6 +8,7 @@ import scipy.optimize as optim
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
 from streamlit import cache
+from pathlib import Path
 
 # from helper_functions import read_render_markdown_file
 
@@ -254,17 +255,38 @@ def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
 # Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
 
+Nfeval=1
+fout = open(f"{Path.cwd()}/output/solver_output.txt", 'w')
+
+import streamlit as st
+from numpy.linalg import norm
+
+# callback function
+def save_results(tw_in, args):
+    global Nfeval
+    global fout
+    Fvalue = opt_func(tw_in, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
+                args[7], args[8], args[9])
+    fout.write(f"At iterate {Nfeval},  F={norm(Fvalue, 1)}")
+
+    Nfeval += 1
+
+    
+
+#     tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
+#                n_component, n_point, z_index)
+
 def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
              n_component, n_point, z_index):
 
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
 
-    d2tw_dz2 = np.zeros((n_point-2, n_component))
-    for i in range(n_component):
+    #d2tw_dz2 = np.zeros((n_point-2, n_component))
+    #for i in range(n_component):
         #print()
         #print(np.diff(tw[:, i], n=2).shape)
-        d2tw_dz2[:, i] += np.diff(tw[:, i], n=2) # / np.diff(z, n=2)
+    #    d2tw_dz2[:, i] += np.diff(tw[:, i], n=2) # / np.diff(z, n=2)
     #tmp =  np.sum(np.abs(d2tw_dz2) * np.repeat(np.sqrt(z[1:-1]), 2, axis=0).reshape(n_point-2, n_component))
     return tw_in - tw #+ 5.0e-3 * tmp
                 
@@ -275,6 +297,8 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 #TODO: Look at NITSOL and NKSOL parameters to see if any clues?
 
 # https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
+
+from functools import partial
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
     charge_pair = fluid.charge_pair
@@ -292,35 +316,10 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_ps
 
     tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                 n_component, n_point, z_index)
-    
-    return optim.root(opt_func, tw_initial, args=tw_args,
-                      method="krylov", jac=None,
-                      tol=tolerance, callback=None, 
-                      options={"disp": True, "maxiter": max_iteration})
 
-
-
-
-# callback_func(tw, tw_args) ?
-
-
-
-def test_solve_model(opt_func, tw_initial, fluid, model, discrete):
-    beta_phiw = model.beta_phiw
-    beta_psi_charge = model.beta_psi_charge
-    charge_pair = fluid.charge_pair
-    rho = fluid.rho
-    f1 = model.f1
-    f2 = model.f2
-    z = model.z
-    n_component = fluid.n_component
-    n_point = discrete.n_point
-    z_index = model.z_index
-
-    tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-                n_component, n_point, z_index)
-    
-    tolerance = discrete.tolerance
-    max_iteration = discrete.max_iteration
-
-    return tw_args, tolerance, max_iteration
+    solution = optim.root(opt_func, tw_initial, args=tw_args,
+                        method="krylov", jac=None,
+                        tol=tolerance, callback=partial(save_results, args=tw_args), 
+                        options={"disp": True, "maxiter": max_iteration})
+    fout.close()
+    return solution
