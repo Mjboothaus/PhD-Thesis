@@ -51,8 +51,13 @@ fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component":
     "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0})})
 
 
-fluid_parameters["lj"] = dict({"name": "Lennard-Jones liquid", "component": ["LJ"], "valence": np.array([0.0]), 
-            "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([0.5]), "epsilon_r": 1, "index": 2,
+fluid_parameters["lj1"] = dict({"name": "Lennard-Jones liquid (1-comp)", "component": ["LJ"], "valence": np.array([0.0]), 
+            "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([1.0]), "epsilon_r": 1, "index": 2,
+            "charge_pair": np.array([0.0]), "rho": np.array([0.0]), "beta": 0.0, "epsilon": 0.0})
+
+
+fluid_parameters["lj2"] = dict({"name": "Lennard-Jones liquid (2-comp)", "component": ["A1", "A2"], "valence": np.array([0.0, 0.0]), 
+            "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([0.5, 0.5]), "epsilon_r": 1, "index": 5,
             "charge_pair": np.array([0.0]), "rho": np.array([0.0]), "beta": 0.0, "epsilon": 0.0})
 
 
@@ -84,8 +89,11 @@ def fluid_specific_parameters(symbol):
                                           "b": 0.338e-19, "sigma": [1.463, 1.585],
                                           "cap_c": np.array([24.3, 48.0, 124.5]) * 1e-19,
                                           "cap_d": np.array([24.0, 73.0, 250.0]) * 1e-19})})
-    elif symbol == "lj":
-        other_params = dict({"lj": dict({"epsilon_lj": np.array(1.0), "sigma_lj": np.array(0.5)})})
+    elif symbol == "lj1":
+        other_params = dict({"lj1": dict({"epsilon_lj": np.array(1.0), "sigma_lj": np.array(0.5)})})
+    
+    elif symbol == "lj2":
+        other_params = dict({"lj2": dict({"epsilon_lj": np.array([1.0, 1.0, 1.0]), "sigma_lj": np.array([0.5, 0.5, 0.5])})})
 
     return other_params
 
@@ -153,7 +161,7 @@ def calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r):
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            u[1:, l] = 4.0 * epsilon_lj * ((sigma_lj/r[1:])**12 - (sigma_lj/r[1:])**6)
+            u[1:, l] = 4.0 * epsilon_lj[l] * ((sigma_lj[l]/r[1:])**12 - (sigma_lj[l]/r[1:])**6)
     return u
 
 
@@ -210,7 +218,7 @@ def integral_z_infty_dr_r_c_short(c_short, n_pair, z, f1):
 def integral_z_infty_dr_r2_c_short(c_short, n_pair, z, f2):
     for ij in range(n_pair):
         for k, _ in enumerate(z):
-            f2[k, ij] = trapezoid(y=z[:k] * z[:k] * c_short[k, ij], x=z[:k])
+            f2[k, ij] = trapezoid(y=z[:k]*z[:k] * c_short[k, ij], x=z[:k])
     return f2
 
 
