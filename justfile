@@ -4,6 +4,7 @@ project_name := "michael-booth-phd-thesis"
 app_py := "src/Main.py"
 server_port := "8080"
 gcp_region := "asia-southeast2"
+input := "lj/nrcg-lj-1comp.in"
 
 set dotenv-load
 
@@ -57,6 +58,11 @@ rm-dev-venv:
 test:
     pytest
 
+# just bulk-fluid-pyoz input="input_filename"
+bulk-fluid-pyoz:
+	#!/usr/bin/env bash
+	cd src/pyoz
+	python pyoz.py -i tests/{{input}}
 
 # Run app.py (in Streamlit) locally
 

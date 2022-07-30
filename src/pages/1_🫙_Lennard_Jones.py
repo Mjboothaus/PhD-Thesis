@@ -11,7 +11,7 @@ from time import sleep
 
 # from helper_functions import read_render_markdown_file
 
-fluid_symbol = "lj"
+fluid_symbol = "lj2"
 fluid = set_fluid_parameters(fluid_symbol)
 if fluid is not None:
     z_cutoff, n_point, psi_0, tolerance, max_iteration = create_sidebar(fluid)
@@ -20,8 +20,8 @@ else:
 
 other_params = fluid_specific_parameters(fluid_symbol)
 
-epsilon_lj = other_params["lj"]["epsilon_lj"]
-sigma_lj = other_params["lj"]["sigma_lj"]
+epsilon_lj = other_params[fluid_symbol]["epsilon_lj"]
+sigma_lj = other_params[fluid_symbol]["sigma_lj"]
 
 d = set_num_parameters(n_point, z_cutoff, fluid.n_component, fluid.n_pair, tolerance, max_iteration)
 
@@ -53,12 +53,13 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
                 c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros)
 
 # Bulk-fluid inputs (direct correlation function
+#TODO: Run bulk calculation on the fly (or from stored cr)
 
-#CR_PATH = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
-#CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
+CR_PATH = f"{Path.cwd().as_posix()}/data/{fluid.cr_filename}"
 
-CR_PATH = f"{Path.cwd().as_posix()}/src/pyoz/tests/lj/nrcg-cr.dat.orig"
+st.sidebar.text(fluid.cr_filename)
 
+# Run calculation
 
 if run_calc := st.button("Run calculation"):
     try:
@@ -117,7 +118,14 @@ if run_calc := st.button("Run calculation"):
 
     #TODO: Generalise plotting to cope with variable number of components - i.e. in y_label
     with col2:
-        fig = plotly_line(z, hw_solution+1, ["z", "hw0"], y_label="hw_solution", legend_label="",
+        y_col_labels = ["z"]
+        y_col_labels.extend(f"hw_{i}" for i in range(n_component))
+
+        y_col_labels_bulk = ["z"]
+        for i in range(n_component):
+            y_col_labels_bulk.extend(f"fn(z)_{i}{j}" for j in range(i, n_component))
+
+        fig = plotly_line(z, hw_solution+1, y_col_labels, y_label="hw_solution", legend_label="",
                         xliml=[0, 30], yliml=[0, 4], title="hw_solution")
         st.plotly_chart(fig)
 
@@ -131,19 +139,19 @@ if run_calc := st.button("Run calculation"):
         # st.plotly_chart(fig)
 
 
-        # fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
+        #fig = plotly_line(r, c_short, ["r", "c0"], y_label="c_ij(r)", legend_label="",
         #                 xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
-        # st.plotly_chart(fig)
+        #st.plotly_chart(fig)
 
 
-        # fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
-        #                 xliml=[0, 10], yliml=[-40, 5], title="f1 function")
-        # st.plotly_chart(fig)
+        fig = plotly_line(z, f1, y_col_labels_bulk, y_label="f1_ij(r)", legend_label="",
+                         xliml=[0, 10], yliml=[-40, 5], title="f1 function")
+        st.plotly_chart(fig)
 
 
-        # fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
-        #                 xliml=[0, 10], yliml=[-40, 5], title="f2 function")
-        # st.plotly_chart(fig)
+        fig = plotly_line(z, f2, y_col_labels_bulk, y_label="f2_ij(r)", legend_label="",
+                         xliml=[0, 10], yliml=[-40, 5], title="f2 function")
+        st.plotly_chart(fig)
 
 
         # fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",

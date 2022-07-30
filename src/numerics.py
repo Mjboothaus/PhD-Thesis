@@ -20,7 +20,7 @@ class Discretisation:
 def create_sidebar(fluid):
     # st.sidebar.text(fluid.name) - clear from menu bar
     st.sidebar.text(f"Temperature (K): {fluid.temperature}")
-    st.sidebar.text(f"Concentration (m/dm3): {fluid.concentration[0]}")
+    st.sidebar.text(f"Concentration (m/dm3): {fluid.concentration}")
 
     st.sidebar.text("Inputs:")
     psi_0 = st.sidebar.number_input(label=r"$\psi_0$ (mV):", value=0, min_value=-1000, max_value=1000)

@@ -1,6 +1,7 @@
 # Acknowledgement:  Bela Schaum
 # Reference:        https://github.com/streamlit/streamlit/issues/268
 
+from re import S
 import streamlit as st
 import io
 import contextlib
@@ -26,6 +27,7 @@ class _Redirect:
                     super().truncate(super().tell() + len(__s))
             res = super().write(__s)
             self._trigger(self.getvalue())
+
             return res
 
         def shallow_copy(self):
@@ -75,6 +77,7 @@ class _Redirect:
 
         self.fun = getattr(self.st, self.format)
         #self.fun = getattr(self.file_text)
+
         for redirection in self.redirections:
             redirection.__enter__()
 
@@ -87,9 +90,12 @@ class _Redirect:
         res = None
         for redirection in self.redirections:
             res = redirection.__exit__(*exc)
+        
+        with open("output.txt", "w") as out_file:
+            print(self.io.getvalue(), file=out_file)
 
-        self._write(self.io.getvalue())
-
+        #self._write(self.io.getvalue())
+        
         self.redirections = []
         self.st = None
         self.fun = None
