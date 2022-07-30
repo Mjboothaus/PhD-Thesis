@@ -53,15 +53,13 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
                 c_short=fluid_zeros, f1=fluid_zeros, f2=fluid_zeros)
 
 # Bulk-fluid inputs (direct correlation function
+#TODO: Run bulk calculation on the fly (or from stored cr)
 
-#CR_PATH = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
-#CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
+CR_PATH = f"{Path.cwd().as_posix()}/data/{fluid.cr_filename}"
 
-# CR_PATH = f"{Path.cwd().as_posix()}/src/pyoz/tests/lj/nrcg-cr.dat.orig"
+st.sidebar.text(fluid.cr_filename)
 
-CR_PATH = f"{Path.cwd().as_posix()}/data/pyoz-cr-lj-equal-2-comp.dat"
-
-# TODO: Run bulk calculation on the fly (or from stored cr)
+# Run calculation
 
 if run_calc := st.button("Run calculation"):
     try:
