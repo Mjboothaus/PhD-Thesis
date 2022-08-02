@@ -67,7 +67,9 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 
 from time import sleep
 
-CR_PATH = f"{Path.cwd().as_posix()}/data/nrcg-cr-approx-maybe.dat"
+CR_PATH = f"{Path.cwd().as_posix()}/data/{fluid.cr_filename}"
+
+st.sidebar.text(fluid.cr_filename)
 
 if run_calc := st.button("Run calculation"):
     try:
@@ -82,6 +84,12 @@ if run_calc := st.button("Run calculation"):
     f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
     f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 
+
+    f1_integrand = calc_f1_integrand(c_short, n_pair, z, n_point)
+    f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
+
+    st.write(f1_integrand.shape, f2_integrand.shape)
+
     # initial guess of zero - maybe should be \beta \phi
 
     tw_initial = np.zeros((n_point, n_component))
@@ -89,7 +97,6 @@ if run_calc := st.button("Run calculation"):
 
     model.f1 = f1
     model.f2 = f2
-
 
     # tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
     #             n_component, n_point, z_index, integral_z_infty, integral_0_z)
@@ -153,14 +160,18 @@ if run_calc := st.button("Run calculation"):
                         xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
         st.plotly_chart(fig)
 
-
-        fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-40, 5], title="f1 function")
+        fig = plotly_line(z, f1_integrand, ["z", "F1_0", "F1_1", "F1_2"], y_label="f1_ij(r)", legend_label="", title="f1 function")
         st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-40, 5], title="f2 function")
+        fig = plotly_line(z, f2_integrand, ["z", "F2_0", "F2_1", "F2_2"], y_label="f2_ij(r)", legend_label="", title="f2 function")
+        st.plotly_chart(fig)
+
+        fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="", title="f1 function")
+        st.plotly_chart(fig)
+
+
+        fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="", title="f2 function")
         st.plotly_chart(fig)
 
 

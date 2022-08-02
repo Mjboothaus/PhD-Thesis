@@ -48,7 +48,8 @@ class Fluid:
 
 fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
     1.0, -1.0]), "charge": np.array([0]), "temperature": 1075.0, "concentration": np.array([19.5, 19.5]),
-    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0})})
+    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0,
+    "cr_filename": "nrcg-cr-approx-maybe.dat"})})
 
 
 fluid_parameters["lj1"] = dict({"name": "Lennard-Jones liquid (1-comp)", "component": ["LJ"], "valence": np.array([0.0]), 
@@ -221,14 +222,31 @@ def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
 def integral_z_infty_dr_r_c_short(c_short, n_pair, z, f1):
     for ij in range(n_pair):
         for k, _ in enumerate(z):
-            f1[k, ij] = trapezoid(y=z[:k] * c_short[k, ij], x=z[:k])
+            #f1[k, ij] = trapezoid(y=z[k:] * c_short[k:, ij], x=z[k:])
+            integrand = z*c_short[:, ij]
+            f1[k: ij] = trapezoid(y=integrand[k:], x=z[k:])
     return f1
+
+def calc_f1_integrand(c_short, n_pair, z, n_point):
+    f1_integrand = np.zeros((n_point, n_pair))
+    for ij in range(n_pair):
+        f1_integrand[:, ij] = z * c_short[:, ij]
+    return f1_integrand
+
+
+def calc_f2_integrand(c_short, n_pair, z, n_point):
+    f2_integrand = np.zeros((n_point, n_pair))
+    for ij in range(n_pair):
+        f2_integrand[:, ij] = z*z * c_short[:, ij]
+    return f2_integrand
 
 
 def integral_z_infty_dr_r2_c_short(c_short, n_pair, z, f2):
     for ij in range(n_pair):
         for k, _ in enumerate(z):
-            f2[k, ij] = trapezoid(y=z[:k]*z[:k] * c_short[k, ij], x=z[:k])
+            #f2[k, ij] = trapezoid(y=z[k:]*z[k:] * c_short[k:, ij], x=z[k:])
+            integrand = z*z*c_short[:, ij]
+            f2[k: ij] = trapezoid(y=integrand[k:], x=z[k:])
     return f2
 
 

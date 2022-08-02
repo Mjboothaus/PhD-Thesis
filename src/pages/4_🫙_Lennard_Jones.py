@@ -74,6 +74,8 @@ if run_calc := st.button("Run calculation"):
     f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
     f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 
+    assert model.f1.all() == model.f2.all()
+
     # initial guess of zero - maybe should be \beta \phi
 
     tw_initial = np.zeros((n_point, n_component))
@@ -139,17 +141,22 @@ if run_calc := st.button("Run calculation"):
         # st.plotly_chart(fig)
 
 
-        #fig = plotly_line(r, c_short, ["r", "c0"], y_label="c_ij(r)", legend_label="",
-        #                 xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
-        #st.plotly_chart(fig)
+        fig = plotly_line(r, r*c_short[:, 0], y_col_labels_bulk[:2], y_label="c_ij(r)", legend_label="",
+                         xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+        st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, f1, y_col_labels_bulk, y_label="f1_ij(r)", legend_label="",
+        fig = plotly_line(r, r*r*c_short[:, 0], y_col_labels_bulk[:2], y_label="c_ij(r)", legend_label="",
+                         xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
+        st.plotly_chart(fig)
+
+
+        fig = plotly_line(z, f1, y_col_labels_bulk[:2], y_label="f1_ij(r)", legend_label="",
                          xliml=[0, 10], yliml=[-40, 5], title="f1 function")
         st.plotly_chart(fig)
 
 
-        fig = plotly_line(z, f2, y_col_labels_bulk, y_label="f2_ij(r)", legend_label="",
+        fig = plotly_line(z, f2, y_col_labels_bulk[:2], y_label="f2_ij(r)", legend_label="",
                          xliml=[0, 10], yliml=[-40, 5], title="f2 function")
         st.plotly_chart(fig)
 
