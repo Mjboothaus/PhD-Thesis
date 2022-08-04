@@ -7,7 +7,7 @@ from scipy import interpolate
 import scipy.optimize as optim
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
-from streamlit import cache
+#from streamlit import cache
 from pathlib import Path
 
 # from helper_functions import read_render_markdown_file
@@ -177,9 +177,9 @@ def calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r):
     return u
 
 
-
+# mol / dm3 to number / A^3
 def calc_rho(concentration):
-    return np.array(concentration) / 1.0e27 * Avogadro
+    return np.array(concentration) * Avogadro / 1.0e27 
 
 
 def calc_kappa(beta, charge, rho, epsilon):
@@ -210,7 +210,7 @@ def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     return cr, r
 
 
-@cache
+#@cache
 def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
     # CR_PATH = "../pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
     cr_df = pd.read_csv(cr_path, header=None, delim_whitespace=True)
@@ -220,13 +220,14 @@ def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
     return interpolate_cr(r, cr, n_point, n_pair, z)
 
 
-def integral_z_infty_dr_r_c_short(c_short, n_pair, z, f1):
+def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
+    f1 = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
         for k, _ in enumerate(z):
             #f1[k, ij] = trapezoid(y=z[k:] * c_short[k:, ij], x=z[k:])
-            integrand = z*c_short[:, ij]
-            f1[k: ij] = trapezoid(y=integrand[k:], x=z[k:])
+            f1[k: ij] = z[k] * c_short[k, ij] # trapezoid(y=integrand[k:], x=z[k:])
     return f1
+
 
 def calc_f1_integrand(c_short, n_pair, z, n_point):
     f1_integrand = np.zeros((n_point, n_pair))
@@ -242,11 +243,14 @@ def calc_f2_integrand(c_short, n_pair, z, n_point):
     return f2_integrand
 
 
-def integral_z_infty_dr_r2_c_short(c_short, n_pair, z, f2):
+def integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z):
+    integrand = np.zeros(n_point)
+    f2 = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
         for k, _ in enumerate(z):
             #f2[k, ij] = trapezoid(y=z[k:]*z[k:] * c_short[k:, ij], x=z[k:])
-            integrand = z*z*c_short[:, ij]
+            integrand[:] = z*z*c_short[:, ij]
+            print(integrand.shape)
             f2[k: ij] = trapezoid(y=integrand[k:], x=z[k:])
     return f2
 

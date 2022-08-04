@@ -4,7 +4,7 @@ def create_sidebar(fluid):
     # st.sidebar.text(fluid.name) - clear from menu bar
     st.sidebar.markdown("__Inputs:__")
     st.sidebar.markdown(f"Temperature (K): {fluid.temperature}")
-    st.sidebar.markdown(f"Concentration (m/dm3): {fluid.concentration}")
+    st.sidebar.markdown(f"Concentration $M / dm^3$: {fluid.concentration}")
 
     # st.sidebar.latex("\psi_0 (mV):")
     
