@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 
 import numpy as np
@@ -7,10 +6,7 @@ from scipy import interpolate
 import scipy.optimize as optim
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
-#from streamlit import cache
-from pathlib import Path
-
-# from helper_functions import read_render_markdown_file
+from streamlit import cache
 
 
 @dataclass
@@ -21,92 +17,6 @@ class Model:
     c_short: np.array
     f1: np.array
     f2: np.array
-
-
-@dataclass
-class Fluid:
-    name: str
-    symbol: str
-    component: list[str]
-    valence: np.ndarray
-    charge: np.ndarray
-    temperature: float
-    concentration: np.ndarray
-    epsilon_r: float
-    n_component: int
-    n_pair: int
-    index: int
-    charge_pair: np.array
-    rho: np.array
-    beta: float
-    epsilon: float
-    cr_filename: str = ""
-
-# Note: charge & rho need to be calculate and then inserted into the Fluid instance
-#       np.array([0]) is a placeholder (which has the right type)
-
-
-fluid_parameters = dict({"kcl": dict({"name": "Potassium Chloride", "component": ["K", "Cl"], "valence": np.array([
-    1.0, -1.0]), "charge": np.array([0]), "temperature": 1075.0, "concentration": np.array([19.5, 19.5]),
-    "epsilon_r": 1.0, "index": 1, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0,
-    "cr_filename": "nrcg-cr-approx-maybe.dat"})})
-
-
-fluid_parameters["lj1"] = dict({"name": "Lennard-Jones liquid (1-comp)", "component": ["LJ"], "valence": np.array([0.0]), 
-            "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([0.5]), "epsilon_r": 1, "index": 2,
-            "charge_pair": np.array([0.0]), "rho": np.array([0.0]), "beta": 0.0, "epsilon": 0.0,
-            "cr_filename": "lj1-cr.data"})
-
-
-fluid_parameters["lj2"] = dict({"name": "Lennard-Jones liquid (2-comp)", "component": ["A1", "A2"], "valence": np.array([0.0, 0.0]), 
-            "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([0.5, 0.5]), "epsilon_r": 1, "index": 5,
-            "charge_pair": np.array([0.0]), "rho": np.array([0.0]), "beta": 0.0, "epsilon": 0.0,
-            "cr_filename": "pyoz-cr-lj-equal-2-comp.dat"})
-
-
-fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
-    1.0, -1.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
-    "epsilon_r": 1.0, "index": 2})
-
-
-fluid_parameters["2_2"] = dict({"name": "2-2 Aqueous electrolyte", "component": ["+2", "-2"], "valence": np.array([
-    2.0, -2.0]), "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([1.0, 1.0]),
-    "epsilon_r": 78.3, "index": 5, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0,
-    "cr_filename": "TO_BE_DEFINED.dat"})
-
-
-def set_fluid_parameters(symbol):
-    symbol = symbol.lower()
-    if symbol not in fluid_parameters:
-        return None
-    parameters = fluid_parameters[symbol]
-    parameters["symbol"] = symbol
-    n_component = parameters["n_component"] = len(parameters["component"])
-    parameters["n_pair"] = int((n_component+1) * (n_component) / 2)
-    return Fluid(name=parameters["name"], symbol=parameters["symbol"], 
-        component=parameters["component"], valence=parameters["valence"], 
-        charge=parameters["charge"], temperature=parameters["temperature"], 
-        concentration=parameters["concentration"], epsilon_r=parameters["epsilon_r"], 
-        n_component=parameters["n_component"], n_pair=parameters["n_pair"], 
-        index=parameters["index"], charge_pair=parameters["charge_pair"], 
-        rho=parameters["rho"], beta=parameters["beta"], epsilon=parameters["epsilon"],
-        cr_filename=parameters["cr_filename"])
-
-
-def fluid_specific_parameters(symbol):
-    symbol = symbol.lower()
-    if symbol == "kcl":
-        other_params = dict({"kcl": dict({"n_outer_shell": np.array([8., 8.]), "alpha": 1.0 / 0.337,
-                                          "b": 0.338e-19, "sigma": [1.463, 1.585],
-                                          "cap_c": np.array([24.3, 48.0, 124.5]) * 1e-19,
-                                          "cap_d": np.array([24.0, 73.0, 250.0]) * 1e-19})})
-    elif symbol == "lj1":
-        other_params = dict({"lj1": dict({"epsilon_lj": np.array([1.0]), "sigma_lj": np.array([0.5])})})
-    
-    elif symbol == "lj2":
-        other_params = dict({"lj2": dict({"epsilon_lj": np.array([1.0, 1.0, 1.0]), "sigma_lj": np.array([0.5, 0.5, 0.5])})})
-
-    return other_params
 
 
 def calc_beta(temperature):
@@ -160,26 +70,29 @@ def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, eps
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            u[1:, l] = (charge[i] * charge[j]) / (r[1:] * 1e-10 * epsilon) + cap_c[l] / \
-                r[1:]**6 + cap_d[l]/r[1:]**8 + \
+            u[1:, l] = (charge[i] * charge[j]) / (r[1:] * 1e-10 * epsilon) + \
+                cap_c[l] / r[1:]**6 + cap_d[l] / r[1:]**8 + \
                 cap_b[l] * np.exp(-alpha * r[1:])
             u[0, l] = u[1, l]
     return u
 
 
-# Bulk potential
+# Bulk LJ potential
+
 def calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r):
     u = np.zeros((n_point, n_pair))
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            u[1:, l] = 4.0 * epsilon_lj[l] * ((sigma_lj[l]/r[1:])**12 - (sigma_lj[l]/r[1:])**6)
+            u[1:, l] = 4.0 * epsilon_lj[l] * \
+                ((sigma_lj[l]/r[1:])**12 - (sigma_lj[l]/r[1:])**6)
     return u
 
 
-# mol / dm3 to number / A^3
+# Convert mol / dm3 to number / A^3
+
 def calc_rho(concentration):
-    return np.array(concentration) * Avogadro / 1.0e27 
+    return np.array(concentration) * Avogadro / 1.0e27
 
 
 def calc_kappa(beta, charge, rho, epsilon):
@@ -195,9 +108,6 @@ def calc_phiw(z, n_point, n_component):
         phiw[:, i] = np.exp(-wall_d * z) * capital_a * (wall_d * z + 2)
     return phiw
 
-# TODO: Fix up choice of c(r) - in progress
-# Read in some c(r) -- currently LJ fluid (assuming c_short ~= c_LJ(r))
-
 
 def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     cr = np.zeros((n_point, n_pair))
@@ -210,9 +120,8 @@ def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     return cr, r
 
 
-#@cache
+@cache
 def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
-    # CR_PATH = "../pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
     cr_df = pd.read_csv(cr_path, header=None, delim_whitespace=True)
     cr_df.set_index(0, inplace=True)
     r = cr_df.index.to_numpy()
@@ -261,7 +170,6 @@ def calc_hw(tw, n_component, beta_phiw):
     return hw
 
 
-# TODO: Continue from here - check units
 # TODO: make initialisation of arrays consistent - not some in Class and others in "calc" functions
 
 def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
@@ -287,34 +195,13 @@ def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                 l = calc_l_index(i, j)
                 tw[k, i] = beta_psi_charge[i]
                 tw[k, i] += TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l]
-                                                + charge_pair[l] * (integral_z_infty[k, j] + z[k] * integral_0_z[k, j])
-                                                + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
-                                                + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
+                                               + charge_pair[l] * (integral_z_infty[k, j] + z[k] * integral_0_z[k, j])
+                                               + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
+                                               + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
     return tw
 
 
 # Documentation: https://scipy.github.io/devdocs/reference/optimize.root-krylov.html
-
-#Nfeval=1
-#fout = open(f"{Path.cwd()}/output/solver_output.txt", 'w')
-
-import streamlit as st
-from numpy.linalg import norm
-
-# callback function
-def save_results(tw_in, args):
-    global Nfeval
-    global fout
-    Fvalue = opt_func(tw_in, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
-                args[7], args[8], args[9])
-    fout.write(f"At iterate {Nfeval},  F={norm(Fvalue, 1)}")
-
-    Nfeval += 1
-
-    
-
-#     tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-#                n_component, n_point, z_index)
 
 def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
              n_component, n_point, z_index):
@@ -322,23 +209,15 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
 
-    #d2tw_dz2 = np.zeros((n_point-2, n_component))
-    #for i in range(n_component):
-        #print()
-        #print(np.diff(tw[:, i], n=2).shape)
-    #    d2tw_dz2[:, i] += np.diff(tw[:, i], n=2) # / np.diff(z, n=2)
-    #tmp =  np.sum(np.abs(d2tw_dz2) * np.repeat(np.sqrt(z[1:-1]), 2, axis=0).reshape(n_point-2, n_component))
-    return tw_in - tw #+ 5.0e-3 * tmp
-                
+    return tw_in - tw  
 
-    #- 0.05 * sum((tw[1:] - tw[:-1])**2 * np.repeat(z[1:], 2, axis=0).reshape(n_point-1, n_component))
 
-#TODO: Work out if regularisation works to keep solution smooth
-#TODO: Look at NITSOL and NKSOL parameters to see if any clues?
+# TODO: Look at NITSOL and NKSOL parameters to see if any clues?
 
 # https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
 
-#from functools import partial
+# from functools import partial
+
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
     charge_pair = fluid.charge_pair
@@ -355,12 +234,12 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_ps
     max_iteration = discrete.max_iteration
 
     tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-                n_component, n_point, z_index)
+               n_component, n_point, z_index)
 
     solution = optim.root(opt_func, tw_initial, args=tw_args,
-                        method="krylov", jac=None,
-                        tol=tolerance, callback=None,
-                        options={"disp": True, "maxiter": max_iteration})
+                          method="krylov", jac=None,
+                          tol=tolerance, callback=None,
+                          options={"disp": True, "maxiter": max_iteration})
     # fout.close()
     return solution
 
