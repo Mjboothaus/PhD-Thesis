@@ -75,11 +75,11 @@ if run_calc := st.button("Run calculation"):
         sleep(10.0)
         st.experimental_rerun()
 
-    f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
-    f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
+    f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z)
+    f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z)
 
-    f1_integrand = calc_f1_integrand(c_short, n_pair, z, n_point)
-    f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
+    #f1_integrand = calc_f1_integrand(c_short, n_pair, z, n_point)
+    #f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
 
     # initial guess of zero - maybe should be \beta \phi
 
@@ -128,7 +128,7 @@ if run_calc := st.button("Run calculation"):
         r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1, "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": None})
         r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2, "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": None})
 
-        r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand, "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
-        r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand, "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
+        #r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand, "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
+        #r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand, "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
 
         plot_bulk_curves(n_component, r, r_plots)

@@ -220,15 +220,6 @@ def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
     return interpolate_cr(r, cr, n_point, n_pair, z)
 
 
-def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
-    f1 = np.zeros((n_point, n_pair))
-    for ij in range(n_pair):
-        for k, _ in enumerate(z):
-            #f1[k, ij] = trapezoid(y=z[k:] * c_short[k:, ij], x=z[k:])
-            f1[k: ij] = z[k] * c_short[k, ij] # trapezoid(y=integrand[k:], x=z[k:])
-    return f1
-
-
 def calc_f1_integrand(c_short, n_pair, z, n_point):
     f1_integrand = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
@@ -243,15 +234,23 @@ def calc_f2_integrand(c_short, n_pair, z, n_point):
     return f2_integrand
 
 
+def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
+    integrand = np.zeros(n_point)
+    f1 = np.zeros((n_point, n_pair))
+    for ij in range(n_pair):
+        integrand[:] = z*c_short[:, ij]
+        for k, _ in enumerate(z):
+            f1[k:, ij] = trapezoid(y=integrand[k:], x=z[k:])
+    return f1
+
+
 def integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z):
     integrand = np.zeros(n_point)
     f2 = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
+        integrand[:] = z*z*c_short[:, ij]
         for k, _ in enumerate(z):
-            #f2[k, ij] = trapezoid(y=z[k:]*z[k:] * c_short[k:, ij], x=z[k:])
-            integrand[:] = z*z*c_short[:, ij]
-            print(integrand.shape)
-            f2[k: ij] = trapezoid(y=integrand[k:], x=z[k:])
+            f2[k:, ij] = trapezoid(y=integrand[k:], x=z[k:])
     return f2
 
 

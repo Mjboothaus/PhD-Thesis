@@ -55,8 +55,8 @@ def plot_wall_curves(n_component, z, z_plots):
 
         fig = plotly_line(z, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
                              xliml=xliml, yliml=yliml, title=plot_title)
-        show(fig)
-        #st.plotly_chart(fig)
+        #show(fig) - Jupyter
+        st.plotly_chart(fig)
 
 
 def plot_bulk_curves(n_component, r, r_plots):
@@ -76,5 +76,5 @@ def plot_bulk_curves(n_component, r, r_plots):
 
         fig = plotly_line(r, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
                             xliml=xliml, yliml=yliml, title=plot_title)
-        fig.show()
-        #st.plotly_chart(fig)
+        #fig.show() - Jupyter
+        st.plotly_chart(fig)
