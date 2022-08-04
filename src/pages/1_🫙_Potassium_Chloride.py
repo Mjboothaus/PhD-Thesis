@@ -1,4 +1,6 @@
+import sys
 from pathlib import Path
+from time import sleep
 
 import pandas as pd
 #import st_redirect as rd
@@ -8,11 +10,51 @@ from modelling import *
 from numerics import create_sidebar, set_num_parameters
 from plotting import plotly_line
 
-import sys
+# Local plotting functions
 
-# from helper_functions import read_render_markdown_file
+def plot_selected_wall_curves(n_component, z, z_plots):
+    for plot_title, details in z_plots.items():
+        y_col_labels = ["z"]
+        fn_label = details["fn_label"]
+        y_col_labels.extend(f"{fn_label}_{i}" for i in range(n_component))
+        try:
+            xliml=details["xlim"]
+        except Exception:
+            xliml=None
+        try:
+            yliml=details["ylim"]
+        except Exception:
+            yliml=None
+
+        fig = plotly_line(z, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
+                             xliml=xliml, yliml=yliml, title=plot_title)
+        st.plotly_chart(fig)
+
+
+def plot_selected_bulk_curves(n_component, r, r_plots):
+    for plot_title, details in r_plots.items():
+        y_col_labels = ["r"]
+        fn_label = details["fn_label"]
+        for i in range(n_component):
+            y_col_labels.extend(f"{fn_label}_{i}{j}" for j in range(i, n_component))
+        try:
+            xliml=details["xlim"]
+        except Exception:
+            xliml=None
+        try:
+            yliml=details["ylim"]
+        except Exception:
+            yliml=None
+
+        fig = plotly_line(r, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
+                            xliml=xliml, yliml=yliml, title=plot_title)
+        st.plotly_chart(fig)
+
+
+# Initialise fluid and numerical parameters
 
 fluid_symbol = "kcl"
+
 fluid = set_fluid_parameters(fluid_symbol)
 if fluid is not None:
     z_cutoff, n_point, psi_0, tolerance, max_iteration = create_sidebar(fluid)
@@ -21,6 +63,7 @@ else:
 
 other_params = fluid_specific_parameters(fluid_symbol)
 
+#TODO: Work out how to make the other parameters less custom
 n_outer_shell = other_params["kcl"]["n_outer_shell"]
 b = other_params["kcl"]["b"]
 alpha = other_params["kcl"]["alpha"]
@@ -46,6 +89,7 @@ fluid.rho = calc_rho(fluid.concentration)
 kappa = calc_kappa(fluid.beta, fluid.charge, fluid.rho, fluid.epsilon)
 st.sidebar.text(f"kappa: {kappa}")
 
+#TODO: Move these prelim calcs inside the potential (in modelling)
 beta_pauling = calc_beta_pauling(fluid.valence, n_outer_shell, n_component, n_pair)
 cap_b = calc_cap_b(beta_pauling, b, alpha, sigma, n_component, n_pair)
 
@@ -62,14 +106,12 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 
 # Bulk-fluid inputs (direct correlation function
 
-#CR_PATH = "data/pyOZ_bulk_fluid/tests/lj/nrcg-cr.dat.orig"
-#CR_PATH = "/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/pyoz/nrcg-cr.dat"
-
-from time import sleep
 
 CR_PATH = f"{Path.cwd().as_posix()}/data/{fluid.cr_filename}"
 
 st.sidebar.text(fluid.cr_filename)
+
+# Run calculation
 
 if run_calc := st.button("Run calculation"):
     try:
@@ -84,11 +126,8 @@ if run_calc := st.button("Run calculation"):
     f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, z, model.f1)
     f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, z, model.f2)
 
-
     f1_integrand = calc_f1_integrand(c_short, n_pair, z, n_point)
     f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
-
-    st.write(f1_integrand.shape, f2_integrand.shape)
 
     # initial guess of zero - maybe should be \beta \phi
 
@@ -97,13 +136,6 @@ if run_calc := st.button("Run calculation"):
 
     model.f1 = f1
     model.f2 = f2
-
-    # tw_args = (tw, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-    #             n_component, n_point, z_index, integral_z_infty, integral_0_z)
-
-    # tw_args, tol, maxit = test_solve_model(opt_func, tw_initial, fluid, model, d)
-
-    # st.write(tw_args[1])
 
     # Output to main page
 
@@ -114,8 +146,6 @@ if run_calc := st.button("Run calculation"):
     col1, col2 = st.columns([1, 2])
 
     # Solve equation
-    # body = "Test"
-    # md_tmp = st.text(body)
 
     out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
     normal_stdout = sys.stdout
@@ -140,41 +170,23 @@ if run_calc := st.button("Run calculation"):
         out_file.writelines(str(sys.stdout))
 
 
-
     with col2:
-        fig = plotly_line(z, hw_solution+1, ["z", "hw0", "hw1"], y_label="hw_solution", legend_label="",
-                        xliml=[0, 30], yliml=[0, 4], title="hw_solution")
-        st.plotly_chart(fig)
+        z_plots = dict({"hw_solution": dict({"fn_label": "hw", "plot_fn": hw_solution+1, 
+            "plot_name": "Solution: gw(z)"})})
 
-        fig = plotly_line(r, beta_u, ["r", "u0", "u1", "u2"], y_label="beta * u", legend_label="",
-                        xliml=[0, 10], yliml=[-100, 200], title="Dimensionless ion-ion potential")
-        st.plotly_chart(fig)
+        plot_selected_wall_curves(n_component, z, z_plots)
 
+        r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short, 
+            "plot_name": "c_short(r)"})})
+        r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": "beta u(r)",
+            "xlim": [0, 10], "ylim": [-100, 200]})
+        r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1, "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": [-10, 10]})
+        r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2, "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": [-10, 10]})
 
-        fig = plotly_line(z, beta_phiw, ["z", "phi0", "phi1"], y_label="beta * phiw", legend_label="",
-                        xliml=[0, 10], yliml=[-20, 40], title="Dimensionless short-range wall-ion potential")
-        st.plotly_chart(fig)
+        r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand, "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": [-10, 10]})
+        r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand, "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": [-10, 10]})
 
-
-        fig = plotly_line(r, c_short, ["r", "c0", "c1", "c2"], y_label="c_ij(r)", legend_label="",
-                        xliml=[0, 10], yliml=[-2, 2], title="'Short-range' direct correlation function")
-        st.plotly_chart(fig)
-
-        fig = plotly_line(z, f1_integrand, ["z", "F1_0", "F1_1", "F1_2"], y_label="f1_ij(r)", legend_label="", title="f1 function")
-        st.plotly_chart(fig)
+        plot_selected_bulk_curves(n_component, r, r_plots)
 
 
-        fig = plotly_line(z, f2_integrand, ["z", "F2_0", "F2_1", "F2_2"], y_label="f2_ij(r)", legend_label="", title="f2 function")
-        st.plotly_chart(fig)
-
-        fig = plotly_line(z, f1, ["z", "f1_0", "f1_1", "f1_2"], y_label="f1_ij(r)", legend_label="", title="f1 function")
-        st.plotly_chart(fig)
-
-
-        fig = plotly_line(z, f2, ["z", "f2_0", "f2_1", "f2_2"], y_label="f2_ij(r)", legend_label="", title="f2 function")
-        st.plotly_chart(fig)
-
-
-        fig = plotly_line(z, hw_initial, ["z", "hw0", "hw1"], y_label="hw", legend_label="",
-                        xliml=[0, 10], yliml=[-2, 2], title="hw_initial for tw = tw_initial (zero guess)")
-        st.plotly_chart(fig)
+        # beta_u, beta_phiw, c_short, f1, f2, f1_integrand, f2_integrand, hw_initial, hw_solution
