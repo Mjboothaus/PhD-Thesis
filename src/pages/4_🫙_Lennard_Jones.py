@@ -8,10 +8,9 @@ import st_redirect_new as rd
 import streamlit as st
 from modelling import *
 from numerics import set_num_parameters
+from parameters import fluid_specific_parameters, set_fluid_parameters
 from plotting import plot_bulk_curves, plot_wall_curves
 from sidebar import create_sidebar
-from parameters import set_fluid_parameters, fluid_specific_parameters
-
 
 # Initialise fluid and numerical parameters
 

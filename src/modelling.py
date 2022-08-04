@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from scipy import interpolate
 import scipy.optimize as optim
+from scipy import interpolate
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
 from streamlit import cache
@@ -209,7 +209,7 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
 
-    return tw_in - tw  
+    return tw_in - tw
 
 
 # TODO: Look at NITSOL and NKSOL parameters to see if any clues?
@@ -223,24 +223,15 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_ps
     charge_pair = fluid.charge_pair
     n_component = fluid.n_component
     rho = fluid.rho
-
     f1 = model.f1
     f2 = model.f2
     z = model.z
     z_index = model.z_index
-
     n_point = discrete.n_point
     tolerance = discrete.tolerance
     max_iteration = discrete.max_iteration
+    tw_args = beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_index
 
-    tw_args = (beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
-               n_component, n_point, z_index)
-
-    solution = optim.root(opt_func, tw_initial, args=tw_args,
-                          method="krylov", jac=None,
-                          tol=tolerance, callback=None,
-                          options={"disp": True, "maxiter": max_iteration})
-    # fout.close()
-    return solution
+    return optim.root(opt_func, tw_initial, args=tw_args, method="krylov", jac=None, tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
 
     # partial(save_results, args=tw_args

@@ -1,5 +1,3 @@
-import altair as alt
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -29,14 +27,13 @@ def fast_plot(x, y):
 
 def plotly_line(x, y, column_names, y_label="", legend_label="", title=None, xliml=None, yliml=None):
     df = pd.DataFrame(data=np.column_stack((x, y)), columns=column_names)
-    fig = px.line(df, x=column_names[0], y=column_names[1:], title=title, 
-        labels={column_names[0]: column_names[0],
-        "value": y_label,
-        "variable": legend_label})
+    fig = px.line(df, x=column_names[0], y=column_names[1:], title=title,
+                  labels={column_names[0]: column_names[0],
+                          "value": y_label,
+                          "variable": legend_label})
     fig.update_xaxes(range=xliml)
     fig.update_yaxes(range=yliml)
     return fig
-
 
 
 def plot_wall_curves(n_component, z, z_plots):
@@ -45,16 +42,16 @@ def plot_wall_curves(n_component, z, z_plots):
         fn_label = details["fn_label"]
         y_col_labels.extend(f"{fn_label}_{i}" for i in range(n_component))
         try:
-            xliml=details["xlim"]
+            xliml = details["xlim"]
         except Exception:
-            xliml=None
+            xliml = None
         try:
-            yliml=details["ylim"]
+            yliml = details["ylim"]
         except Exception:
-            yliml=None
+            yliml = None
 
         fig = plotly_line(z, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
-                             xliml=xliml, yliml=yliml, title=plot_title)
+                          xliml=xliml, yliml=yliml, title=plot_title)
         #show(fig) - Jupyter
         st.plotly_chart(fig)
 
@@ -64,17 +61,18 @@ def plot_bulk_curves(n_component, r, r_plots):
         y_col_labels = ["r"]
         fn_label = details["fn_label"]
         for i in range(n_component):
-            y_col_labels.extend(f"{fn_label}_{i}{j}" for j in range(i, n_component))
+            y_col_labels.extend(
+                f"{fn_label}_{i}{j}" for j in range(i, n_component))
         try:
-            xliml=details["xlim"]
+            xliml = details["xlim"]
         except Exception:
-            xliml=None
+            xliml = None
         try:
-            yliml=details["ylim"]
+            yliml = details["ylim"]
         except Exception:
-            yliml=None
+            yliml = None
 
         fig = plotly_line(r, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
-                            xliml=xliml, yliml=yliml, title=plot_title)
+                          xliml=xliml, yliml=yliml, title=plot_title)
         #fig.show() - Jupyter
         st.plotly_chart(fig)
