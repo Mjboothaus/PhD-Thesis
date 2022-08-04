@@ -7,48 +7,9 @@ import pandas as pd
 import st_redirect_new as rd
 import streamlit as st
 from modelling import *
-from numerics import create_sidebar, set_num_parameters
-from plotting import plotly_line
-
-# Local plotting functions
-
-def plot_selected_wall_curves(n_component, z, z_plots):
-    for plot_title, details in z_plots.items():
-        y_col_labels = ["z"]
-        fn_label = details["fn_label"]
-        y_col_labels.extend(f"{fn_label}_{i}" for i in range(n_component))
-        try:
-            xliml=details["xlim"]
-        except Exception:
-            xliml=None
-        try:
-            yliml=details["ylim"]
-        except Exception:
-            yliml=None
-
-        fig = plotly_line(z, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
-                             xliml=xliml, yliml=yliml, title=plot_title)
-        st.plotly_chart(fig)
-
-
-def plot_selected_bulk_curves(n_component, r, r_plots):
-    for plot_title, details in r_plots.items():
-        y_col_labels = ["r"]
-        fn_label = details["fn_label"]
-        for i in range(n_component):
-            y_col_labels.extend(f"{fn_label}_{i}{j}" for j in range(i, n_component))
-        try:
-            xliml=details["xlim"]
-        except Exception:
-            xliml=None
-        try:
-            yliml=details["ylim"]
-        except Exception:
-            yliml=None
-
-        fig = plotly_line(r, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
-                            xliml=xliml, yliml=yliml, title=plot_title)
-        st.plotly_chart(fig)
+from numerics import set_num_parameters
+from plotting import plot_bulk_curves, plot_wall_curves
+from sidebar import create_sidebar
 
 
 # Initialise fluid and numerical parameters
@@ -174,7 +135,7 @@ if run_calc := st.button("Run calculation"):
         z_plots = dict({"hw_solution": dict({"fn_label": "hw", "plot_fn": hw_solution+1, 
             "plot_name": "Solution: gw(z)"})})
 
-        plot_selected_wall_curves(n_component, z, z_plots)
+        plot_wall_curves(n_component, z, z_plots)
 
         r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short, 
             "plot_name": "c_short(r)"})})
@@ -186,7 +147,7 @@ if run_calc := st.button("Run calculation"):
         r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand, "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": [-10, 10]})
         r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand, "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": [-10, 10]})
 
-        plot_selected_bulk_curves(n_component, r, r_plots)
+        plot_bulk_curves(n_component, r, r_plots)
 
 
         # beta_u, beta_phiw, c_short, f1, f2, f1_integrand, f2_integrand, hw_initial, hw_solution
