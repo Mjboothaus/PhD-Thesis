@@ -23,4 +23,4 @@ def create_app_header(app_title, subtitle=None):
 
 create_app_header(APP_TITLE, SUB_TITLE)
 
-read_render_markdown_file("docs/app_main.html", output="streamlit")
+read_render_markdown_file("docs/app_main_inc.md", output="streamlit")
