@@ -4,7 +4,8 @@ import streamlit as st
 
 from helper_functions import read_render_markdown_file
 
-APP_TITLE = "Charged fluids near interfaces: Integral equation theory"
+APP_TITLE = "Charged fluids near interfaces"
+SUB_TITLE = "Integral Equation Theory"
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -20,4 +21,6 @@ def create_app_header(app_title, subtitle=None):
         st.subheader(subtitle)
     return None
 
-read_render_markdown_file("docs/app_main.md", output="streamlit")
+create_app_header(APP_TITLE, SUB_TITLE)
+
+read_render_markdown_file("docs/app_main.html", output="streamlit")

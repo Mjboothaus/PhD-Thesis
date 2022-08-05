@@ -1,6 +1,7 @@
+markdown
+markdown-include
 matplotlib
 notebook
-numericalunits
 plotly
 pytest
 pytest-reqs

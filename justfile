@@ -20,9 +20,8 @@ dev-venv:
 	pip-compile requirements-dev.in
 	python3 -m venv .venv_dev_{{project_name}}
 	. .venv_dev_{{project_name}}/bin/activate
-	# pip install pip==18.1.0
 	python3 -m pip install --upgrade pip
-	pip install -r requirements.txt
+	pip install --require-virtualenv --log pip_install_{{project_name}}.log -r requirements.txt
 	python -m ipykernel install --user --name .venv_dev_{{project_name}}
 	echo -e '\n' source .venv_dev_{{project_name}}/bin/activate '\n'
 
@@ -34,7 +33,7 @@ deploy-venv:
 	python3 -m venv .venv_deploy_{{project_name}}
 	. .venv_deploy_{{project_name}}/bin/activate
 	python3 -m pip install --upgrade pip
-	pip install -r requirements-deploy.txt
+	pip install --require-virtualenv -r requirements-deploy.txt
 	echo -e '\n' source .venv_deploy_{{project_name}}/bin/activate '\n'
 
 
@@ -46,6 +45,17 @@ update-dev-reqs:
 update-deploy-reqs:
 	pip-compile requirements-deploy.in
 	pip install -r requirements-deploy.txt --upgrade
+
+
+alt-dev-pip-install:
+	#!/usr/bin/env bash
+	pip-compile requirements-dev.in
+	python3 -m venv .venv_dev_{{project_name}}
+	. .venv_dev_{{project_name}}/bin/activate
+	cat requirements-dev.txt | cut -f1 -d"#" | sed '/^\s*$/d' | xargs -n 1 pip install
+	python3 -m pip install --upgrade pip
+	echo -e '\n' source .venv_dev_{{project_name}}/bin/activate '\n'
+
 
 # See custom dvenv command defined in ~/.zshrc
 

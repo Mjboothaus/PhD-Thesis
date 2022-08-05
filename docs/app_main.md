@@ -1,5 +1,3 @@
-### Charged fluids near interfaces: Integral equation theory
-
 #### Michael Julian Booth, Ph. D. (Science)
 
 ##### The University of Sydney, 1998
