@@ -40,7 +40,7 @@ def plot_wall_curves(n_component, z, z_plots):
     for plot_title, details in z_plots.items():
         y_col_labels = ["z"]
         fn_label = details["fn_label"]
-        y_col_labels.extend(f"{fn_label}_{i}" for i in range(n_component))
+        y_col_labels.extend(f"{fn_label}_w{i}" for i in range(n_component))
         try:
             xliml = details["xlim"]
         except Exception:

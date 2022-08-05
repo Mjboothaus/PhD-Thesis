@@ -14,7 +14,7 @@ from sidebar import create_sidebar
 
 # Initialise fluid and numerical parameters
 
-fluid_symbol = "lj1"
+fluid_symbol = "lj2"
 
 fluid = set_fluid_parameters(fluid_symbol)
 if fluid is not None:
@@ -124,8 +124,8 @@ with tab1:
         if "run_calc" not in st.session_state:
             st.session_state.run_calc = run_calc
 
-        if "hw_solution" not in st.session_state:
-            st.session_state.hw_solution = hw_solution
+        #if "hw_solution" not in st.session_state:
+        #    st.session_state.hw_solution = hw_solution
 
     with tab2:
     
@@ -135,26 +135,30 @@ with tab1:
     with tab3:
         if "run_calc" in st.session_state:
             if run_calc:
-                if "hw_solution" in st.session_state:
-                    hw_solution = st.session_state.hw_solution 
+                #if "hw_solution" in st.session_state:
+                #    hw_solution = st.session_state.hw_solution 
+                
+                # st.write(hw_solution.shape)
 
-                z_plots = dict({"hw_solution": dict({"fn_label": "hw", "plot_fn": hw_solution+1,
-                                                    "plot_name": "Solution: gw(z)"})})
+                z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
+                                                    "plot_fn": hw_solution+1,
+                                                    "plot_name": "Solution: g(z)"})})
+                st.write(n_component)
 
                 plot_wall_curves(n_component, z, z_plots)
 
-                r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
-                                                "plot_name": "c_short(r)"})})
-                r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": "beta u(r)",
-                                        "xlim": [0, 10], "ylim": [-10, 100]})
-                r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1,
-                                    "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": None})
-                r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2,
-                                    "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": None})
+                # r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
+                #                                 "plot_name": "c_short(r)"})})
+                # r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": "beta u(r)",
+                #                         "xlim": [0, 10], "ylim": [-10, 100]})
+                # r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1,
+                #                     "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": None})
+                # r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2,
+                #                     "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": None})
 
-                r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand,
-                                            "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
-                r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand,
-                                            "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
+                # r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand,
+                #                             "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
+                # r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand,
+                #                             "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
 
                 # plot_bulk_curves(n_component, r, r_plots)

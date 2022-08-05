@@ -41,7 +41,7 @@ fluid_parameters["lj1"] = dict({"name": "Lennard-Jones liquid (1-comp)", "compon
 fluid_parameters["lj2"] = dict({"name": "Lennard-Jones liquid (2-comp)", "component": ["A1", "A2"], "valence": np.array([0.0, 0.0]),
                                 "charge": np.array([0]), "temperature": 298.15, "concentration": np.array([0.5, 0.5]), "epsilon_r": 1, "index": 5,
                                 "charge_pair": np.array([0.0]), "rho": np.array([0.0]), "beta": 0.0, "epsilon": 0.0,
-                                "cr_filename": "pyoz-cr-lj-equal-2-comp.dat"})
+                                "cr_filename": "pyoz-cr-lj-unequal-2-comp.dat"})
 
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
