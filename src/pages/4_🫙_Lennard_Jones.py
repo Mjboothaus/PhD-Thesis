@@ -93,6 +93,11 @@ hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 tab0, tab1, tab2 = st.tabs(["Bulk properties", "Calculation", "Wall graphs"])
 
 with tab0: 
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Temperature (K)", f"{fluid.temperature}", f"{fluid.beta}")
+    col2.metric("Concentration (M/dm3)", f"{fluid.concentration}")
+    col3.metric("Components", f"{fluid.component}")
+
     r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
                                     "plot_name": "c_short(r)"})})
     r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": r'$\beta u(r)$',
@@ -107,14 +112,12 @@ with tab0:
     r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand,
                                 "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
 
-    plot_bulk_curves(n_component, r, r_plots)
+    plot_bulk_curves(n_component, r, r_plots, fluid.component)
 
 
 
     # TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
-    # TODO: Handle numerical (e.g. Jacobian) exceptions gracefully
     # TODO: Plot |F(x)| convergence - pull values out of st_redirect
-
 
     # out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
 
@@ -126,23 +129,39 @@ with tab1:
     if run_calc := st.button("Run calculation"):
         with st.spinner("Finding optimal solution:"):
             st.markdown("Solver output (Newton-Krylov)")
+            #to_out = st.empty()
             to_out = st.empty()
+            st.session_state["to_out"] = to_out
             with rd.stdout(to=to_out, format='text', max_buffer=1000):
 
                 # Solve non-linear equation
-
-                solution = solve_model(opt_func, tw_initial, fluid, model, d,
+                try:
+                    solution = solve_model(opt_func, tw_initial, fluid, model, d,
                                         beta_phiw, beta_psi_charge)
-        tw_solution = solution.x
-        hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+                    tw_solution = solution.x
+                    # tmp = to_out._form_data()  # attempt to get contents from 
+                    # st.write(tmp)
+                    # print(st.session_state["to_out"].text())
+                except ValueError as err_message:
+                    solution = None
+                    st.info(err_message)
 
-        st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
+        if solution is not None:
+            st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
+            hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+        else:
+            st.error("Solver failed to find a solution: see error message above.")
+            hw_solution = hw_initial
+
 
 with tab2:
-    if run_calc:
-        z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
-                                            "plot_fn": hw_solution+1,
-                                            "plot_name": "Solution: g(z)"})})
-        plot_wall_curves(n_component, z, z_plots)
-    else:
-        st.markdown("Select the Calculation tab and press the [Run calculation] button.")
+        if run_calc:
+            if solution is not None:
+                z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
+                                                    "plot_fn": hw_solution+1,
+                                                    "plot_name": "Solution: g(z)"})})
+                plot_wall_curves(n_component, z, z_plots, fluid.component)
+            else:
+                st.info("Solution not found: no output available.")
+        else:
+            st.markdown("Select the Calculation tab and press the [Run calculation] button.")

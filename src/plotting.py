@@ -36,11 +36,11 @@ def plotly_line(x, y, column_names, y_label="", legend_label="", title=None, xli
     return fig
 
 
-def plot_wall_curves(n_component, z, z_plots):
+def plot_wall_curves(n_component, z, z_plots, component):
     for plot_title, details in z_plots.items():
         y_col_labels = ["z"]
         fn_label = details["fn_label"]
-        y_col_labels.extend(f"{fn_label}_w{i}" for i in range(n_component))
+        y_col_labels.extend(f"{fn_label}_w{component[i]}" for i in range(n_component))
         try:
             xliml = details["xlim"]
         except Exception:
@@ -56,22 +56,16 @@ def plot_wall_curves(n_component, z, z_plots):
         st.plotly_chart(fig)
 
 
-def plot_bulk_curves(n_component, r, r_plots):
+def plot_bulk_curves(n_component, r, r_plots, component):
     for plot_title, details in r_plots.items():
         y_col_labels = ["r"]
         fn_label = details["fn_label"]
         for i in range(n_component):
             y_col_labels.extend(
-                f"{fn_label}_{i}{j}" for j in range(i, n_component))
-        try:
-            xliml = details["xlim"]
-        except Exception:
-            xliml = None
-        try:
-            yliml = details["ylim"]
-        except Exception:
-            yliml = None
-
+                f"{fn_label}_{component[i]}{component[j]}" for j in range(i, n_component))
+        xliml = details["xlim"] if "xlim" in details.keys() else None
+        yliml = details["ylim"] if "ylim" in details.keys() else None
+ 
         fig = plotly_line(r, details["plot_fn"], y_col_labels, y_label=details["plot_name"], legend_label="",
                           xliml=xliml, yliml=yliml, title=plot_title)
         #fig.show() - Jupyter
