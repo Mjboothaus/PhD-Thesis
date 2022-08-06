@@ -28,10 +28,10 @@
     # van der Waals with sigma and epsilon
     %potential lj
 	# sigma required
-	sigma		0.8 1.2	# distance where the interaction is zero
+	sigma		0.9 1.1	# distance where the interaction is zero
 	sigma_unit	nm	# supported units A, m, nm, pm
 	sigma_rule	arit	# arit/geom
-	epsilon 	0.1 0.15	# potential minimum depth
+	epsilon 	0.1 0.12	# potential minimum depth
 	epsilon_unit	kJ_mol	# supported units kT, eV, kJ_mol, kcal_mol
 	epsilon_rule	geom	# arit/geom
     %end_potential

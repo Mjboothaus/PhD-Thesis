@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from time import sleep
 
@@ -45,8 +44,9 @@ fluid.charge_pair = calc_charge_pair(
     fluid.beta, fluid.charge, fluid.epsilon, n_component, n_pair)
 fluid.rho = calc_rho(fluid.concentration)
 kappa = calc_kappa(fluid.beta, fluid.charge, fluid.rho, fluid.epsilon)
-st.sidebar.text(f"kappa: {kappa}")
 
+st.sidebar.text(f"kappa: {kappa}")
+st.sidebar.text(fluid.cr_filename)
 
 r = z    # r on same discretisation as z
 beta_u = fluid.beta * \
@@ -64,56 +64,73 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 
 CR_PATH = f"{Path.cwd().as_posix()}/data/{fluid.cr_filename}"
 
-st.sidebar.text(fluid.cr_filename)
 
-run = st.empty()
+try:
+    c_short, r_short = load_and_interpolate_cr(
+        Path(CR_PATH), n_point, n_pair, z)
+except Exception as e:
+    st.error(
+        f"Please ensure the c(r) data file is available here: {Path(CR_PATH).parent.as_posix()}")
+    st.info("Restarting in 10 seconds")
+    # st.exception(e)
+    sleep(10.0)
+    st.experimental_rerun()
 
-tab1, tab2, tab3 = st.tabs(["Calculation", "Convergence", "Charts"])
+f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z)
+f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z)
+
+f1_integrand = calc_f1_integrand(c_short, n_pair, z, n_point)
+f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
+
+# initial guess of zero - maybe should be \beta \phi
+
+model.f1 = f1
+model.f2 = f2
+
+tw_initial = np.zeros((n_point, n_component))
+hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
+
+tab0, tab1, tab2 = st.tabs(["Bulk properties", "Calculation", "Wall graphs"])
+
+with tab0: 
+    r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
+                                    "plot_name": "c_short(r)"})})
+    r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": r'$\beta u(r)$',
+                            "xlim": [0, 10], "ylim": [0, 10000]})
+    r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1,
+                        "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": None})
+    r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2,
+                        "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": None})
+
+    r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand,
+                                "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
+    r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand,
+                                "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
+
+    plot_bulk_curves(n_component, r, r_plots)
+
+
+
+    # TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
+    # TODO: Handle numerical (e.g. Jacobian) exceptions gracefully
+    # TODO: Plot |F(x)| convergence - pull values out of st_redirect
+
+
+    # out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
+
 
 with tab1:
 
     # Run calculation
 
-    if run_calc := run.button("Run calculation"):
-        try:
-            c_short, r_short = load_and_interpolate_cr(
-                Path(CR_PATH), n_point, n_pair, z)
-        except Exception as e:
-            st.error(
-                f"Please ensure the c(r) data file is available here: {Path(CR_PATH).parent.as_posix()}")
-            st.info("Restarting in 10 seconds")
-            # st.exception(e)
-            sleep(10.0)
-            st.experimental_rerun()
-
-        f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z)
-        f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z)
-
-        f1_integrand = calc_f1_integrand(c_short, n_pair, z, n_point)
-        f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
-
-        # initial guess of zero - maybe should be \beta \phi
-
-        model.f1 = f1
-        model.f2 = f2
-
-        tw_initial = np.zeros((n_point, n_component))
-        hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
-
-        # Output to main page
-
-        # TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
-        # TODO: Handle numerical (e.g. Jacobian) exceptions gracefully
-        # TODO: Plot |F(x)| convergence - pull values out of st_redirect
-
-        # Solve equation
-
-        # out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
-
+    if run_calc := st.button("Run calculation"):
         with st.spinner("Finding optimal solution:"):
             st.markdown("Solver output (Newton-Krylov)")
             to_out = st.empty()
             with rd.stdout(to=to_out, format='text', max_buffer=1000):
+
+                # Solve non-linear equation
+
                 solution = solve_model(opt_func, tw_initial, fluid, model, d,
                                         beta_phiw, beta_psi_charge)
         tw_solution = solution.x
@@ -121,44 +138,11 @@ with tab1:
 
         st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
 
-        if "run_calc" not in st.session_state:
-            st.session_state.run_calc = run_calc
-
-        #if "hw_solution" not in st.session_state:
-        #    st.session_state.hw_solution = hw_solution
-
-    with tab2:
-    
-        st.write("Under construction")
-
-
-    with tab3:
-        if "run_calc" in st.session_state:
-            if run_calc:
-                #if "hw_solution" in st.session_state:
-                #    hw_solution = st.session_state.hw_solution 
-                
-                # st.write(hw_solution.shape)
-
-                z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
-                                                    "plot_fn": hw_solution+1,
-                                                    "plot_name": "Solution: g(z)"})})
-                st.write(n_component)
-
-                plot_wall_curves(n_component, z, z_plots)
-
-                # r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
-                #                                 "plot_name": "c_short(r)"})})
-                # r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": "beta u(r)",
-                #                         "xlim": [0, 10], "ylim": [-10, 100]})
-                # r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1,
-                #                     "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": None})
-                # r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2,
-                #                     "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": None})
-
-                # r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand,
-                #                             "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
-                # r_plots["f2_integrand"] = dict({"fn_label": "f2_integrand", "plot_fn": f2_integrand,
-                #                             "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
-
-                # plot_bulk_curves(n_component, r, r_plots)
+with tab2:
+    if run_calc:
+        z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
+                                            "plot_fn": hw_solution+1,
+                                            "plot_name": "Solution: g(z)"})})
+        plot_wall_curves(n_component, z, z_plots)
+    else:
+        st.markdown("Select the Calculation tab and press the [Run calculation] button.")

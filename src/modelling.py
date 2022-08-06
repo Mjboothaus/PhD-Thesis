@@ -100,6 +100,7 @@ def calc_kappa(beta, charge, rho, epsilon):
                    sum(np.multiply(charge**2, rho)))
 
 
+@cache
 def calc_phiw(z, n_point, n_component):
     phiw = np.zeros((n_point, n_component))
     capital_a = 16.274e-19  # joules
@@ -109,6 +110,7 @@ def calc_phiw(z, n_point, n_component):
     return phiw
 
 
+@cache
 def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     cr = np.zeros((n_point, n_pair))
     for l in range(n_pair):
@@ -129,6 +131,7 @@ def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
     return interpolate_cr(r, cr, n_point, n_pair, z)
 
 
+@cache
 def calc_f1_integrand(c_short, n_pair, z, n_point):
     f1_integrand = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
@@ -136,6 +139,7 @@ def calc_f1_integrand(c_short, n_pair, z, n_point):
     return f1_integrand
 
 
+@cache
 def calc_f2_integrand(c_short, n_pair, z, n_point):
     f2_integrand = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
@@ -143,6 +147,7 @@ def calc_f2_integrand(c_short, n_pair, z, n_point):
     return f2_integrand
 
 
+@cache
 def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
     integrand = np.zeros(n_point)
     f1 = np.zeros((n_point, n_pair))
@@ -153,6 +158,7 @@ def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
     return f1
 
 
+@cache
 def integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z):
     integrand = np.zeros(n_point)
     f2 = np.zeros((n_point, n_pair))
@@ -208,15 +214,12 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 
     tw = calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
                  n_component, n_point, z_index)
-
     return tw_in - tw
 
 
 # TODO: Look at NITSOL and NKSOL parameters to see if any clues?
 
-# https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
-
-# from functools import partial
+# C.f. https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
 
 
 def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
@@ -232,6 +235,5 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_ps
     max_iteration = discrete.max_iteration
     tw_args = beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_index
 
-    return optim.root(opt_func, tw_initial, args=tw_args, method="krylov", jac=None, tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
-
-    # partial(save_results, args=tw_args
+    return optim.root(opt_func, tw_initial, args=tw_args, method="krylov", jac=None, 
+            tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
