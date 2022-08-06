@@ -659,6 +659,30 @@ def main(argv=None):
                 fw.write("\n")
             fw.close()
 
+        # save c_r_sr_ij to file
+        if (outp['c_ij_sr_write']):
+            print("\tdirect short range correlation function\t(%s)" % outp['c_ij_sr_name'])
+            fw = open(outp['c_ij_sr_name'], "wt")
+            fw.write("%8.3f" % 0.0)
+            for i in range(syst['ncomponents']):
+                for j in range(i, syst['ncomponents']):
+                    fw.write("%10.5f" % 0.0)
+            fw.write("\n")
+            for dr in range(ctrl['npoints']):
+                fw.write("%8.3f" % r[dr])
+                for i in range(syst['ncomponents']):
+                    for j in range(i, syst['ncomponents']):
+                        # careful, we have to write the complete c(r), i.e., we need to compensate for the
+                        # Ng-correction!
+                        # cs(r) = c(r) + Ucorr(r) => c(r) = cs(r) - Ucorr(r)
+                        fw.write("%10.5f" % c_r_sr_ij[i, j, dr]) + U_ij[i, j, dr]
+                # end for i,j in range ncomponents...
+                fw.write("\n")
+            fw.close()
+
+        #TODO: See below for the short range direct correlation fn c_r_ij_sr - copy above and write out too
+        # c_r_ij_sr = c_r_ij + U_ij_individual[index]
+
         # save S to file
         if (outp['S_ij_write']):
             print("\tpartial structure factors\t(%s)" % outp['S_ij_name'])

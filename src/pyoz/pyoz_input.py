@@ -1896,6 +1896,9 @@ def parse_outp(cmdline, lines, lines_orig, lineno_beg, lineno_end):
     # direct correlatio function
     c_ij_write = outp_def.c_ij_write
     c_ij_name = outp_def.c_ij_name
+    # direct sr correlatio function
+    c_ij_sr_write = outp_def.c_ij_sr_write
+    c_ij_sr_name = outp_def.c_ij_sr_name
     # structure factors
     S_ij_write = outp_def.S_ij_write
     S_ij_name = outp_def.S_ij_name
@@ -1905,6 +1908,7 @@ def parse_outp(cmdline, lines, lines_orig, lineno_beg, lineno_end):
         G_ij_name = cmdline['name'] + outp_def.gamma_suffix
         g_ij_name = cmdline['name'] + outp_def.gr_suffix
         c_ij_name = cmdline['name'] + outp_def.cr_suffix
+        c_ij_sr_name = cmdline['name'] + outp_def.cr_sr_suffix
         S_ij_name = cmdline['name'] + outp_def.S_suffix
         U_ij_name = cmdline['name'] + outp_def.ur_suffix
         Utot_ij_name = cmdline['name'] + outp_def.urtot_suffix
@@ -1981,7 +1985,16 @@ def parse_outp(cmdline, lines, lines_orig, lineno_beg, lineno_end):
             elif (match(r'cr_name$', keyword)):
                 c_ij_write = True
                 c_ij_name = (orig_l.split())[1]
+            # **************************************************************************
+            # c_sr(r)
 
+            elif (match(r'cr_sr_write$', keyword)):
+                c_ij_sr_write = True
+            elif (match(r'cr_sr_name$', keyword)):
+                c_ij_sr_write = True
+                c_ij_sr_name = (orig_l.split())[1]
+
+            
             # **************************************************************************
             # S(k)
 
@@ -2057,6 +2070,13 @@ def parse_outp(cmdline, lines, lines_orig, lineno_beg, lineno_end):
         print("\tc(r) will be saved to file %s" % (outp['c_ij_name']))
     # else:
     #  print("\tc(r) will not be written!")
+
+# c(r) short related stuff - c_r_ij_sr
+    outp['c_ij_sr_write'] = c_ij_sr_write
+    outp['c_ij_sr_name'] = c_ij_sr_name
+    if (outp['c_ij_sr_write']):
+        print("\tc_sr(r) will be saved to file %s" % (outp['c_ij_sr_name']))
+    
 
     # S(k) related stuff
     outp['S_ij_write'] = S_ij_write

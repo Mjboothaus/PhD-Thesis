@@ -236,6 +236,8 @@ class outp_defaults:
     ur_suffix = '-ur.dat'
     urtot_suffix = '-urtot.dat'
     cr_suffix = '-cr.dat'
+    cr_sr_suffix = '-cr_sr.dat'
+
     S_suffix = '-sk.dat'
 
     # Gamma related stuff
@@ -272,6 +274,13 @@ class outp_defaults:
     # filename
     c_ij_name = name + cr_suffix
 
+# c(r) short range related stuff
+    # write?
+    c_ij_sr_write = False
+    # filename
+    c_ij_sr_name = name + cr_sr_suffix
+
+    
     # S(k) related stuff
     # write?
     S_ij_write = False
