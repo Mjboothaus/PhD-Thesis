@@ -19,7 +19,7 @@ class _Redirect:
                 concatenated_len = super().tell() + len(__s)
                 if concatenated_len > self._max_buffer:
                     rest = self.getvalue()[
-                        max(concatenated_len, concatenated_len - self._max_buffer):]
+                        max(concatenated_len+10, concatenated_len - self._max_buffer):]
                     if self._buffer_separator is not None:
                         rest = rest.split(self._buffer_separator, 1)[-1]
                     super().seek(0)
@@ -44,7 +44,6 @@ class _Redirect:
         self.to = to
         self.to_file = to_file
         self.fun = None
-        self.ffun = None
 
         if not self.stdout and not self.stderr:
             raise ValueError("one of stdout or stderr must be True")
@@ -77,7 +76,6 @@ class _Redirect:
             self.redirections.append(contextlib.redirect_stderr(self.io))
 
         self.fun = getattr(self.st, self.format)
-        # self.ffun = getattr(self.to_file, self.file_handle)
 
         for redirection in self.redirections:
             redirection.__enter__()
@@ -92,21 +90,17 @@ class _Redirect:
         for redirection in self.redirections:
             res = redirection.__exit__(*exc)
         
-        with open("output.txt", "w") as out_file:
+        with open(self.to_file, "w") as out_file:
             print(self.io.getvalue(), file=out_file)
 
-        #self._write(self.io.getvalue())
-        
         self.redirections = []
         self.st = None
         self.fun = None
-        self.ffun = None
         self.io = self.io.shallow_copy()
         return res
 
     def _write(self, data):
         self.fun(data)
-        # self.ffun(data)
 
 
 stdout = _Redirect()

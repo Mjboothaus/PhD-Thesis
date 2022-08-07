@@ -9,47 +9,47 @@ import streamlit as st
 from modelling import *
 from numerics import set_num_parameters
 from parameters import fluid_specific_parameters, set_fluid_parameters
-from plotting import plot_bulk_curves, plot_wall_curves
+from plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
 from sidebar import create_sidebar
 
-# class Logger(object):
-#     def __init__(self, file_name):
-#         self.terminal = sys.stdout
-#         self.file_name = file_name
+# # class Logger(object):
+# #     def __init__(self, file_name):
+# #         self.terminal = sys.stdout
+# #         self.file_name = file_name
 
+# #     def write(self, message):
+# #         with open(self.file_name, "a", encoding = 'utf-8') as self.log:            
+# #             self.log.write(message)
+# #         self.terminal.write(message)
+
+# #     def flush(self):
+# #         #this flush method is needed for python 3 compatibility.
+# #         #this handles the flush command by doing nothing.
+# #         #you might want to specify some extra behavior here.
+# #         pass
+
+# # # Set logging going (to capture stdout - primarily iteration output)
+
+# # #sys.stdout = Logger("file_name.txt")   
+
+# class Logger:
+ 
+#     def __init__(self, filename):
+#         self.console = sys.stdout
+#         self.file = open(filename, 'w')
+ 
 #     def write(self, message):
-#         with open(self.file_name, "a", encoding = 'utf-8') as self.log:            
-#             self.log.write(message)
-#         self.terminal.write(message)
-
+#         self.console.write(message)
+#         self.file.write(message)
+ 
 #     def flush(self):
-#         #this flush method is needed for python 3 compatibility.
-#         #this handles the flush command by doing nothing.
-#         #you might want to specify some extra behavior here.
-#         pass
+#         self.console.flush()
+#         self.file.flush()
+ 
 
-# # Set logging going (to capture stdout - primarily iteration output)
-
-# #sys.stdout = Logger("file_name.txt")   
-
-class Logger:
- 
-    def __init__(self, filename):
-        self.console = sys.stdout
-        self.file = open(filename, 'w')
- 
-    def write(self, message):
-        self.console.write(message)
-        self.file.write(message)
- 
-    def flush(self):
-        self.console.flush()
-        self.file.flush()
- 
- 
-path = 'logger_file.txt'
-sys.stdout = Logger(path)
-print('Hello, World')
+# path = 'logger_file.txt'
+# sys.stdout = Logger(path)
+# print('Hello, World')
 
 
 
@@ -79,7 +79,7 @@ print('Hello, World')
 
 
 
-print("Should be logged & go to screen")
+# print("Should be logged & go to screen")
 
 # Initialise fluid and numerical parameters
 
@@ -189,9 +189,7 @@ with tab0:
     # TODO: Save/write solution & params to disk (on a "continuous" basis e.g. after every 10 iterations)
     # TODO: Plot |F(x)| convergence - pull values out of st_redirect
 
-    # out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
-import io
-from contextlib import redirect_stdout
+    solver_output_filepath = f"{Path.cwd()}/output/solver_out.txt"
 
 
 with tab1:
@@ -202,10 +200,7 @@ with tab1:
         with st.spinner("Finding optimal solution:"):
             st.markdown("Solver output (Newton-Krylov)")
             to_out = st.empty()
-
-            #f = io.StringIO()
-            #with redirect_stdout(f):
-            with rd.stdout(to=to_out, to_file=None, format='text', max_buffer=1000):
+            with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
 
                     # Solve non-linear equation
                     try:
@@ -216,16 +211,16 @@ with tab1:
                         solution = None
                         st.info(err_message)
 
-            #out = f.getvalue()
-            #st.write(f"All output: {out}")
-            #out_file.close()
-
         if solution is not None:
             st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
             hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+            plot_convergence(solver_output_filepath)
+
         else:
             st.error("Solver failed to find a solution: see error message above.")
             hw_solution = hw_initial
+
+        
 
 
 with tab2:
@@ -235,6 +230,7 @@ with tab2:
                                                     "plot_fn": hw_solution+1,
                                                     "plot_name": "Solution: g(z)"})})
                 plot_wall_curves(n_component, z, z_plots, fluid.component)
+
             else:
                 st.info("Solution not found: no output available.")
         else:

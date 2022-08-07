@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from regex import P
 import streamlit as st
 
 
@@ -70,3 +71,15 @@ def plot_bulk_curves(n_component, r, r_plots, component):
                           xliml=xliml, yliml=yliml, title=plot_title)
         #fig.show() - Jupyter
         st.plotly_chart(fig)
+
+
+    
+def plot_convergence(filename, log_y=True):
+    with open(filename, "r") as solver_out:
+        content = solver_out.readlines()
+    conv_table = list(map(np.float32, [line.replace(":", ",").replace("|F(x)| = ", "").split(";")[0].split(",") for line in content if line != "\n"]))
+    convergence_df = pd.DataFrame(conv_table, columns=["Iteration #", "|F(x)|"], dtype=np.float32)
+    fig = plotly_line(x=convergence_df["Iteration #"], y=convergence_df["|F(x)|"], column_names=["Iteration #", "|F(x)|"])
+    if log_y:
+        fig.update_yaxes(type="log")
+    st.plotly_chart(fig)
