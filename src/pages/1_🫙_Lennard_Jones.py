@@ -3,7 +3,7 @@ from time import sleep
 
 import pandas as pd
 #import st_redirect as rd
-import st_redirect_new as rd
+import st_redirect as rd
 import streamlit as st
 from modelling import *
 from numerics import set_num_parameters
