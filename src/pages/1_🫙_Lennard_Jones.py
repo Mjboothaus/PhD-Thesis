@@ -15,7 +15,7 @@ from sidebar import create_sidebar
 
 # Initialise fluid and numerical parameters
 
-fluid_symbol = "lj2"
+fluid_symbol = "lj1"
 
 fluid = set_fluid_parameters(fluid_symbol)
 if fluid is not None:
@@ -66,17 +66,25 @@ model = Model(z=z, z_index=z_index, hw=wall_zeros,
 
 CR_PATH = f"{Path.cwd().as_posix()}/data/{fluid.cr_filename}"
 
+st.write(CR_PATH)
+st.write(list(Path(CR_PATH).parent.iterdir()))
 
 try:
-    c_short, r_short = load_and_interpolate_cr(
-        Path(CR_PATH), n_point, n_pair, z)
+    if Path(CR_PATH).exists():
+        st.write(f"File exists: {CR_PATH}")
+        c_short, _ = load_and_interpolate_cr(Path(CR_PATH), n_point, n_pair, z)
+    else:
+        st.write(f"File NOT exists: {CR_PATH}")
+        c_short = fluid_zeros
+
 except Exception as e:
     st.error(
         f"Please ensure the c(r) data file is available here: {Path(CR_PATH).parent.as_posix()}")
     st.info("Restarting in 10 seconds")
     # st.exception(e)
-    sleep(10.0)
-    st.experimental_rerun()
+    #sleep(10.0)
+    #st.experimental_rerun()
+    c_short = fluid_zeros
 
 f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z)
 f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z)
@@ -152,7 +160,7 @@ with tab1:
             st.error("Solver failed to find a solution: see error message above.")
             hw_solution = hw_initial
 
-        
+
 
 
 with tab2:

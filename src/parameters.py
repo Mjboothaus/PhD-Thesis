@@ -45,8 +45,9 @@ fluid_parameters["lj2"] = dict({"name": "Lennard-Jones liquid (2-comp)", "compon
 
 
 fluid_parameters["h2o"] = dict({"name": "Liquid water", "component": ["H", "2O"], "valence": np.array([
-    1.0, -1.0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
-    "epsilon_r": 1.0, "index": 2})
+    1.0, -1.0]), "charge": np.array([0]), "temperature": 298.0, "concentration": np.array([1.0, 1.0]),
+    "epsilon_r": 1.0, "index": 2, "charge_pair": np.array([0]), "rho": np.array([0]), "beta": 0.0, "epsilon": 0.0,
+    "cr_filename": "TO_BE_DEFINED.dat"})
 
 
 fluid_parameters["2_2"] = dict({"name": "2-2 Aqueous electrolyte", "component": ["+2", "-2"], "valence": np.array([
