@@ -96,13 +96,17 @@ gcr-setup:
     gcloud config set project {{project_name}}
 
 
-# Deploy container to Google Cloud (Cloud Run)
+# Deploy container to Google Cloud (Cloud Run) - timed
 
-gcr-deploy: 
-    gcloud run deploy --source . {{project_name}} --region {{gcp_region}}
-    # --image
-    # gcloud run deploy {{project_name}} --image [IMAGE]
-
+gcr-deploy:
+	#!/usr/bin/env bash
+	start=`date +%s`
+	gcloud run deploy --source . {{project_name}} --region {{gcp_region}}
+	# --image
+	# gcloud run deploy {{project_name}} --image [IMAGE]
+	end=`date +%s`
+	runtime=$((end-start))
+	echo $runtime
 
 gcr-list-deployed-url:
     gcloud run services list --platform managed | awk 'NR==2 {print $4}'
@@ -119,3 +123,13 @@ gcr-app-disable:   # deleting project does not delete app
 
 # Resources:
 # - https://stackoverflow.com/questions/59423245/how-to-get-or-generate-deploy-url-for-google-cloud-run-services
+
+gcr-deploy-time-test:
+	#!/usr/bin/env bash
+	start=`date +%s`
+	#gcloud run deploy --source . {{project_name}} --region {{gcp_region}}
+	# --image
+	# gcloud run deploy {{project_name}} --image [IMAGE]
+	end=`date +%s`
+	runtime=$((end-start))
+	echo $runtime
