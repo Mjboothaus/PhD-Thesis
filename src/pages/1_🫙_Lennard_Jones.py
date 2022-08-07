@@ -2,7 +2,6 @@ from pathlib import Path
 from time import sleep
 
 import pandas as pd
-#import st_redirect as rd
 import st_redirect as rd
 import streamlit as st
 from modelling import *
@@ -92,14 +91,19 @@ f2_integrand = calc_f2_integrand(c_short, n_pair, z, n_point)
 tw_initial = np.zeros((n_point, n_component))
 hw_initial = calc_hw(tw_initial, n_component, beta_phiw)
 
+if fluid.symbol in ["lj1", "lj2"]:
+    st.subheader(f"Fluids near an interface: {fluid.name}")
+else:
+    st.subheader(f"Charged fluids near an interface: {fluid.name}")
+
 tab0, tab1, tab2 = st.tabs(["Bulk properties", "Calculation", "Output graphs"])
 
 with tab0:
     st.markdown("#")
     col1, col2, col3 = st.columns(3)
     col1.metric("Temperature (K)", f"{fluid.temperature}")
-    col2.metric("Concentration (M/dm3)", f"{fluid.concentration}")
-    col3.metric("Components", f"{fluid.component}")
+    col2.metric("Concentration (M/dm3)", f"{fluid.concentration[0]}")
+    col3.metric("Components", f"{', '.join(fluid.component)}")
 
     r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
                                     "plot_name": "c_short(r)"})})
