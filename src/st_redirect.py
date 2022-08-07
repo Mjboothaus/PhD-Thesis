@@ -1,10 +1,10 @@
 # Acknowledgement:  Bela Schaum
 # Reference:        https://github.com/streamlit/streamlit/issues/268
 
-from re import S
 import streamlit as st
 import io
 import contextlib
+
 
 class _Redirect:
     class IOStuff(io.StringIO):
@@ -37,7 +37,6 @@ class _Redirect:
         self.io = _Redirect.IOStuff(self._write, max_buffer, buffer_separator)
         self.redirections = []
         self.st = None
-        self.file_handle = None
         self.stderr = stderr is True
         self.stdout = stdout is True or (stdout is None and not self.stderr)
         self.format = format or 'code'
@@ -55,9 +54,6 @@ class _Redirect:
         if self.to and (not hasattr(self.to, 'text') or not hasattr(self.to, 'empty')):
             raise ValueError("'to' is not a streamlit container object")
 
-        #if self.to_file and (not hasattr(self.to_file, 'text') or not hasattr(self.to_file, 'empty')):
-        #    raise ValueError("'to' is not a streamlit container object")
-
     def __enter__(self):
         if self.st is not None:
             raise Exception("Already entered")
@@ -67,8 +63,6 @@ class _Redirect:
         to.text(
             f"Redirected output from {'stdout and stderr' if self.stdout and self.stderr else 'stdout' if self.stdout else 'stderr'}:")
         self.st = to.empty()
-
-        self.file_text = ""
 
         if self.stdout:
             self.redirections.append(contextlib.redirect_stdout(self.io))
@@ -89,7 +83,7 @@ class _Redirect:
         res = None
         for redirection in self.redirections:
             res = redirection.__exit__(*exc)
-        
+
         with open(self.to_file, "w") as out_file:
             print(self.io.getvalue(), file=out_file)
 
@@ -106,27 +100,3 @@ class _Redirect:
 stdout = _Redirect()
 stderr = _Redirect(stderr=True)
 stdouterr = _Redirect(stdout=True, stderr=True)
-
-'''
-# can be used as
-
-import time
-import sys
-from random import getrandbits
-import streamlit.redirect as rd
-
-st.text('Suboutput:')
-so = st.empty()
-
-with rd.stdout, rd.stderr(format='markdown', to=st.sidebar):
-    print("hello  ")
-    time.sleep(1)
-    i = 5
-    while i > 0: 
-        print("**M**izu?  ", file=sys.stdout if getrandbits(1) else sys.stderr)
-        i -= 1
-        with rd.stdout(to=so):
-            print(f" cica {i}")
-        if i:
-            time.sleep(1)
-# '''

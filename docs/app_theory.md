@@ -13,10 +13,6 @@ The input to the calculation is:
 4. either the surface potential $\psi_0$ or surface charge density $\sigma$.
 
 
-<!-- 
-@import "equation_3_1.md"
-@import "equation_3_2.md"
- -->
  #### CF1 model of liquid water
 
 In this thesis we use the CF1 model of water. This model is a slight variant

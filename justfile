@@ -38,11 +38,13 @@ deploy-venv:
 
 
 update-dev-reqs:
+	python3 -m pip install --upgrade pip
 	pip-compile requirements-dev.in
 	pip install -r requirements-dev.txt --upgrade
 
 
 update-deploy-reqs:
+	python3 -m pip install --upgrade pip
 	pip-compile requirements-deploy.in
 	pip install -r requirements-deploy.txt --upgrade
 

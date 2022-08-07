@@ -13,15 +13,11 @@ First, following a systematic approximation to an expansion of the entropy, with
 in the literature, and a compact derivation of the anisotropic hypernetted chain (AHNC)
 approximation are presented. Selected new equation sets are highlighted.
 
-{!equation_3_1.md!}
-
 Second, results from the numerical solution of a singlet integral equation approximation are reported, which describe the structure and properties of (i) an atom-based model of water, and (ii) molten potassium chloride, next to a planar interface.
 Predictions from the theory include the density and charge profiles perpendicular to
 the interface, the mean electrostatic potential, the potential of zero charge and the
 differential capacitance. The results of this work are compared with the output from
 computer simulations.
-
-{!equation_3_2.md!}
 
 Lastly, the Newton-GMRES algorithm is introduced for the accurate, robust
 and efficient solution of such Ornstein-Zernike type integral equations. This method is

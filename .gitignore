@@ -1,6 +1,7 @@
 .DS_Store
-#*.dat
 .vscode/
+
+#*.dat
 !data/nrcg-cr-approx-maybe.dat
 
 # Byte-compiled / optimized / DLL files
