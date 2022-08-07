@@ -37,13 +37,14 @@ class _Redirect:
         self.io = _Redirect.IOStuff(self._write, max_buffer, buffer_separator)
         self.redirections = []
         self.st = None
-        self.file_text = ""
+        self.file_handle = None
         self.stderr = stderr is True
         self.stdout = stdout is True or (stdout is None and not self.stderr)
         self.format = format or 'code'
         self.to = to
         self.to_file = to_file
         self.fun = None
+        self.ffun = None
 
         if not self.stdout and not self.stderr:
             raise ValueError("one of stdout or stderr must be True")
@@ -76,7 +77,7 @@ class _Redirect:
             self.redirections.append(contextlib.redirect_stderr(self.io))
 
         self.fun = getattr(self.st, self.format)
-        #self.fun = getattr(self.file_text)
+        # self.ffun = getattr(self.to_file, self.file_handle)
 
         for redirection in self.redirections:
             redirection.__enter__()
@@ -99,11 +100,13 @@ class _Redirect:
         self.redirections = []
         self.st = None
         self.fun = None
+        self.ffun = None
         self.io = self.io.shallow_copy()
         return res
 
     def _write(self, data):
         self.fun(data)
+        # self.ffun(data)
 
 
 stdout = _Redirect()

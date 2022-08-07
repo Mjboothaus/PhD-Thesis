@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import sleep
 
+import sys
 import pandas as pd
 #import st_redirect as rd
 import st_redirect_new as rd
@@ -10,6 +11,75 @@ from numerics import set_num_parameters
 from parameters import fluid_specific_parameters, set_fluid_parameters
 from plotting import plot_bulk_curves, plot_wall_curves
 from sidebar import create_sidebar
+
+# class Logger(object):
+#     def __init__(self, file_name):
+#         self.terminal = sys.stdout
+#         self.file_name = file_name
+
+#     def write(self, message):
+#         with open(self.file_name, "a", encoding = 'utf-8') as self.log:            
+#             self.log.write(message)
+#         self.terminal.write(message)
+
+#     def flush(self):
+#         #this flush method is needed for python 3 compatibility.
+#         #this handles the flush command by doing nothing.
+#         #you might want to specify some extra behavior here.
+#         pass
+
+# # Set logging going (to capture stdout - primarily iteration output)
+
+# #sys.stdout = Logger("file_name.txt")   
+
+class Logger:
+ 
+    def __init__(self, filename):
+        self.console = sys.stdout
+        self.file = open(filename, 'w')
+ 
+    def write(self, message):
+        self.console.write(message)
+        self.file.write(message)
+ 
+    def flush(self):
+        self.console.flush()
+        self.file.flush()
+ 
+ 
+path = 'logger_file.txt'
+sys.stdout = Logger(path)
+print('Hello, World')
+
+
+
+# def print_to_file(filename):
+#     orig_stdout = sys.stdout  # capture original state of stdout
+
+#     class Unbuffered:
+#         def __init__(self, filename):
+#             self.stream = orig_stdout
+#             self.te = open(filename, 'w')  # File where you need to keep the logs
+
+#         def write(self, data):
+#             self.stream.write(data)
+#             self.stream.flush()
+#             self.te.write(data)    # Write the data of stdout here to a text file as well
+#             self.te.flush()
+
+#         def flush(self):
+#         #this flush method is needed for python 3 compatibility.
+#         #this handles the flush command by doing nothing.
+#         #you might want to specify some extra behavior here.
+#             pass
+
+#     sys.stdout=Unbuffered(filename)
+
+# print_to_file('log.txt')
+
+
+
+print("Should be logged & go to screen")
 
 # Initialise fluid and numerical parameters
 
@@ -120,6 +190,8 @@ with tab0:
     # TODO: Plot |F(x)| convergence - pull values out of st_redirect
 
     # out_filepath = f"{Path.cwd()}/output/optim-solver-out.txt"
+import io
+from contextlib import redirect_stdout
 
 
 with tab1:
@@ -129,22 +201,24 @@ with tab1:
     if run_calc := st.button("Run calculation"):
         with st.spinner("Finding optimal solution:"):
             st.markdown("Solver output (Newton-Krylov)")
-            #to_out = st.empty()
             to_out = st.empty()
-            st.session_state["to_out"] = to_out
-            with rd.stdout(to=to_out, format='text', max_buffer=1000):
 
-                # Solve non-linear equation
-                try:
-                    solution = solve_model(opt_func, tw_initial, fluid, model, d,
-                                        beta_phiw, beta_psi_charge)
-                    tw_solution = solution.x
-                    # tmp = to_out._form_data()  # attempt to get contents from 
-                    # st.write(tmp)
-                    # print(st.session_state["to_out"].text())
-                except ValueError as err_message:
-                    solution = None
-                    st.info(err_message)
+            #f = io.StringIO()
+            #with redirect_stdout(f):
+            with rd.stdout(to=to_out, to_file=None, format='text', max_buffer=1000):
+
+                    # Solve non-linear equation
+                    try:
+                        solution = solve_model(opt_func, tw_initial, fluid, model, d,
+                                            beta_phiw, beta_psi_charge)
+                        tw_solution = solution.x
+                    except ValueError as err_message:
+                        solution = None
+                        st.info(err_message)
+
+            #out = f.getvalue()
+            #st.write(f"All output: {out}")
+            #out_file.close()
 
         if solution is not None:
             st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
