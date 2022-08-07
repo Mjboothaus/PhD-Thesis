@@ -101,8 +101,8 @@ gcr-setup:
 gcr-deploy:
 	#!/usr/bin/env bash
 	start=`date +%s`
-	gcloud run deploy --source . {{project_name}} --region {{gcp_region}} --platform managed --allow-unauthenticated --memory 4Gi --timeout=900 --cpu=4 --concurrency=10
-	# --image
+	gcloud run deploy --source . {{project_name}} --region {{gcp_region}} --memory 4Gi --timeout=900 --cpu=4 --concurrency=10
+	# --image --platform managed --allow-unauthenticated
 	# gcloud run deploy {{project_name}} --image [IMAGE]
 	end=`date +%s`
 	runtime=$((end-start))
