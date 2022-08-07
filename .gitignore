@@ -1,5 +1,5 @@
 .DS_Store
-*.dat
+#*.dat
 .vscode/
 !data/nrcg-cr-approx-maybe.dat
 

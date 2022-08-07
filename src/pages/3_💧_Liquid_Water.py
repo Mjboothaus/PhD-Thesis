@@ -4,6 +4,8 @@ from sidebar import create_sidebar
 
 # from helper_functions import read_render_markdown_file
 
+st.markdown("Liquid water at a charged interface: Coming soon...")
+
 fluid_symbol = "h2o"
 
 fluid = set_fluid_parameters(fluid_symbol)
@@ -14,4 +16,3 @@ if fluid is not None:
 else:
     st.error("Invalid choice of fluid")
 
-st.markdown("Liquid water at a charged interface: Coming soon...")
