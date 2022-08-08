@@ -236,4 +236,4 @@ def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_ps
     tw_args = beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z, n_component, n_point, z_index
 
     return optim.root(opt_func, tw_initial, args=tw_args, method="krylov", jac=None, 
-            tol=tolerance, callback=None, options={"disp": True, "maxiter": max_iteration})
+            callback=None, options={"disp": True, "maxiter": max_iteration, "fatol": tolerance})
