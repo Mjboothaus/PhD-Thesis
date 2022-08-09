@@ -3,7 +3,11 @@ import streamlit as st
 from helper_functions import read_render_markdown_file
 from pathlib import Path
 
-tab0, tab1, tab2 = st.tabs(["Page 1", "Page 2", "Resources"])
+tab_intro, tab0, tab1, tab2 = st.tabs(["Introduction", "Page 1", "Page 2", "Resources"])
+
+with tab_intro:
+    read_render_markdown_file("docs/what_problem.md", "streamlit")
+
 
 with tab0:
     read_render_markdown_file("docs/app_theory.md", "streamlit")
