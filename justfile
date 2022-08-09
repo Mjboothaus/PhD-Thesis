@@ -112,16 +112,13 @@ gcr-deploy:
 
 gcr-list-deployed-url:
     gcloud run services list --platform managed | awk 'NR==2 {print $4}'
-
+    # See: https://stackoverflow.com/questions/59423245/how-to-get-or-generate-deploy-url-for-google-cloud-run-services
 
 gcr-app-disable:   # deleting project does not delete app
     gcloud app versions list
 
+gcr-list-projects:
+	gcloud projects list
 
 #TODO: 
 # gloud init - other stuff?
-# gcloud projects list
-
-
-# Resources:
-# - https://stackoverflow.com/questions/59423245/how-to-get-or-generate-deploy-url-for-google-cloud-run-services

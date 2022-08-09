@@ -83,10 +83,10 @@ def fluid_specific_parameters(symbol):
                                           "cap_d": np.array([24.0, 73.0, 250.0]) * 1e-19})})
     elif symbol == "lj1":
         other_params = dict(
-            {"lj1": dict({"epsilon_lj": np.array([1.0]), "sigma_lj": np.array([0.5])})})
+            {"lj1": dict({"epsilon_lj": np.array([0.1]), "sigma_lj": np.array([0.5])})})
 
     elif symbol == "lj2":
         other_params = dict({"lj2": dict({"epsilon_lj": np.array(
-            [1.0, 1.0, 1.0]), "sigma_lj": np.array([0.5, 0.5, 0.5])})})
+            [0.1, 0.1, 0.1]), "sigma_lj": np.array([0.5, 0.5, 0.5])})})
 
     return other_params

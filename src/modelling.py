@@ -81,11 +81,12 @@ def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, eps
 
 def calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r):
     u = np.zeros((n_point, n_pair))
-    for i in range(n_component):
-        for j in range(i, n_component):
-            l = calc_l_index(i, j)
-            u[1:, l] = 4.0 * epsilon_lj[l] * \
-                ((sigma_lj[l]/r[1:])**12 - (sigma_lj[l]/r[1:])**6)
+    for ir, _ in enumerate(r[1:]):
+        for i in range(n_component):
+            for j in range(i, n_component):
+                l = calc_l_index(i, j)
+                u[ir, l] = 4.0 * epsilon_lj[l] * ((sigma_lj[l]/r[ir])**12 - (sigma_lj[l]/r[ir])**6)
+                # u[1:, l] = 4.0 * epsilon_lj[l] * ((sigma_lj[l]/r[1:])**12 - (sigma_lj[l]/r[1:])**6)
     return u
 
 

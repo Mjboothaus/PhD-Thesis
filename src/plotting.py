@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import matplotlib.pyplot as plt
 
 
 def make_simple_plot(x, y, xlabel=None, ylabel=None, title=None, xliml=None, yliml=None, output="jupyter"):
