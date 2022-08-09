@@ -1,6 +1,9 @@
 .DS_Store
 .vscode/
 
+src/pyoz/
+output/
+
 #*.dat
 !data/nrcg-cr-approx-maybe.dat
 
