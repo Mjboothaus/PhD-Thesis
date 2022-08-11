@@ -4,7 +4,7 @@
 
 TL;DR
 
-[https://phd.databooth.com.au](https://phd.databooth.com.au)
+[https://phd.databooth.com.au](https://phd.databooth.com.au) - Streamlit web app deployed via Google Cloud Run.
 
 ## Background
 
