@@ -1,3 +1,6 @@
+# See https://stackoverflow.com/questions/68673221/warning-running-pip-as-the-root-user
+# for enhancements to Dockerfile e.g. not running as root & in venv
+
 #FROM python:3.9.12
 FROM python:3.10-slim-bullseye
 RUN apt-get update && apt-get install -y
@@ -15,7 +18,7 @@ RUN pip install -r requirements.txt
 COPY docs app/docs
 COPY src app/src
 COPY data app/data
-COPY output app/output
+#COPY output app/output
 WORKDIR /app
 
 # run it!

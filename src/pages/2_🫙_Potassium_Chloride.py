@@ -146,7 +146,7 @@ with tab1:
         with st.spinner("__Finding optimal solution:__"):
             st.markdown("Solver output (Newton-Krylov algorithm)")
             to_out = st.empty()
-            solver_output_filepath = f"{Path.cwd()}/output/solver_out.txt"
+            solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
             with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
                     # Solve non-linear equation
                     try:

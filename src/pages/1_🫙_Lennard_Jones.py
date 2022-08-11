@@ -54,6 +54,9 @@ r = z    # r on same discretisation as z
 beta_u = fluid.beta * \
     calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r)
 
+ur = calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r)
+
+
 beta_phiw = fluid.beta * calc_phiw(z, n_point, n_component)
 beta_psi = 0.0
 beta_psi_charge = -beta_psi * fluid.charge
@@ -107,12 +110,12 @@ with tab0:
 
     r_plots = dict({"c_short": dict({"fn_label": "c_short", "plot_fn": c_short,
                                     "plot_name": "c_short(r)"})})
-    r_plots["beta*u"] = dict({"fn_label": "beta u", "plot_fn": beta_u, "plot_name": r'$\beta u(r)$',
-                            "xlim": [0, 10], "ylim": [0, 10000]})
+    r_plots["u(r)"] = dict({"fn_label": "u(r)", "plot_fn": ur, "plot_name": r'u(r)',
+                            "xlim": [0, 10], "ylim": [-1, 10]})
     r_plots["f1"] = dict({"fn_label": "f1", "plot_fn": f1,
-                        "plot_name": "f1(r)",  "xlim": [0, 10], "ylim": None})
+                        "plot_name": "f1(z)",  "xlim": [0, 10], "ylim": None})
     r_plots["f2"] = dict({"fn_label": "f2", "plot_fn": f2,
-                        "plot_name": "f2(r)",  "xlim": [0, 10], "ylim": None})
+                        "plot_name": "f2(z)",  "xlim": [0, 10], "ylim": None})
 
     r_plots["f1_integrand"] = dict({"fn_label": "f1_integrand", "plot_fn": f1_integrand,
                                 "plot_name": "f1_integrand(r)",  "xlim": [0, 10], "ylim": None})
@@ -128,7 +131,7 @@ with tab1:
         with st.spinner("__Finding optimal solution:__"):
             st.markdown("Solver output (Newton-Krylov algorithm)")
             to_out = st.empty()
-            solver_output_filepath = f"{Path.cwd()}/output/solver_out.txt"
+            solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
             with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
                     # Solve non-linear equation
                     try:
