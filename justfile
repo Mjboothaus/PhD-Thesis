@@ -1,9 +1,10 @@
 # Docs: https://just.systems/man/en/
 
-project_name := "michael-booth-phd-thesis"
+project_name := "mjboothaus-phd-thesis"
 app_py := "src/Main.py"
 server_port := "8080"
-gcp_region := "asia-southeast2"
+gcp_region := "australia-southeast1"   
+# region formerly # asia-southeast2
 input := "lj/nrcg-lj-1comp.in"
 
 set dotenv-load
@@ -91,11 +92,12 @@ container:
 # Still in progress - still not STP
 gcr-setup:
     gcloud components update
-    # gcloud config set region asia-southeast2
     gcloud projects create {{project_name}}
     gcloud beta billing projects link {{project_name}} --billing-account $BILLING_ACCOUNT_GCP
-    gcloud services enable cloudbuild.googleapis.com
     gcloud config set project {{project_name}}
+	gcloud services enable cloudbuild.googleapis.com
+	gcloud config set compute/region australia-southeast1  
+
 
 
 # Deploy container to Google Cloud (Cloud Run) - timed
