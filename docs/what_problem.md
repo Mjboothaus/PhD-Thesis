@@ -12,7 +12,7 @@ container.
 The structure of a model of water at a perfectly flat, charged or uncharged,
 interface is one of the topics considered in this thesis. For example, some of the structural
 quantities calculated in this work are:
-1. the normalized oxygen and hydrogen density profiles, $g_{wO}(z)$ and $g_{wH}(z)$, which are displayed in the upper panel of Figure 1.1; and
+1. the normalized oxygen and hydrogen density profiles, $g_{wO}(z)$ and $g_{wH}(z)$, which are displayed in the upper panel of Figure 1.1 of the thesis hard-copy; and
 2. the mean electrostatic potential (z) (lower panel of Figure 1.1). 
 
 As will be seen
