@@ -95,9 +95,9 @@ gcr-setup:
     gcloud projects create {{project_name}}
     gcloud beta billing projects link {{project_name}} --billing-account $BILLING_ACCOUNT_GCP
     gcloud config set project {{project_name}}
-	gcloud services enable cloudbuild.googleapis.com
-	gcloud config set compute/region australia-southeast1  
-
+    gcloud services enable cloudbuild.googleapis.com
+    gcloud services enable run.googleapis.com
+    gcloud config set compute/region australia-southeast1  
 
 
 # Deploy container to Google Cloud (Cloud Run) - timed
@@ -105,12 +105,13 @@ gcr-setup:
 gcr-deploy:
 	#!/usr/bin/env bash
 	start=`date +%s`
+	# add allow unauthenticated flag to command
 	gcloud run deploy --source . {{project_name}} --region {{gcp_region}} --memory 4Gi --timeout=900 --cpu=4 --concurrency=10
 	# --image --platform managed --allow-unauthenticated
 	# gcloud run deploy {{project_name}} --image [IMAGE]
 	end=`date +%s`
 	runtime=$((end-start))
-	echo $runtime
+	echo $runtime seconds to deploy
 
 gcr-list-deployed-url:
     gcloud run services list --platform managed | awk 'NR==2 {print $4}'
