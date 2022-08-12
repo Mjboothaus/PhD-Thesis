@@ -1,5 +1,7 @@
 import pytest
-from src.modelling import *
+from ..parameters import set_fluid_parameters
+from ..modelling import calc_beta, calc_charge, calc_epsilon, calc_kappa, calc_rho, calc_l_index
+from scipy.constants import Boltzmann
 
 def test_calc_l_index():
     n_component = 2
