@@ -1,14 +1,13 @@
-# src/oo_refactoring/base_streamlit_app.py
 from pathlib import Path
 from time import sleep
 
 import streamlit as st
 
-from .helper_functions import calc_hw, load_and_interpolate_cr, solve_model
-from .numerics import set_num_parameters
-from .parameters import fluid_specific_parameters, set_fluid_parameters
-from .plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
-from .sidebar import create_sidebar
+from oo_refactoring.modelling import calc_hw, load_and_interpolate_cr, solve_model
+from numerics import set_num_parameters
+from parameters import fluid_specific_parameters, set_fluid_parameters
+from plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
+from sidebar import create_sidebar
 
 
 class BaseStreamlitApp:

@@ -1,4 +1,3 @@
-# src/oo_refactoring/lennard_jones_app.py
 from pathlib import Path
 from time import sleep
 
@@ -6,8 +5,8 @@ import numpy as np
 import st_redirect as rd
 import streamlit as st
 
-from .base_streamlit_app import BaseStreamlitApp
-from .helper_functions import (
+from base_streamlit_app import BaseStreamlitApp
+from modelling import (
     calc_beta,
     calc_charge,
     calc_charge_pair,
@@ -24,7 +23,7 @@ from .helper_functions import (
     load_and_interpolate_cr,
     solve_model,
 )
-from .plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
+from plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
 
 
 class LennardJonesApp(BaseStreamlitApp):

@@ -1,5 +1,4 @@
-# src/oo_refactoring/potassium_chloride_app.py
-from .base_streamlit_app import BaseStreamlitApp
+from base_streamlit_app import BaseStreamlitApp
 
 
 class PotassiumChlorideApp(BaseStreamlitApp):
