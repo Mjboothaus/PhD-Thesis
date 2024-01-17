@@ -1,5 +1,5 @@
-# src/modelling.py
 from dataclasses import dataclass
+
 import numpy as np
 import scipy.optimize as optim
 from scipy import interpolate
