@@ -1,0 +1,63 @@
+[lennard_jones]
+name = "Lennard-Jones Fluid"
+symbol = "lj"
+component = ["LJ"]
+valence = [0.0]
+# charge = [0.0]
+temperature = 298.15
+concentration = [0.5]
+epsilon_r = 1.0
+index = 0
+# charge_pair = [0.0]
+# rho = [0.0]
+# beta = 0.0
+# epsilon = 0.0
+cr_filename = "lj-cr.data"
+
+[potassium_chloride]
+name = "Potassium Chloride"
+symbol = "kcl"
+component = ["K", "Cl"]
+valence = [1.0, -1.0]
+# charge = [1.0, -1.0]  # Placeholder values, actual charge will be calculated
+temperature = 298.15
+concentration = [1.0, 1.0]
+epsilon_r = 78.3
+index = 1
+# charge_pair = [0.0]  # Placeholder values, actual charge_pair will be calculated
+# rho = [0.0]  # Placeholder values, actual rho will be calculated
+# beta = 0.0  # Placeholder values, actual beta will be calculated
+# epsilon = 0.0  # Placeholder values, actual epsilon will be calculated
+cr_filename = "kcl-cr.data"
+
+[liquid_water]
+name = "Liquid Water"
+symbol = "$H_{2}O$"
+component = ["H2O"]
+valence = [1.0, -2.0]  # Water is neutral, but this is a placeholder for the data structure
+# charge = [1.0, -2.0]  # Placeholder values, actual charge will be calculated
+temperature = 298.15
+concentration = [55.5]  # Approximate molar "concentration" of pure water
+epsilon_r = 80.1
+index = 2
+# charge_pair = [0.0]  # Placeholder values, actual charge_pair will be calculated
+# rho = [0.0]  # Placeholder values, actual rho will be calculated
+# beta = 0.0  # Placeholder values, actual beta will be calculated
+# epsilon = 0.0  # Placeholder values, actual epsilon will be calculated
+cr_filename = "h2o-cr.data"
+
+[2-2_electrolyte]
+name = "2-2 Aqueous Electrolyte"
+symbol = "2-2"
+component = ["Cation2+", "Anion2-"]
+valence = [2.0, -2.0]
+# charge = [2.0, -2.0]  # Placeholder values, actual charge will be calculated
+temperature = 298.15
+concentration = [0.1, 0.1]  # Example concentrations
+epsilon_r = 78.3
+index = 3
+# charge_pair = [0.0]  # Placeholder values, actual charge_pair will be calculated
+# rho = [0.0]  # Placeholder values, actual rho will be calculated
+# beta = 0.0  # Placeholder values, actual beta will be calculated
+# epsilon = 0.0  # Placeholder values, actual epsilon will be calculated
+cr_filename = "2-2-electrolyte-cr.data"

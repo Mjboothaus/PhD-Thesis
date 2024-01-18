@@ -17,48 +17,39 @@ class Model:
     f2: np.array
 
 
-class PotentialCalculations:
+class ModelManager:
+    @staticmethod
+    def initialize_model(fluid):
+        # Logic to initialize the model based on the fluid's properties
+        z = np.linspace(0, fluid.z_cutoff, fluid.n_point)
+        z_index = np.arange(fluid.n_point)
+        hw = np.zeros_like(z)  # Assuming hw is initialized to zeros
+        c_short = np.zeros_like(z)  # Assuming c_short is initialized to zeros
+        f1 = np.zeros_like(z)  # Assuming f1 is initialized to zeros
+        f2 = np.zeros_like(z)  # Assuming f2 is initialized to zeros
+
+        model = Model(z=z, z_index=z_index, hw=hw, c_short=c_short, f1=f1, f2=f2)
+        # ... initialize other attributes if necessary ...
+        return model
+
+    @staticmethod
+    def calculate_interactions(fluid, model):
+        # Logic to calculate interactions
+        # This is a placeholder for the actual interaction calculations
+        # ... calculation logic ...
+        # Example: model.hw = some_function(fluid, model.z)
+        pass
+
     @staticmethod
     def calc_beta(temperature):
+        # Calculate the thermodynamic beta
         return 1.0 / (Boltzmann * temperature)
 
     # ... other static methods for calculations ...
-
-
-class Solver:
+    # Example: method to calculate some property of the model
     @staticmethod
-    def solve_model(
-        opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge
-    ):
-        charge_pair = fluid.charge_pair
-        n_component = fluid.n_component
-        rho = fluid.rho
-        f1 = model.f1
-        f2 = model.f2
-        z = model.z
-        z_index = model.z_index
-        n_point = discrete.n_point
-        tolerance = discrete.tolerance
-        max_iteration = discrete.max_iteration
-        tw_args = (
-            beta_phiw,
-            beta_psi_charge,
-            charge_pair,
-            rho,
-            f1,
-            f2,
-            z,
-            n_component,
-            n_point,
-            z_index,
-        )
+    def calculate_property(model, parameter):
+        # ... calculation logic for the property ...
+        pass
 
-        return optim.root(
-            opt_func,
-            tw_initial,
-            args=tw_args,
-            method="krylov",
-            jac=None,
-            callback=None,
-            options={"disp": True, "maxiter": max_iteration, "fatol": tolerance},
-        )
+    # ... other static methods for calculations ...
