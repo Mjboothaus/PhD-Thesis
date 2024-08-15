@@ -4,6 +4,14 @@ import streamlit as st
 
 from helper_functions import read_render_markdown_file
 
+import sys
+from pathlib import Path
+
+# Add the src directory to sys.path to allow for module resolution
+sys.path.append(str(Path(__file__).resolve()))
+
+
+
 APP_TITLE = "Charged fluids near interfaces"
 SUB_TITLE = "Integral Equation Theory"
 

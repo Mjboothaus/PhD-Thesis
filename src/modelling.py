@@ -6,7 +6,7 @@ import scipy.optimize as optim
 from scipy import interpolate
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
-from streamlit import cache
+from streamlit import cache_data
 
 
 @dataclass
@@ -81,12 +81,17 @@ def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, eps
 
 def calc_u_lj(epsilon_lj, sigma_lj, n_point, n_component, n_pair, r):
     u = np.zeros((n_point, n_pair))
-    for ir, _ in enumerate(r[1:]):
+    
+    # Handle r[0] separately
+    u[0, :] = np.inf  # Set to infinity or another appropriate value
+    
+    # Process the rest of the points
+    for ir in range(1, n_point):
         for i in range(n_component):
             for j in range(i, n_component):
                 l = calc_l_index(i, j)
                 u[ir, l] = 4.0 * epsilon_lj[l] * ((sigma_lj[l]/r[ir])**12 - (sigma_lj[l]/r[ir])**6)
-                # u[1:, l] = 4.0 * epsilon_lj[l] * ((sigma_lj[l]/r[1:])**12 - (sigma_lj[l]/r[1:])**6)
+    
     return u
 
 
@@ -101,7 +106,7 @@ def calc_kappa(beta, charge, rho, epsilon):
                    sum(np.multiply(charge**2, rho)))
 
 
-@cache
+@cache_data
 def calc_phiw(z, n_point, n_component):
     phiw = np.zeros((n_point, n_component))
     capital_a = 16.274e-19  # joules
@@ -111,7 +116,7 @@ def calc_phiw(z, n_point, n_component):
     return phiw
 
 
-@cache
+@cache_data
 def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     cr = np.zeros((n_point, n_pair))
     for l in range(n_pair):
@@ -123,16 +128,16 @@ def interpolate_cr(r_in, cr_in, n_point, n_pair, z):
     return cr, r
 
 
-@cache
+@cache_data
 def load_and_interpolate_cr(cr_path, n_point, n_pair, z):
-    cr_df = pd.read_csv(cr_path, header=None, delim_whitespace=True)
+    cr_df = pd.read_csv(cr_path, header=None, sep='\s+')
     cr_df.set_index(0, inplace=True)
     r = cr_df.index.to_numpy()
     cr = cr_df.to_numpy()
     return interpolate_cr(r, cr, n_point, n_pair, z)
 
 
-@cache
+@cache_data
 def calc_f1_integrand(c_short, n_pair, z, n_point):
     f1_integrand = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
@@ -140,7 +145,7 @@ def calc_f1_integrand(c_short, n_pair, z, n_point):
     return f1_integrand
 
 
-@cache
+@cache_data
 def calc_f2_integrand(c_short, n_pair, z, n_point):
     f2_integrand = np.zeros((n_point, n_pair))
     for ij in range(n_pair):
@@ -148,7 +153,7 @@ def calc_f2_integrand(c_short, n_pair, z, n_point):
     return f2_integrand
 
 
-@cache
+@cache_data
 def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
     integrand = np.zeros(n_point)
     f1 = np.zeros((n_point, n_pair))
@@ -159,7 +164,7 @@ def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
     return f1
 
 
-@cache
+@cache_data
 def integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z):
     integrand = np.zeros(n_point)
     f2 = np.zeros((n_point, n_pair))

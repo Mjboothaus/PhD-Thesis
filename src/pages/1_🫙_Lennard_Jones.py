@@ -12,7 +12,7 @@ from sidebar import create_sidebar
 
 # Initialise fluid and numerical parameters
 
-fluid_symbol = "lj2"
+fluid_symbol = "lj1"
 
 fluid = set_fluid_parameters(fluid_symbol)
 if fluid is not None:
@@ -20,6 +20,7 @@ if fluid is not None:
 else:
     st.error("Invalid choice of fluid")
 
+# pyoz-cr-lj-equal-2-comp.data
 other_params = fluid_specific_parameters(fluid_symbol)
 
 epsilon_lj = other_params[fluid_symbol]["epsilon_lj"]
@@ -79,7 +80,6 @@ except Exception as e:
     st.markdown("##")
     st.exception(e)
     sleep(10.0)
-    st.experimental_rerun()
 
 f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z)
 f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z)

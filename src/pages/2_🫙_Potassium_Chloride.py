@@ -90,7 +90,6 @@ except Exception as e:
     st.markdown("##")
     st.exception(e)
     sleep(10.0)
-    st.experimental_rerun()
 
     #c_short = c_short + c_long
 
