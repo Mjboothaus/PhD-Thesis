@@ -1,7 +1,8 @@
-# src/parameters.py
 import toml
 from dataclasses import dataclass
 import numpy as np
+from pathlib import Path
+from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 
 
 @dataclass
@@ -25,16 +26,19 @@ class Fluid:
 
 
 class FluidInitialiser:
-    def __init__(self, config_path):
+    def __init__(
+        self,
+        config_path="/Users/mjboothaus/code/github/mjboothaus/PhD-Thesis/src/oo_refactoring/fluid_parameters.toml",
+    ):
         self.config_path = config_path
         self.fluids = self.load_fluids()
 
     def load_fluids(self):
         with open(self.config_path, "r") as f:
-            try:
-                config = toml.load(f)
-            except Exception:
-                raise FileNotFoundError(f"{self.config_path} not found.")
+            # try:
+            config = toml.load(f)
+            # except:
+            #    raise FileNotFoundError(f"{Path(self.config_path).resolve().as_posix()} not found.")
 
         fluids = {}
         for fluid_name, attributes in config.items():
@@ -90,7 +94,7 @@ class FluidInitialiser:
             "charge": charge.tolist(),
             "charge_pair": charge_pair.tolist(),
         }
-        with open(self.config_path, "a") as f:
+        with open(self.config_path, "w") as f:
             f.write(f"\n# Derived values for {fluid_name} - for info only\n")
             toml.dump({fluid_name: derived_data}, f)
 

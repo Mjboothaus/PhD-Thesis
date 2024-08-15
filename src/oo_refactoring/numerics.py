@@ -15,24 +15,33 @@ class DiscretisationScheme:
     tolerance: float
     max_iteration: int
 
+    #     # Set up the spatial discretization
+    #     z = np.linspace(0.0, self.z_cutoff, self.n_point)
+    #     z_index = np.arange(0, self.n_point, dtype=int)
+    #     wall_zeros = np.zeros((self.n_point, self.n_component))
+    #     fluid_zeros = np.zeros((self.n_point, self.n_pair))
+
 
 class NumericsManager:
-    self.n_point = n_point
-    self.z_cutoff = z_cutoff
-    self.n_component = n_component
-    self.n_pair = n_pair
-    self.tolerance = tolerance
-    self.max_iteration = max_iteration
-    self.grid_size = self.z_cutoff / (self.n_point - 1)
-    self.discretisation = DiscretisationScheme(
-        self.n_point,
-        self.n_component,
-        self.n_pair,
-        self.z_cutoff,
-        self.grid_size,
-        self.tolerance,
-        self.max_iteration,
-    )
+    def __init__(
+        self, n_point, z_cutoff, n_component, n_pair, tolerance, max_iteration
+    ):
+        self.n_point = n_point
+        self.z_cutoff = z_cutoff
+        self.n_component = n_component
+        self.n_pair = n_pair
+        self.tolerance = tolerance
+        self.max_iteration = max_iteration
+        self.grid_size = self.z_cutoff / (self.n_point - 1)
+        self.discretisation = DiscretisationScheme(
+            self.n_point,
+            self.n_component,
+            self.n_pair,
+            self.z_cutoff,
+            self.grid_size,
+            self.tolerance,
+            self.max_iteration,
+        )
 
     @staticmethod
     def perform_calculation(model, parameters):

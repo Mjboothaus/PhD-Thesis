@@ -1,4 +1,3 @@
-# src/oo_refactoring/display.py
 import streamlit as st
 
 

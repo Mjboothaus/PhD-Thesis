@@ -6,6 +6,7 @@ import st_redirect as rd
 import streamlit as st
 
 from base_streamlit_app import BaseStreamlitApp
+
 from modelling import (
     calc_beta,
     calc_charge,

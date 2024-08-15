@@ -1,18 +1,23 @@
-from oo_refactoring.modelling import ModelManager
-from oo_refactoring.numerics import NumericsManager
-from oo_refactoring.display import DisplayManager
+from modelling import ModelManager
+from numerics import NumericsManager
+from display import DisplayManager
 import streamlit as st
+from sidebar import Sidebar
 
 
 class BaseStreamlitApp:
     def __init__(self, fluid):
         self.fluid = fluid
-        self.model = None
+        self.model = None  # ModelManager()
+        self.numerics = (
+            None  # NumericsManager() - these depend on Sidebar values - have defaults
+        )
         self.results = None
 
     def run(self):
         # Set up the Streamlit interface
-        st.subheader(f"{self.fluid.name} near an interface")
+        st.subheader(f"{self.fluid} near an interface")
+        Sidebar.create_sidebar(self.fluid)
 
         # Set up tabs for different sections of the app
         tab_bulk, tab_calc, tab_results = st.tabs(

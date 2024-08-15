@@ -16,3 +16,11 @@ As part of the submission I included some electronic resources at the following 
 Alas the University of Sydney (School of Chemistry) didn't seem to prioritise the longevity of these materials (I did ask others if they had a copy of my `FORTRAN` code, however to date nothing has materialised.) 
 
 ![Online Resources cover page](https://github.com/Mjboothaus/PhD-Thesis/blob/deb94173c8ee3b2591c19219e2ea813f33181ae1/docs/Thesis_OnlineResources_Cover.jpg)
+
+## Bulk fluid correlation functions
+
+The code for this was obtained from this project http://pyoz.vrbka.net which now seems to be discontinued.
+
+and a fork is available here: https://github.com/ctk3b/pyoz.
+
+I also found another (parallel) repo here: https://github.com/elvissoares/PyOZ (untested).

@@ -15,4 +15,3 @@ if fluid is not None:
     st.write(fluid)
 else:
     st.error("Invalid choice of fluid")
-
