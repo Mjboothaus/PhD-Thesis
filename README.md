@@ -24,3 +24,11 @@ The code for this was obtained from this project http://pyoz.vrbka.net which now
 and a fork is available here: https://github.com/ctk3b/pyoz.
 
 I also found another (parallel) repo here: https://github.com/elvissoares/PyOZ (untested).
+
+## TODOs
+
+- This is still a work-in-progress - I think the LJ fluids work ok - but the charged fluids should have short-range correlations that approach zero (which is currently not the case).
+- I have made an attempt at an "OO-refactoring" but I think this is only partial.
+- The automatic wiring-in of the bulk fluid code would also be ideal.
+- I think the bulk (and maybe singlet OZ) code can probably be simplified - I think it uses far from ideal discrete data structures.
+- The capture of the solver text can possibly use a now in-built Streamlit widget but this is untested (can't find it as yet - maybe still to be released - 1.37 currently).
