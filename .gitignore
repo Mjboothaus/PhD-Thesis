@@ -4,6 +4,8 @@
 src/pyoz/
 output/
 
+data/solver_out.txt
+
 #*.dat
 !data/nrcg-cr-approx-maybe.dat
 
