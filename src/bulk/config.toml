@@ -1,0 +1,25 @@
+# pyoz_config.toml
+
+[general]
+version = "0.1.8"
+max_iter = 1000
+convergence_crit = 1e-6
+max_dsqn = 1e-3
+
+[system]
+ncomponents = 2
+npoints = 1024
+deltar = 0.05
+deltak = 0.1
+
+[output]
+U_ij_write = true
+U_ij_name = "potential.dat"
+
+[solver]
+do_nr = false
+mix_param = 0.5
+nr_convergence_factor = 0.1
+
+[graphics]
+do_graphics = false
