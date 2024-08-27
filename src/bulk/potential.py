@@ -21,9 +21,7 @@ class PotentialCalculator:
         U_ij = np.zeros((self.system["ncomponents"], self.system["ncomponents"], self.config["npoints"]))
         U_ij_individual = {}
         dU_ij_individual = {}
-        U_discontinuity = np.zeros(
-            (self.system["ncomponents"], self.system["ncomponents"], self.config["npoints"])
-        )
+        U_discontinuity = np.zeros_like(U_ij)
         U_erf_ij = {"real": np.zeros_like(U_ij), "fourier": np.zeros_like(U_ij)}
 
         for potential_type in self.system["potential"]:
@@ -47,16 +45,15 @@ class PotentialCalculator:
         U_discontinuity: np.ndarray,
         r: np.ndarray,
     ):
-        U_ij_individual["hs"] = np.zeros_like(U_ij)
-        dU_ij_individual["hs"] = np.zeros_like(U_ij)
+        # Vectorized approach: Use broadcasting to calculate sigma for all pairs
+        sigma = 0.5 * (self.parameters["sigma"][:, None] + self.parameters["sigma"][None, :])
 
-        for i in range(self.system["ncomponents"]):
-            for j in range(i, self.system["ncomponents"]):
-                sigma = 0.5 * (self.parameters["sigma"][i] + self.parameters["sigma"][j])
-                U_ij_individual["hs"][i, j] = np.where(r < sigma, np.inf, 0)
-                U_ij_individual["hs"][j, i] = U_ij_individual["hs"][i, j]
-                U_discontinuity[i, j] = np.where(r < sigma, np.inf, 0)
-                U_discontinuity[j, i] = U_discontinuity[i, j]
+        # Create a mask for r < sigma
+        mask = r[None, None, :] < sigma[:, :, None]
+
+        # Use the mask to set values
+        U_ij_individual["hs"] = np.where(mask, np.inf, 0)
+        U_discontinuity[:] = U_ij_individual["hs"]  # Use [:] to modify in-place
 
         U_ij += U_ij_individual["hs"]
 
@@ -67,23 +64,18 @@ class PotentialCalculator:
         dU_ij_individual: Dict[str, np.ndarray],
         r: np.ndarray,
     ):
-        U_ij_individual["lj"] = np.zeros_like(U_ij)
-        dU_ij_individual["lj"] = np.zeros_like(U_ij)
+        # Vectorized approach: Use broadcasting to calculate epsilon and sigma for all pairs
+        epsilon = np.sqrt(self.parameters["epsilon"][:, None] * self.parameters["epsilon"][None, :])
+        sigma = 0.5 * (self.parameters["sigma"][:, None] + self.parameters["sigma"][None, :])
 
-        for i in range(self.system["ncomponents"]):
-            for j in range(i, self.system["ncomponents"]):
-                epsilon = np.sqrt(self.parameters["epsilon"][i] * self.parameters["epsilon"][j])
-                sigma = 0.5 * (self.parameters["sigma"][i] + self.parameters["sigma"][j])
+        # Calculate LJ potential for all pairs and distances at once
+        sigma_r = sigma[:, :, None] / r[None, None, :]
+        U_lj = 4 * epsilon[:, :, None] * (sigma_r**12 - sigma_r**6)
+        dU_lj = 4 * epsilon[:, :, None] * (-12 * sigma_r**12 + 6 * sigma_r**6) / r[None, None, :]
 
-                U_lj = 4 * epsilon * ((sigma / r) ** 12 - (sigma / r) ** 6)
-                U_ij_individual["lj"][i, j] = U_lj
-                U_ij_individual["lj"][j, i] = U_lj
-
-                dU_lj = 4 * epsilon * (-12 * (sigma**12 / r**13) + 6 * (sigma**6 / r**7))
-                dU_ij_individual["lj"][i, j] = dU_lj
-                dU_ij_individual["lj"][j, i] = dU_lj
-
-        U_ij += U_ij_individual["lj"]
+        U_ij_individual["lj"] = U_lj
+        dU_ij_individual["lj"] = dU_lj
+        U_ij += U_lj
 
     def _add_coulomb_potential(
         self,
@@ -95,31 +87,30 @@ class PotentialCalculator:
         r: np.ndarray,
         k: np.ndarray,
     ):
-        U_ij_individual["coulomb"] = np.zeros_like(U_ij)
-        dU_ij_individual["coulomb"] = np.zeros_like(U_ij)
+        # Vectorized approach: Calculate q_ij for all pairs
+        q_ij = self.parameters["charge"][:, None] * self.parameters["charge"][None, :]
 
-        for i in range(self.system["ncomponents"]):
-            for j in range(i, self.system["ncomponents"]):
-                q_ij = self.parameters["charge"][i] * self.parameters["charge"][j]
-                U_coulomb = q_ij / r
-                U_ij_individual["coulomb"][i, j] = U_coulomb
-                U_ij_individual["coulomb"][j, i] = U_coulomb
+        # Calculate Coulomb potential for all pairs and distances at once
+        U_coulomb = q_ij[:, :, None] / r[None, None, :]
+        dU_coulomb = -q_ij[:, :, None] / r[None, None, :] ** 2
 
-                dU_coulomb = -q_ij / r**2
-                dU_ij_individual["coulomb"][i, j] = dU_coulomb
-                dU_ij_individual["coulomb"][j, i] = dU_coulomb
+        U_ij_individual["coulomb"] = U_coulomb
+        dU_ij_individual["coulomb"] = dU_coulomb
 
-                U_erf = q_ij * np.erf(self.config["alpha"] * r) / r
-                U_erf_ij["real"][i, j] = U_erf
-                U_erf_ij["real"][j, i] = U_erf
+        # Calculate erf-corrected potentials
+        U_erf = q_ij[:, :, None] * np.erf(self.config["alpha"] * r[None, None, :]) / r[None, None, :]
+        U_erf_ij["real"] = U_erf
 
-                U_erf_fourier = (
-                    4 * np.pi * q_ij * np.exp(-((k / (2 * self.config["alpha"])) ** 2)) / k**2
-                )
-                U_erf_ij["fourier"][i, j] = U_erf_fourier
-                U_erf_ij["fourier"][j, i] = U_erf_fourier
+        U_erf_fourier = (
+            4
+            * np.pi
+            * q_ij[:, :, None]
+            * np.exp(-((k[None, None, :] / (2 * self.config["alpha"])) ** 2))
+            / k[None, None, :] ** 2
+        )
+        U_erf_ij["fourier"] = U_erf_fourier
 
-        U_ij += U_ij_individual["coulomb"]
+        U_ij += U_coulomb
 
     def def_modMayerFunc(
         self,
@@ -128,7 +119,8 @@ class PotentialCalculator:
         U_discontinuity: np.ndarray,
         U_erf_ij_real: np.ndarray,
     ) -> Dict[str, np.ndarray]:
-        modMayerFunc = {
+        # Vectorized approach: Calculate all modified Mayer functions at once
+        return {
             "u_ij": np.exp(-self.constants.beta * U_ij),
             "u_hs": np.exp(-self.constants.beta * U_ij_individual["hs"]),
             "u_lj": np.exp(-self.constants.beta * U_ij_individual["lj"]),
@@ -136,7 +128,6 @@ class PotentialCalculator:
             "u_discontinuity": np.exp(-self.constants.beta * U_discontinuity),
             "u_erf": np.exp(self.constants.beta * U_erf_ij_real),
         }
-        return modMayerFunc
 
 
 # Usage:
