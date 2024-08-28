@@ -1,6 +1,5 @@
-# File: pyoz_potential.py
-
 import numpy as np
+from scipy.special import erf
 from typing import Dict, Tuple, Any
 
 
@@ -45,8 +44,11 @@ class PotentialCalculator:
         U_discontinuity: np.ndarray,
         r: np.ndarray,
     ):
+        # Convert sigma to a NumPy array if it's not already
+        sigma_array = np.array(self.parameters["sigma"])
+
         # Vectorized approach: Use broadcasting to calculate sigma for all pairs
-        sigma = 0.5 * (self.parameters["sigma"][:, None] + self.parameters["sigma"][None, :])
+        sigma = 0.5 * (sigma_array[:, None] + sigma_array[None, :])
 
         # Create a mask for r < sigma
         mask = r[None, None, :] < sigma[:, :, None]
@@ -64,9 +66,13 @@ class PotentialCalculator:
         dU_ij_individual: Dict[str, np.ndarray],
         r: np.ndarray,
     ):
+        # Convert parameters to NumPy arrays
+        epsilon_array = np.array(self.parameters["epsilon"])
+        sigma_array = np.array(self.parameters["sigma"])
+
         # Vectorized approach: Use broadcasting to calculate epsilon and sigma for all pairs
-        epsilon = np.sqrt(self.parameters["epsilon"][:, None] * self.parameters["epsilon"][None, :])
-        sigma = 0.5 * (self.parameters["sigma"][:, None] + self.parameters["sigma"][None, :])
+        epsilon = np.sqrt(epsilon_array[:, None] * epsilon_array[None, :])
+        sigma = 0.5 * (sigma_array[:, None] + sigma_array[None, :])
 
         # Calculate LJ potential for all pairs and distances at once
         sigma_r = sigma[:, :, None] / r[None, None, :]
@@ -87,8 +93,11 @@ class PotentialCalculator:
         r: np.ndarray,
         k: np.ndarray,
     ):
+        # Convert charge to a NumPy array if it's not already
+        charge_array = np.array(self.parameters["charge"])
+
         # Vectorized approach: Calculate q_ij for all pairs
-        q_ij = self.parameters["charge"][:, None] * self.parameters["charge"][None, :]
+        q_ij = charge_array[:, None] * charge_array[None, :]
 
         # Calculate Coulomb potential for all pairs and distances at once
         U_coulomb = q_ij[:, :, None] / r[None, None, :]
@@ -98,14 +107,15 @@ class PotentialCalculator:
         dU_ij_individual["coulomb"] = dU_coulomb
 
         # Calculate erf-corrected potentials
-        U_erf = q_ij[:, :, None] * np.erf(self.config["alpha"] * r[None, None, :]) / r[None, None, :]
+        alpha = self.config["alpha"]
+        U_erf = q_ij[:, :, None] * erf(alpha * r[None, None, :]) / r[None, None, :]
         U_erf_ij["real"] = U_erf
 
         U_erf_fourier = (
             4
             * np.pi
             * q_ij[:, :, None]
-            * np.exp(-((k[None, None, :] / (2 * self.config["alpha"])) ** 2))
+            * np.exp(-((k[None, None, :] / (2 * alpha)) ** 2))
             / k[None, None, :] ** 2
         )
         U_erf_ij["fourier"] = U_erf_fourier
@@ -120,14 +130,20 @@ class PotentialCalculator:
         U_erf_ij_real: np.ndarray,
     ) -> Dict[str, np.ndarray]:
         # Vectorized approach: Calculate all modified Mayer functions at once
-        return {
+        modMayerFunc = {
             "u_ij": np.exp(-self.constants.beta * U_ij),
-            "u_hs": np.exp(-self.constants.beta * U_ij_individual["hs"]),
-            "u_lj": np.exp(-self.constants.beta * U_ij_individual["lj"]),
-            "u_coulomb": np.exp(-self.constants.beta * U_ij_individual["coulomb"]),
             "u_discontinuity": np.exp(-self.constants.beta * U_discontinuity),
             "u_erf": np.exp(self.constants.beta * U_erf_ij_real),
         }
+
+        # Add individual potential contributions
+        for potential_type in ["hs", "lj", "coulomb"]:
+            if potential_type in U_ij_individual:
+                modMayerFunc[f"u_{potential_type}"] = np.exp(
+                    -self.constants.beta * U_ij_individual[potential_type]
+                )
+
+        return modMayerFunc
 
 
 # Usage:
