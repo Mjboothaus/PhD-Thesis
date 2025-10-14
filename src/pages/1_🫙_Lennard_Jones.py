@@ -102,36 +102,29 @@ else:
 
 tab1, tab2, tab0 = st.tabs(["Calculation", "Output graphs", "Bulk properties"])
 
+def update_memory_display(container, initial_mem=None):
+    col1, col2 = container.columns(2)
+    current_mem = get_memory_usage()
+    col1.metric("Current Memory Usage", f"{current_mem:.2f} MB")
+    if initial_mem is not None:
+        col2.metric("Memory Change", f"{current_mem - initial_mem:+.2f} MB")
+
 with tab1:
-    # Set up placeholder containers
-    st.markdown("#")
-    header_container = st.empty()
-    mem_container = st.empty()
-    button_container = st.empty()
-    status_container = st.empty()
-    solver_container = st.empty()
-    result_container = st.empty()
-    plot_container = st.empty()
+    st.markdown("### Newton-Krylov Algorithm Solver")
     
-    def update_memory_display(initial_mem=None):
-        mem_col1, mem_col2 = mem_container.columns(2)
-        current_mem = get_memory_usage()
-        mem_col1.metric("Current Memory Usage", f"{current_mem:.2f} MB")
-        if initial_mem is not None:
-            mem_col2.metric("Memory Change", f"{current_mem - initial_mem:+.2f} MB")
+    # Memory display
+    mem_container = st.container()
+    update_memory_display(mem_container)
     
-    # Initial display setup
-    header_container.markdown("### Newton-Krylov Algorithm Solver")
-    update_memory_display()
-    
-    if run_calc := button_container.button("Run calculation"):
+    # Run calculation button
+    if run_calc := st.button("Run calculation", key="run_calc_btn"):
         initial_memory = get_memory_usage()
         solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
         
         try:
             with st.spinner("Finding optimal solution..."):
-                solver_container.markdown("__Solver progress:__")
-                output_area = solver_container.empty()
+                st.markdown("__Solver progress:__")
+                output_area = st.empty()
                 
                 with rd.stdout(to=output_area, to_file=solver_output_filepath, format="text", max_buffer=10000):
                     solution = solve_model(opt_func, tw_initial, fluid, model, d,
@@ -141,22 +134,22 @@ with tab1:
                 # Update result display
                 result_msg = solution["message"].replace(".", f" after {solution['nit']} iterations.")
                 result_msg = result_msg.replace("A s", "S")
-                result_container.success(result_msg)
+                st.success(result_msg)
                 
                 # Calculate solution and plot convergence
                 hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-                with plot_container:
-                    plot_convergence(solver_output_filepath)
+                st.markdown("__Convergence Plot:__")
+                plot_convergence(solver_output_filepath)
                 
                 # Final memory update
-                update_memory_display(initial_memory)
+                update_memory_display(mem_container, initial_memory)
                 
         except ValueError as err_message:
-            result_container.error("Solver failed to find a solution")
-            solver_container.warning(str(err_message))
+            st.error("Solver failed to find a solution")
+            st.warning(str(err_message))
             hw_solution = hw_initial
             # Still update memory display
-            update_memory_display(initial_memory)
+            update_memory_display(mem_container, initial_memory)
 
 with tab2:
         st.markdown("#")
