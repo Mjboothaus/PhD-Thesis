@@ -42,17 +42,17 @@ if fluid is not None:
     tab1, tab2, tab0 = st.tabs(["Calculation", "Output graphs", "Bulk properties"])
     
     with tab1:
-        solution, hw_solution = create_calculation_tab(
-            fluid=fluid,
-            model=model,
-            d=d,
-            beta_phiw=beta_phiw,
-            beta_psi_charge=beta_psi_charge,
-            n_component=n_component,
-            n_pair=n_pair,
-            z=z,
-            status="in_progress"
-        )
+    solution, hw_solution, calculation_run = create_calculation_tab(
+        fluid=fluid,
+        model=model,
+        d=d,
+        beta_phiw=beta_phiw,
+        beta_psi_charge=beta_psi_charge,
+        n_component=n_component,
+        n_pair=n_pair,
+        z=z,
+        status="in_progress"
+    )
     
     with tab2:
         st.info("Output graphs will be available once the model implementation is complete.")

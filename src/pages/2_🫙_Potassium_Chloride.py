@@ -139,7 +139,7 @@ with tab0:
     plot_bulk_curves(n_component, r, r_plots, fluid.component)
 
 with tab1:
-    solution, hw_solution = create_calculation_tab(
+    solution, hw_solution, calculation_run = create_calculation_tab(
         fluid=fluid,
         model=model,
         d=d,
@@ -153,7 +153,7 @@ with tab1:
 
 with tab2:
         st.markdown("#")
-        if run_calc:
+        if calculation_run:
             if solution is not None:
                 z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
                                                     "plot_fn": hw_solution+1,

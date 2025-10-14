@@ -28,7 +28,7 @@ def create_calculation_tab(
     n_pair: int,
     z: Any,
     status: str = "ready"
-) -> Tuple[Dict, Any]:
+) -> Tuple[Dict, Any, bool]:
     """Create calculation tab with solver functionality.
     
     Args:
@@ -97,4 +97,6 @@ def create_calculation_tab(
             # Still update memory display
             update_memory_display(mem_container, initial_memory)
 
-    return solution, hw_solution
+    # Return solution, hw_solution, and whether calculation was run
+    calculation_run = bool(run_calc)
+    return solution, hw_solution, calculation_run
