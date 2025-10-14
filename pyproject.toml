@@ -6,7 +6,7 @@ authors = [
     {name = "Michael Booth", email = "michael@databooth.com.au"},
 ]
 
-requires-python = "==3.11.*"
+requires-python = ">=3.13"
 readme = "README.md"
 license = {text = "MIT"}
 
@@ -20,6 +20,8 @@ dependencies = [
     "pandas>=2.2.2",
     "matplotlib>=3.9.2",
     "duckdb>=1.0.0",
+    "psutil>=7.1.0",
+    "loguru>=0.7.3",
 ]
 
 [project.optional-dependencies]
