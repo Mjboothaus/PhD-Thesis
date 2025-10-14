@@ -103,37 +103,60 @@ else:
 tab1, tab2, tab0 = st.tabs(["Calculation", "Output graphs", "Bulk properties"])
 
 with tab1:
-    # Run calculation
+    # Set up placeholder containers
     st.markdown("#")
-    mem_col1, mem_col2 = st.columns(2)
-    mem_col1.metric("Current Memory Usage", f"{get_memory_usage():.2f} MB")
+    header_container = st.empty()
+    mem_container = st.empty()
+    button_container = st.empty()
+    status_container = st.empty()
+    solver_container = st.empty()
+    result_container = st.empty()
+    plot_container = st.empty()
     
-    if run_calc := st.button("Run calculation"):
+    def update_memory_display(initial_mem=None):
+        mem_col1, mem_col2 = mem_container.columns(2)
+        current_mem = get_memory_usage()
+        mem_col1.metric("Current Memory Usage", f"{current_mem:.2f} MB")
+        if initial_mem is not None:
+            mem_col2.metric("Memory Change", f"{current_mem - initial_mem:+.2f} MB")
+    
+    # Initial display setup
+    header_container.markdown("### Newton-Krylov Algorithm Solver")
+    update_memory_display()
+    
+    if run_calc := button_container.button("Run calculation"):
         initial_memory = get_memory_usage()
-        with st.spinner("__Finding optimal solution:__"):
-            st.markdown("Solver output (Newton-Krylov algorithm)")
-            to_out = st.empty()
-            solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
-            with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
-                    # Solve non-linear equation
-                    try:
-                        solution = solve_model(opt_func, tw_initial, fluid, model, d,
-                                            beta_phiw, beta_psi_charge)
-                        tw_solution = solution.x
-                    except ValueError as err_message:
-                        solution = None
-                        st.info(err_message)
-        if solution is not None:
-            st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
-            hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-            plot_convergence(solver_output_filepath)
-            
-            # Update memory usage after calculation
-            final_memory = get_memory_usage()
-            mem_col2.metric("Memory Change", f"{final_memory - initial_memory:+.2f} MB")
-        else:
-            st.error("Solver failed to find a solution: see error message above.")
+        solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
+        
+        try:
+            with st.spinner("Finding optimal solution..."):
+                solver_container.markdown("__Solver progress:__")
+                output_area = solver_container.empty()
+                
+                with rd.stdout(to=output_area, to_file=solver_output_filepath, format="text", max_buffer=10000):
+                    solution = solve_model(opt_func, tw_initial, fluid, model, d,
+                                        beta_phiw, beta_psi_charge)
+                    tw_solution = solution.x
+                
+                # Update result display
+                result_msg = solution["message"].replace(".", f" after {solution['nit']} iterations.")
+                result_msg = result_msg.replace("A s", "S")
+                result_container.success(result_msg)
+                
+                # Calculate solution and plot convergence
+                hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+                with plot_container:
+                    plot_convergence(solver_output_filepath)
+                
+                # Final memory update
+                update_memory_display(initial_memory)
+                
+        except ValueError as err_message:
+            result_container.error("Solver failed to find a solution")
+            solver_container.warning(str(err_message))
             hw_solution = hw_initial
+            # Still update memory display
+            update_memory_display(initial_memory)
 
 with tab2:
         st.markdown("#")

@@ -10,15 +10,17 @@ help:
 
 # Development Environment Setup
 
-# Initialize development environment with UV
-init:
-    uv pip install -r requirements.txt
-    uv pip install -r requirements-dev.txt
+# Synchronise environment with pyproject.toml using UV
+sync:
+    uv sync
 
-# Update UV environment
+# Initialize development environment with UV (alias)
+init: sync
+
+# Update UV environment (freeze locks for reference)
 update:
     uv pip freeze > requirements.txt
-    uv pip install -r requirements.txt --upgrade
+    uv pip freeze > requirements-dev.txt
 
 # Run the Streamlit app
 app app_name="src/Main.py":
@@ -61,7 +63,24 @@ container: docker-build docker-run
 
 # Deploy to Render.com
 deploy-render:
+    @echo "📦 Deploying to Render.com..."
+    @echo "📝 Note: Ensure 'render' remote is configured first with:"
+    @echo "   git remote add render <your-render-git-url>"
     git push render main
+
+# Test Docker build and run locally
+test-docker project_name="phd-thesis":
+    @echo "🐳 Building Docker image..."
+    docker build . -t {{project_name}}
+    @echo "🚀 Testing container locally on port 8080..."
+    docker run -d -p 8080:8080 --name {{project_name}}-test {{project_name}}
+    @echo "⏳ Waiting for container to start..."
+    sleep 10
+    @echo "🔍 Testing health endpoint..."
+    curl -f http://localhost:8080 || echo "❌ Health check failed"
+    @echo "🛑 Stopping test container..."
+    docker stop {{project_name}}-test
+    docker rm {{project_name}}-test
 
 # Testing and Quality
 

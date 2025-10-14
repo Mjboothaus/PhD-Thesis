@@ -1,28 +1,30 @@
-# See https://stackoverflow.com/questions/68673221/warning-running-pip-as-the-root-user
-# for enhancements to Dockerfile e.g. not running as root & in venv
+# Modern Dockerfile using UV and Python 3.13
+FROM python:3.13-slim-bookworm
 
-#FROM python:3.9.12
-FROM python:3.10-slim-bullseye
-RUN apt-get update && apt-get install -y
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# remember to expose the port your app'll be exposed on.
-EXPOSE 8080
+# Install UV
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-RUN pip install -U pip
-
-COPY requirements-deploy.txt requirements.txt
-RUN pip install -r requirements.txt
-
-# copy into a directory of its own (so it isn't in the toplevel dir)
-# RUN mkdir -p /app
-COPY docs app/docs
-COPY src app/src
-COPY data app/data
-#COPY output app/output
+# Create app directory
 WORKDIR /app
 
-# run it!
-ENTRYPOINT ["streamlit", "run", "src/Main.py", "--server.port=8080", "--server.address=0.0.0.0"]
-# ENTRYPOINT ["streamlit", "run", "src/Main.py", "--server.port=8080", "--server.address=0.0.0.0", "--server.enableCORS false", "--server.enableXsrfProtection false"]
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
 
-# See https://discuss.streamlit.io/t/deploying-streamlit-on-gcp-cloud-run-problem-when-using-new-multipage-app-feature/26316/3
+# Install dependencies using UV
+RUN uv sync --frozen --no-cache --no-dev
+
+# Copy application code
+COPY docs ./docs
+COPY src ./src
+COPY data ./data
+
+# Expose port
+EXPOSE 8080
+
+# Run the application using UV
+CMD ["uv", "run", "streamlit", "run", "src/Main.py", "--server.port=8080", "--server.address=0.0.0.0"]
