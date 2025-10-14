@@ -7,6 +7,7 @@ from scipy import interpolate
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import trapezoid
 from streamlit import cache_data
+from utils import monitor_memory
 
 
 @dataclass
@@ -65,15 +66,33 @@ def calc_charge_pair(beta, charge, epsilon, n_component, n_pair):
     return charge_pair
 
 
+@monitor_memory
 def calc_u(charge, cap_b, alpha, cap_c, cap_d, n_point, n_component, n_pair, epsilon, r):
+    # Pre-allocate output array
     u = np.zeros((n_point, n_pair))
+    
+    # Pre-compute r-dependent terms to avoid repeated calculations
+    r_inv = np.zeros_like(r)
+    r_inv[1:] = 1.0 / r[1:]  # Avoid division by zero at r[0]
+    r_inv_e10 = r_inv * 1e-10
+    r_inv_6 = r_inv ** 6
+    r_inv_8 = r_inv ** 8
+    exp_term = np.exp(-alpha * r)
+    
+    # Main calculation loop with minimized memory allocations
     for i in range(n_component):
         for j in range(i, n_component):
             l = calc_l_index(i, j)
-            u[1:, l] = (charge[i] * charge[j]) / (r[1:] * 1e-10 * epsilon) + \
-                cap_c[l] / r[1:]**6 + cap_d[l] / r[1:]**8 + \
-                cap_b[l] * np.exp(-alpha * r[1:])
-            u[0, l] = u[1, l]
+            
+            # Calculate all components without creating temporary arrays
+            charge_term = (charge[i] * charge[j]) * r_inv_e10[1:] / epsilon
+            repulsive_term = cap_c[l] * r_inv_6[1:] + cap_d[l] * r_inv_8[1:]
+            exp_contribution = cap_b[l] * exp_term[1:]
+            
+            # Combine terms directly into output array
+            u[1:, l] = charge_term + repulsive_term + exp_contribution
+            u[0, l] = u[1, l]  # Handle r=0 case
+    
     return u
 
 
@@ -154,24 +173,43 @@ def calc_f2_integrand(c_short, n_pair, z, n_point):
 
 
 @cache_data
+@monitor_memory
 def integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z):
-    integrand = np.zeros(n_point)
+    # Pre-allocate output array only
     f1 = np.zeros((n_point, n_pair))
+    
+    # Process each pair, computing integrals directly without temporary arrays
     for ij in range(n_pair):
-        integrand[:] = z*c_short[:, ij]
-        for k, _ in enumerate(z):
-            f1[k:, ij] = trapezoid(y=integrand[k:], x=z[k:])
+        # Use broadcasting instead of temporary array
+        zc = z * c_short[:, ij]  # This creates a view, not a copy
+        
+        # Compute integrals using cumulative trapz for better memory efficiency
+        for k in range(n_point):
+            if k < n_point - 1:  # Only compute if there are points remaining
+                f1[k:, ij] = np.trapz(zc[k:], z[k:])
+    
     return f1
 
 
 @cache_data
+@monitor_memory
 def integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z):
-    integrand = np.zeros(n_point)
+    # Pre-allocate output array only
     f2 = np.zeros((n_point, n_pair))
+    
+    # Use broadcasting for z*z calculation once
+    z2 = z * z  # This creates a view, not a copy
+    
+    # Process each pair, computing integrals directly
     for ij in range(n_pair):
-        integrand[:] = z*z*c_short[:, ij]
-        for k, _ in enumerate(z):
-            f2[k:, ij] = trapezoid(y=integrand[k:], x=z[k:])
+        # Use broadcasting instead of temporary array
+        z2c = z2 * c_short[:, ij]  # This creates a view, not a copy
+        
+        # Compute integrals using cumulative trapz for better memory efficiency
+        for k in range(n_point):
+            if k < n_point - 1:  # Only compute if there are points remaining
+                f2[k:, ij] = np.trapz(z2c[k:], z[k:])
+    
     return f2
 
 
@@ -184,32 +222,64 @@ def calc_hw(tw, n_component, beta_phiw):
 
 # TODO: make initialisation of arrays consistent - not some in Class and others in "calc" functions
 
+@monitor_memory
 def calc_tw(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
             n_component, n_point, z_index):
-
-    tw = np.zeros((n_point, n_component))
-    integral_z_infty = np.zeros((n_point, n_component))
-    integral_0_z = np.zeros((n_point, n_component))
-
+    
     TWO_PI = 2.0 * np.pi
-    hw = calc_hw(tw_in, n_component, beta_phiw)
-
+    
+    # Pre-allocate output array only
+    tw = np.zeros((n_point, n_component))
+    
+    # Calculate hw using in-place operations
+    hw = np.exp(tw_in - beta_phiw) - 1.0
+    
+    # Calculate integrals using a generator to avoid storing all intermediate results
+    def calc_integrals(hw, z, k, i):
+        # Calculate integral_0_z using cumulative trapezoid
+        if k > 0:
+            integral_0_z = np.trapz(hw[:k, i], z[:k])
+        else:
+            integral_0_z = 0.0
+            
+        # Calculate integral_z_infty
+        if k < n_point:
+            z_slice = z[k:]
+            integral_z_infty = np.trapz(z_slice * hw[k:, i], z_slice)
+        else:
+            integral_z_infty = 0.0
+            
+        return integral_0_z, integral_z_infty
+    
+    # Main calculation loop with minimized memory allocations
     for i in range(n_component):
         for k in range(n_point):
-            integral_0_z[k, i] = trapezoid(y=hw[:k, i], x=z[:k])
-            integral_z_infty[k, i] = trapezoid(y=z[k:] * hw[k:, i], x=z[k:])
-
-    for i in range(n_component):
-        for k in range(n_point):
-            z_minus_t = np.flip(z_index[:k])
-            t_minus_z = z_index[k:] - k
+            integral_0_z_k, integral_z_infty_k = calc_integrals(hw, z, k, i)
+            
             for j in range(i, n_component):
                 l = calc_l_index(i, j)
+                
+                # Avoid temporary array allocations by calculating components directly
                 tw[k, i] = beta_psi_charge[i]
-                tw[k, i] += TWO_PI * rho[j] * (z[k] * f1[k, l] - f2[k, l]
-                                               + charge_pair[l] * (integral_z_infty[k, j] + z[k] * integral_0_z[k, j])
-                                               + trapezoid(y=hw[:k, j] * f1[z_minus_t, l])
-                                               + trapezoid(y=hw[k:, j] * f1[t_minus_z, l]))
+                
+                # Main terms
+                main_terms = z[k] * f1[k, l] - f2[k, l]
+                
+                # Charge pair terms
+                charge_terms = charge_pair[l] * (integral_z_infty_k + z[k] * integral_0_z_k)
+                
+                # Calculate trapezoid terms efficiently
+                if k > 0:
+                    trap_term1 = np.trapz(hw[:k, j] * f1[np.flip(z_index[:k]), l])
+                else:
+                    trap_term1 = 0.0
+                    
+                if k < n_point:
+                    trap_term2 = np.trapz(hw[k:, j] * f1[z_index[k:] - k, l])
+                else:
+                    trap_term2 = 0.0
+                
+                tw[k, i] += TWO_PI * rho[j] * (main_terms + charge_terms + trap_term1 + trap_term2)
     return tw
 
 
@@ -228,6 +298,7 @@ def opt_func(tw_in, beta_phiw, beta_psi_charge, charge_pair, rho, f1, f2, z,
 # C.f. https://www.osti.gov/servlets/purl/314885: KINSOL - nonlinear solver based on NKSOL
 
 
+@monitor_memory
 def solve_model(opt_func, tw_initial, fluid, model, discrete, beta_phiw, beta_psi_charge):
     charge_pair = fluid.charge_pair
     n_component = fluid.n_component

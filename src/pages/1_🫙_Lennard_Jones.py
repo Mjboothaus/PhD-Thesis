@@ -9,6 +9,7 @@ from numerics import set_num_parameters
 from parameters import fluid_specific_parameters, set_fluid_parameters
 from plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
 from sidebar import create_sidebar
+from utils import get_memory_usage
 
 # Initialise fluid and numerical parameters
 
@@ -99,7 +100,53 @@ if fluid.symbol in ["lj1", "lj2"]:
 else:
     st.subheader(f"Charged fluids near an interface: {fluid.name}")
 
-tab0, tab1, tab2 = st.tabs(["Bulk properties", "Calculation", "Output graphs"])
+tab1, tab2, tab0 = st.tabs(["Calculation", "Output graphs", "Bulk properties"])
+
+with tab1:
+    # Run calculation
+    st.markdown("#")
+    mem_col1, mem_col2 = st.columns(2)
+    mem_col1.metric("Current Memory Usage", f"{get_memory_usage():.2f} MB")
+    
+    if run_calc := st.button("Run calculation"):
+        initial_memory = get_memory_usage()
+        with st.spinner("__Finding optimal solution:__"):
+            st.markdown("Solver output (Newton-Krylov algorithm)")
+            to_out = st.empty()
+            solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
+            with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
+                    # Solve non-linear equation
+                    try:
+                        solution = solve_model(opt_func, tw_initial, fluid, model, d,
+                                            beta_phiw, beta_psi_charge)
+                        tw_solution = solution.x
+                    except ValueError as err_message:
+                        solution = None
+                        st.info(err_message)
+        if solution is not None:
+            st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
+            hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
+            plot_convergence(solver_output_filepath)
+            
+            # Update memory usage after calculation
+            final_memory = get_memory_usage()
+            mem_col2.metric("Memory Change", f"{final_memory - initial_memory:+.2f} MB")
+        else:
+            st.error("Solver failed to find a solution: see error message above.")
+            hw_solution = hw_initial
+
+with tab2:
+        st.markdown("#")
+        if run_calc:
+            if solution is not None:
+                z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
+                                                    "plot_fn": hw_solution+1,
+                                                    "plot_name": "Solution: g(z)"})})
+                plot_wall_curves(n_component, z, z_plots, fluid.component)
+            else:
+                st.info("_Solution not found: no output available._")
+        else:
+            st.markdown("Select the Calculation tab and press the __[Run calculation]__ button.")
 
 with tab0:
     st.markdown("#")
@@ -123,41 +170,3 @@ with tab0:
                                 "plot_name": "f2_integrand(r)",  "xlim": [0, 10], "ylim": None})
 
     plot_bulk_curves(n_component, r, r_plots, fluid.component)
-
-with tab1:
-    # Run calculation
-    st.markdown("#")
-    if run_calc := st.button("Run calculation"):
-        with st.spinner("__Finding optimal solution:__"):
-            st.markdown("Solver output (Newton-Krylov algorithm)")
-            to_out = st.empty()
-            solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
-            with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
-                    # Solve non-linear equation
-                    try:
-                        solution = solve_model(opt_func, tw_initial, fluid, model, d,
-                                            beta_phiw, beta_psi_charge)
-                        tw_solution = solution.x
-                    except ValueError as err_message:
-                        solution = None
-                        st.info(err_message)
-        if solution is not None:
-            st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
-            hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-            plot_convergence(solver_output_filepath)
-        else:
-            st.error("Solver failed to find a solution: see error message above.")
-            hw_solution = hw_initial
-
-with tab2:
-        st.markdown("#")
-        if run_calc:
-            if solution is not None:
-                z_plots = dict({"Solution: g_{wi}(z)": dict({"fn_label": "g", 
-                                                    "plot_fn": hw_solution+1,
-                                                    "plot_name": "Solution: g(z)"})})
-                plot_wall_curves(n_component, z, z_plots, fluid.component)
-            else:
-                st.info("_Solution not found: no output available._")
-        else:
-            st.markdown("Select the Calculation tab and press the __[Run calculation]__ button.")
