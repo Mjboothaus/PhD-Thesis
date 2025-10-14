@@ -2,13 +2,13 @@ from pathlib import Path
 from time import sleep
 
 import pandas as pd
-import st_redirect as rd
 import streamlit as st
 from modelling import *
 from numerics import set_num_parameters
 from parameters import fluid_specific_parameters, set_fluid_parameters
-from plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
+from plotting import plot_bulk_curves, plot_wall_curves
 from sidebar import create_sidebar
+from components.fluid_calculation import create_calculation_tab
 
 # Initialise fluid and numerical parameters
 
@@ -139,29 +139,17 @@ with tab0:
     plot_bulk_curves(n_component, r, r_plots, fluid.component)
 
 with tab1:
-    # Run calculation
-    st.markdown("#")
-    if run_calc := st.button("Run calculation"):
-        with st.spinner("__Finding optimal solution:__"):
-            st.markdown("Solver output (Newton-Krylov algorithm)")
-            to_out = st.empty()
-            solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
-            with rd.stdout(to=to_out, to_file=solver_output_filepath, format="text", max_buffer=10000):
-                    # Solve non-linear equation
-                    try:
-                        solution = solve_model(opt_func, tw_initial, fluid, model, d,
-                                            beta_phiw, beta_psi_charge)
-                        tw_solution = solution.x
-                    except ValueError as err_message:
-                        solution = None
-                        st.info(err_message)
-        if solution is not None:
-            st.write(solution["message"].replace(".", " after " + str(solution["nit"]) + " iterations.").replace("A s", "S"))
-            hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-            plot_convergence(solver_output_filepath)
-        else:
-            st.error("Solver failed to find a solution: see error message above.")
-            hw_solution = hw_initial
+    solution, hw_solution = create_calculation_tab(
+        fluid=fluid,
+        model=model,
+        d=d,
+        beta_phiw=beta_phiw,
+        beta_psi_charge=beta_psi_charge,
+        n_component=n_component,
+        n_pair=n_pair,
+        z=z,
+        status="ready"
+    )
 
 with tab2:
         st.markdown("#")

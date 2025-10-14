@@ -2,14 +2,13 @@ from pathlib import Path
 from time import sleep
 
 import pandas as pd
-import st_redirect as rd
 import streamlit as st
 from modelling import *
 from numerics import set_num_parameters
 from parameters import fluid_specific_parameters, set_fluid_parameters
-from plotting import plot_bulk_curves, plot_convergence, plot_wall_curves
+from plotting import plot_bulk_curves, plot_wall_curves
 from sidebar import create_sidebar
-from utils import get_memory_usage
+from components.fluid_calculation import create_calculation_tab
 
 # Initialise fluid and numerical parameters
 
@@ -102,54 +101,18 @@ else:
 
 tab1, tab2, tab0 = st.tabs(["Calculation", "Output graphs", "Bulk properties"])
 
-def update_memory_display(container, initial_mem=None):
-    col1, col2 = container.columns(2)
-    current_mem = get_memory_usage()
-    col1.metric("Current Memory Usage", f"{current_mem:.2f} MB")
-    if initial_mem is not None:
-        col2.metric("Memory Change", f"{current_mem - initial_mem:+.2f} MB")
-
 with tab1:
-    st.markdown("### Newton-Krylov Algorithm Solver")
-    
-    # Memory display
-    mem_container = st.container()
-    update_memory_display(mem_container)
-    
-    # Run calculation button
-    if run_calc := st.button("Run calculation", key="run_calc_btn"):
-        initial_memory = get_memory_usage()
-        solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
-        
-        try:
-            with st.spinner("Finding optimal solution..."):
-                st.markdown("__Solver progress:__")
-                output_area = st.empty()
-                
-                with rd.stdout(to=output_area, to_file=solver_output_filepath, format="text", max_buffer=10000):
-                    solution = solve_model(opt_func, tw_initial, fluid, model, d,
-                                        beta_phiw, beta_psi_charge)
-                    tw_solution = solution.x
-                
-                # Update result display
-                result_msg = solution["message"].replace(".", f" after {solution['nit']} iterations.")
-                result_msg = result_msg.replace("A s", "S")
-                st.success(result_msg)
-                
-                # Calculate solution and plot convergence
-                hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
-                st.markdown("__Convergence Plot:__")
-                plot_convergence(solver_output_filepath)
-                
-                # Final memory update
-                update_memory_display(mem_container, initial_memory)
-                
-        except ValueError as err_message:
-            st.error("Solver failed to find a solution")
-            st.warning(str(err_message))
-            hw_solution = hw_initial
-            # Still update memory display
-            update_memory_display(mem_container, initial_memory)
+    solution, hw_solution = create_calculation_tab(
+        fluid=fluid,
+        model=model,
+        d=d,
+        beta_phiw=beta_phiw,
+        beta_psi_charge=beta_psi_charge,
+        n_component=n_component,
+        n_pair=n_pair,
+        z=z,
+        status="ready"
+    )
 
 with tab2:
         st.markdown("#")
