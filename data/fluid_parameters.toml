@@ -10,7 +10,7 @@ temperature = 1075.0
 concentration = [19.5, 19.5]
 epsilon_r = 1.0
 index = 1
-cr_filename = "nrcg-cr-approx-maybe.dat"
+cr_filename = "kcl.cr.dat"  # resolved via data/bulk/ first (legacy dump retained under data/)
 status = "experimental"  # Ng/PY bulk c_short available; g(r) residual still elevated
 
 [kcl.potential]

@@ -70,27 +70,15 @@ def test_calc_hw_zero_tw_equals_boltzmann_factor(small_grid):
     np.testing.assert_allclose(hw, np.exp(-beta_phiw) - 1.0)
 
 
-@pytest.mark.regression
-@pytest.mark.xfail(
-    reason="KCl bulk short-range c(r) does not yet vanish at large r; Phase 3 bulk fix",
-    strict=False,
-)
-def test_kcl_short_range_cr_should_vanish_at_large_r(kcl_cr_path):
-    """Known gap: charged short-range c(r) should approach 0 at large r.
-
-    This characterisation test documents the current bulk artefact. It is
-    expected to fail until the bulk long-range separation is corrected.
-    """
-    import pandas as pd
-
-    df = pd.read_csv(kcl_cr_path, header=None, sep=r"\s+")
-    r = df.iloc[:, 0].to_numpy()
-    cr = df.iloc[:, 1:].to_numpy()
-    # Tail: outermost 5% of the grid
+def test_kcl_bulk_artefact_short_range_vanishes_at_large_r(kcl_cr_path):
+    """Shipped ``data/bulk/kcl.cr.dat`` must have a near-zero short-range tail."""
+    data = np.loadtxt(kcl_cr_path)
+    assert data.ndim == 2 and data.shape[1] >= 2
+    r = data[:, 0]
+    cr = data[:, 1:]
+    assert np.isfinite(cr).all()
     tail = cr[int(0.95 * len(r)) :]
     tail_max = float(np.max(np.abs(tail)))
-    # Desired physical behaviour once fixed:
     assert tail_max < 1e-2, (
-        f"KCl short-range |c(r)| tail max={tail_max:.4f}; "
-        "expected near zero after bulk long-range subtraction is fixed"
+        f"KCl short-range |c(r)| tail max={tail_max:.4g}; expected near zero"
     )
