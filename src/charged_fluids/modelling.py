@@ -239,29 +239,64 @@ def calc_f2_integrand(c_short: np.ndarray, n_pair: int, z: np.ndarray, n_point: 
 def _integral_z_to_end(values: np.ndarray, z: np.ndarray) -> np.ndarray:
     """For each k, trapezoid(values[k:], z[k:]) via one cumulative pass.
 
-    ``values`` and result have shape (n_point,) or (n_point, n_pair).
+    ``values`` and result have shape (n_point,) or (n_point, n_cols).
     """
     values = np.asarray(values, dtype=float)
     z = np.asarray(z, dtype=float)
     n_point = z.size
+    if n_point < 2:
+        return np.zeros_like(values, dtype=float)
+
     if values.ndim == 1:
-        out = np.zeros(n_point, dtype=float)
-        if n_point < 2:
-            return out
         cum = np.zeros(n_point, dtype=float)
         cum[1:] = cumulative_trapezoid(values, z)
+        out = np.zeros(n_point, dtype=float)
         out[:-1] = cum[-1] - cum[:-1]
         return out
 
-    n_pair = values.shape[1]
-    out = np.zeros((n_point, n_pair), dtype=float)
-    if n_point < 2:
-        return out
-    cum = np.zeros((n_point, n_pair), dtype=float)
-    for ij in range(n_pair):
-        cum[1:, ij] = cumulative_trapezoid(values[:, ij], z)
-        out[:-1, ij] = cum[-1, ij] - cum[:-1, ij]
+    # Multi-column: one cumulative_trapezoid call via ravel is awkward; use axis loop
+    # but avoid per-k Python trapezoid. cumulative_trapezoid supports axis=.
+    cum = np.zeros_like(values, dtype=float)
+    cum[1:, :] = cumulative_trapezoid(values, z, axis=0)
+    out = np.zeros_like(values, dtype=float)
+    out[:-1, :] = cum[-1:, :] - cum[:-1, :]
     return out
+
+
+def _trapz_unit_dx(y: np.ndarray) -> float:
+    """Trapezoid with unit sample spacing (historical wall-kernel convention).
+
+    The original thesis discretisation called ``trapezoid(y)`` *without* the ``z``
+    abscissa for the hwxf1 convolution pieces, i.e. dx = 1 in index space.
+    Charge-path integrals still use physical ``z``.
+    """
+    if y.size < 2:
+        return 0.0
+    return float(trapezoid(y))
+
+
+def _wall_pair_kernels(
+    hw_j: np.ndarray,
+    f1_l: np.ndarray,
+    z: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Precompute trap_term1[k] and trap_term2[k] for one (j, pair) channel.
+
+    Matches the historical index-space trapezoid (unit dx) used by the thesis code::
+
+        trap_term1[k] ~ trapz(hw[:k] * flip(f1[:k]))
+        trap_term2[k] ~ trapz(hw[k:] * f1[:n-k])
+    """
+    del z  # physical z is not used for these kernels (unit dx)
+    n = hw_j.size
+    t1 = np.zeros(n, dtype=float)
+    t2 = np.zeros(n, dtype=float)
+    for k in range(n):
+        if k > 0:
+            t1[k] = _trapz_unit_dx(hw_j[:k] * np.flip(f1_l[:k]))
+        # k == n-1 -> single sample -> 0; still call for parity with historical branch
+        t2[k] = _trapz_unit_dx(hw_j[k:] * f1_l[: n - k])
+    return t1, t2
 
 
 @monitor_memory
@@ -297,7 +332,7 @@ def _prefix_trapezoid(y: np.ndarray, z: np.ndarray) -> np.ndarray:
     # cumulative_trapezoid: cum[k] = int from z[0] to z[k] for k>=1, cum[0]=0.
     # trapezoid(y[:k], z[:k]) integrates points 0..k-1, i.e. up to z[k-1] = cum[k-1].
     out[1:] = cum[:-1]
-    # For k=1: trapezoid(y[:1], z[:1]) = 0 (single point) — cum[0]=0, out[1]=0 OK
+    # For k=1: trapezoid(y[:1], z[:1]) = 0 (single point) - cum[0]=0, out[1]=0 OK
     # For k=2: trapezoid(y[:2], z[:2]) = cum[1], out[2]=cum[1] OK
     return out
 
@@ -318,37 +353,44 @@ def calc_tw(
 ) -> np.ndarray:
     """Singlet wall indirect correlation from bulk short-range kernels.
 
-    Pair loops follow the historical upper-triangle ``j >= i`` layout used by
-    the thesis discretisation (same numerical behaviour for n <= 2).
+    For species ``i``::
+
+        tw_i(z) = beta*psi_i
+                  + sum_j 2pi rho_j [ z f1_ij - f2_ij
+                    + charge_pair_ij * (int _z^∞ z' hw_i dz' + z int _0^z hw_i dz')
+                    + int _0^z hw_j(z') f1_ij(z-z') dz'
+                    + int _z^∞ hw_j(z') f1_ij(z'-z) dz' ]
+
+    Pair index ``l = calc_l_index(i, j)`` is symmetric. The sum runs over **all**
+    partner species ``j`` (correct multi-component form).
     """
+    del z_index  # kept in signature for call-site compatibility
     two_pi = 2.0 * np.pi
     tw = np.zeros((n_point, n_component))
     hw = np.exp(tw_in - beta_phiw) - 1.0
 
-    # Precompute charge-path integrals per species: int_0^z hw and int_z^∞ z hw
+    # Charge-path integrals per species: int _0^z hw and int _z^∞ z hw
     integral_0_z = np.zeros((n_point, n_component))
     integral_z_infty = np.zeros((n_point, n_component))
     for i in range(n_component):
         integral_0_z[:, i] = _prefix_trapezoid(hw[:, i], z)
         integral_z_infty[:, i] = _integral_z_to_end(z * hw[:, i], z)
 
+    # Precompute wall pair kernels for every (j, pair channel)
+    # Cache by (j, l) since l depends on (i,j)
+    kernel_cache: dict[tuple[int, int], tuple[np.ndarray, np.ndarray]] = {}
+
     for i in range(n_component):
-        for k in range(n_point):
-            # Historical structure: reset then accumulate over j >= i only.
-            for j in range(i, n_component):
-                l = calc_l_index(i, j)
-                tw[k, i] = beta_psi_charge[i]
-                main_terms = z[k] * f1[k, l] - f2[k, l]
-                charge_terms = charge_pair[l] * (integral_z_infty[k, i] + z[k] * integral_0_z[k, i])
-                if k > 0:
-                    trap_term1 = trapezoid(hw[:k, j] * f1[np.flip(z_index[:k]), l])
-                else:
-                    trap_term1 = 0.0
-                if k < n_point:
-                    trap_term2 = trapezoid(hw[k:, j] * f1[z_index[k:] - k, l])
-                else:
-                    trap_term2 = 0.0
-                tw[k, i] += two_pi * rho[j] * (main_terms + charge_terms + trap_term1 + trap_term2)
+        tw[:, i] = beta_psi_charge[i]
+        for j in range(n_component):
+            l = calc_l_index(i, j)
+            key = (j, l)
+            if key not in kernel_cache:
+                kernel_cache[key] = _wall_pair_kernels(hw[:, j], f1[:, l], z)
+            t1, t2 = kernel_cache[key]
+            main = z * f1[:, l] - f2[:, l]
+            charge = charge_pair[l] * (integral_z_infty[:, i] + z * integral_0_z[:, i])
+            tw[:, i] += two_pi * rho[j] * (main + charge + t1 + t2)
     return tw
 
 
