@@ -9,7 +9,10 @@ import st_redirect as rd
 import streamlit as st
 from utils import get_memory_usage
 
-from modelling import Model, calc_hw, opt_func, solve_model
+from charged_fluids import Model, calc_hw, opt_func, solve_model
+
+# Fluids the wall solver may attempt (same as Marimo / wall_ready_symbols)
+_SOLVE_STATUSES = frozenset({"ready", "experimental"})
 
 
 def update_memory_display(container, initial_mem: float | None = None) -> None:
@@ -32,7 +35,7 @@ def create_calculation_tab(
     z: Any,
     status: str = "ready",
 ) -> tuple[Any, Any, bool]:
-    """Create calculation tab with Newton-Krylov solver UI.
+    """Create calculation tab with Newton–Krylov solver UI.
 
     Returns
     -------
@@ -40,24 +43,30 @@ def create_calculation_tab(
     """
     solution = None
     hw_solution = None
-    # Initial guess is wall indirect correlation tw (issue #21)
     tw_initial = model.tw
 
-    st.markdown("### Newton-Krylov Algorithm Solver")
+    st.markdown("### Newton–Krylov algorithm solver")
+    st.caption("Uses `charged_fluids.solve_model` (same core as Marimo / tests).")
 
-    if status != "ready":
-        st.warning("This fluid type is currently under development")
+    if status not in _SOLVE_STATUSES:
+        st.warning(f"Fluid status `{status}` — wall solve is not available.")
         return None, None, False
+
+    if status == "experimental":
+        st.info(
+            "This fluid is **experimental**: the solver will run, but bulk "
+            "thermodynamics / residual quality may still be imperfect."
+        )
 
     mem_container = st.container()
     update_memory_display(mem_container)
 
     if run_calc := st.button("Run calculation", key="run_calc_btn"):
         initial_memory = get_memory_usage()
-        solver_output_filepath = f"{Path.cwd()}/data/solver_out.txt"
+        solver_output_filepath = str(Path.cwd() / "data" / "solver_out.txt")
 
         try:
-            with st.spinner("Finding optimal solution..."):
+            with st.spinner("Finding optimal solution…"):
                 st.markdown("__Solver progress:__")
                 output_area = st.empty()
 
@@ -69,7 +78,7 @@ def create_calculation_tab(
                 ):
                     solution = solve_model(
                         opt_func,
-                        tw_initial,
+                        tw_initial.copy(),
                         fluid,
                         model,
                         d,
@@ -78,15 +87,17 @@ def create_calculation_tab(
                     )
                     tw_solution = solution.x
 
-                # Persist on shared Model; report iteration count clearly (issue #14)
                 model.tw = tw_solution
                 hw_solution = calc_hw(tw_solution, n_component, beta_phiw)
                 model.hw = hw_solution
-                nit = int(solution.get("nit", 0))
-                st.success(
-                    f"Converged after {nit} iterations. SciPy: {solution.get('message', '')}"
-                )
-                st.markdown("__Convergence Plot:__")
+                nit = int(getattr(solution, "nit", 0) or 0)
+                ok = bool(getattr(solution, "success", False))
+                msg = str(getattr(solution, "message", "") or "")
+                if ok:
+                    st.success(f"Converged after {nit} iterations. SciPy: {msg}")
+                else:
+                    st.warning(f"Finished after {nit} iterations (success={ok}). SciPy: {msg}")
+                st.markdown("__Convergence plot:__")
                 from plotting import plot_convergence
 
                 plot_convergence(solver_output_filepath)
@@ -95,6 +106,10 @@ def create_calculation_tab(
         except ValueError as err_message:
             st.error("Solver failed to find a solution")
             st.warning(str(err_message))
+            hw_solution = model.hw
+            update_memory_display(mem_container, initial_memory)
+        except Exception as exc:  # noqa: BLE001 — surface unexpected solver errors in UI
+            st.exception(exc)
             hw_solution = model.hw
             update_memory_display(mem_container, initial_memory)
 

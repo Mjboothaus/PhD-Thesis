@@ -1,7 +1,11 @@
 # Docs: https://just.systems/man/en/
-# Recipes are intended to run unchanged on macOS, Windows, and Linux via uv.
+# Recipes call `uv` only so they run on macOS, Windows, and Linux without shell forks.
+# Multipage Streamlit imports resolve via PYTHONPATH=src (also set in Dockerfile).
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+
+# Ensure src/ is importable for components/sidebar/plotting in local runs
+export PYTHONPATH := "src"
 
 # Default recipe when just is called without arguments
 default:
@@ -13,12 +17,20 @@ help:
 
 # --- Development environment (uv only) ---
 
-# Synchronise environment with pyproject.toml / uv.lock
+# Synchronise environment with pyproject.toml / uv.lock (default groups)
 sync:
     uv sync
 
 # Initialise development environment (alias)
 init: sync
+
+# App UI dependencies (Streamlit, Plotly, …)
+sync-app:
+    uv sync --group app
+
+# Notebook group (Marimo + Plotly)
+sync-notebook:
+    uv sync --group notebook
 
 # Refresh the lockfile from pyproject.toml
 lock:
@@ -30,24 +42,28 @@ export-reqs:
 
 # --- Application ---
 
-# Run the Streamlit app
-app app_name="src/Main.py":
+# Run the Streamlit app (localhost; uses PYTHONPATH=src)
+app app_name="src/Main.py": sync-app
     uv run streamlit run {{app_name}} --server.address=localhost
 
 # Run the experimental OO Streamlit entry (legacy; see docs/LEGACY.md)
-app-opt app_name="src/oo_refactoring/Main.py":
+app-opt app_name="src/oo_refactoring/Main.py": sync-app
     uv run streamlit run {{app_name}} --server.address=localhost
 
 # Update Streamlit config snapshot
 update-st-config:
     uv run streamlit config show > .streamlit/config.toml
 
-# --- Bulk c(r) generation (Phase 3) ---
+# --- Bulk c(r) generation ---
 
 # Generate bulk short-range c(r) into data/bulk/{symbol}.cr.dat
 # Grid/closure defaults come from data/fluid_parameters.toml [symbol.bulk].
 bulk-cr symbol="lj1":
     uv run python -m charged_fluids.bulk.cli {{symbol}}
+
+# Dry-run bulk solve (no artefact write)
+bulk-cr-dry symbol="lj1":
+    uv run python -m charged_fluids.bulk.cli {{symbol}} --dry-run
 
 # Optional explicit grid override
 bulk-cr-grid symbol="lj1" n_points="1024" delta_r="0.05":
@@ -67,83 +83,70 @@ bulk-cr-h2o:
 
 # Legacy pyOZ path (vendored; see docs/LEGACY.md)
 bulk-fluid-pyoz input_file="lj/nrcg-lj-1comp.in":
-    cd src/pyoz && uv run python pyoz.py -i tests/{{input_file}}
+    uv run python src/pyoz/pyoz.py -i src/pyoz/tests/{{input_file}}
 
-# --- Docker ---
+# --- Docker / deploy ---
 
 docker-build project_name="phd_thesis":
     docker build . -t {{project_name}}
 
 docker-run project_name="phd_thesis" server_port="8080":
-    docker run -p {{server_port}}:{{server_port}} {{project_name}}
+    docker run --rm -e PORT={{server_port}} -p {{server_port}}:{{server_port}} {{project_name}}
 
 container: docker-build docker-run
 
+# Deploy via Render Blueprint (requires `render login` and linked repo)
+# Uses render.yaml; Docker image is built on Render from Dockerfile.
+deploy-render:
+    render blueprints launch --confirm
+
+# Trigger a new deploy of an existing Render service by name (if CLI is authed)
+deploy-render-service service_name="phd-thesis":
+    render deploys create {{service_name}} --confirm
+
 # --- Testing and quality (ruff, ty, prek, pytest) ---
 
-# Run unit tests
 test:
     uv run pytest
 
-# Run tests with coverage for charged_fluids
 test-cov:
     uv run pytest --cov=charged_fluids --cov-report=term-missing --cov-report=html
 
-# Type-check core package and tests
 typecheck:
     uv run ty check
 
-# Lint (check only)
 lint:
     uv run ruff check src/charged_fluids tests
 
-# Format check (no writes)
 fmt-check:
     uv run ruff format --check src/charged_fluids tests
 
-# Apply ruff formatter + autofixes
 format:
     uv run ruff check --fix src/charged_fluids tests
     uv run ruff format src/charged_fluids tests
 
-# Install git hooks via prek
 hooks-install:
     uv run prek install
 
-# Run all prek hooks on the tree
 hooks:
     uv run prek run --all-files
 
-# Format, typecheck, lint, test
 quality: format typecheck lint test
 
 # --- Marimo notebooks (Plotly figures) ---
 
-# Edit the wall-fluid Marimo explorer (installs notebook group on demand)
-marimo:
-    uv sync --group notebook
+marimo: sync-notebook
     uv run marimo edit notebooks/wall_fluid_explorer.py
 
-# Bulk c(r) / parameters / optional OZ explorer
-marimo-bulk:
-    uv sync --group notebook
+marimo-bulk: sync-notebook
     uv run marimo edit notebooks/bulk_fluid_explorer.py
 
 # --- Blog notes ---
 
-# List progressive blog notes
 blog-list:
-    @echo "Blog notes under docs/blog/"
-    @ls docs/blog
+    @uv run python -c "from pathlib import Path; print('\\n'.join(sorted(p.name for p in Path('docs/blog').glob('*'))))"
 
-# --- Clean ---
+# --- Clean (portable via Python; avoids shell glob differences) ---
 
 clean:
-    rm -rf .pytest_cache
-    rm -rf .mypy_cache
-    rm -rf .ruff_cache
-    rm -rf .coverage
-    rm -rf htmlcov
-    rm -rf .ty_cache
-    rm -rf **/__pycache__
-    rm -rf **/*.pyc
+    uv run python -c "import pathlib, shutil; roots=['.pytest_cache','.mypy_cache','.ruff_cache','.ty_cache','htmlcov']; [shutil.rmtree(p, ignore_errors=True) for p in roots]; p=pathlib.Path('.coverage'); p.unlink(missing_ok=True); [shutil.rmtree(x, ignore_errors=True) for x in pathlib.Path('.').rglob('__pycache__')]; print('clean done')"
