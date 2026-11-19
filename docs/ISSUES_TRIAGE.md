@@ -9,10 +9,10 @@ touched ~4 years ago. Status relative to the 2026 modernisation (PR #22+).
 | 20 | Implement pytest | **Done (Phase 1)** | Top-level `tests/`, ~99% `charged_fluids` coverage |
 | 19 | Update SciPy 1.8→1.9 | **Superseded** | Lock has SciPy 1.18.x on Python 3.14 |
 | 18 | Cloud Run connect error 60000 | **Unknown / retest** | Needs fresh deploy after Docker 3.14 image; not verified this sprint |
-| 17 | Bulk KCl at 2 state points | **Still open (Phase 3)** | Needs correct c_sr(r) generation |
+| 17 | Bulk KCl at 2 state points | **Partial** | One melt state point artefact via Ng/PY; multi-state / HNC stability future work |
 | 16 | Parameters in TOML/JSON | **Done (Phase 2)** | `data/fluid_parameters.toml` is sole source |
 | 14 | Max iterations vs reported nits | **Improved (Phase 2)** | UI shows `nit` explicitly from SciPy result |
-| 13 | Get KCl working (c_sr formula) | **Still open (Phase 3)** | Same bulk long-range separation as #17; xfail test tracks tail |
+| 13 | Get KCl working (c_sr formula) | **Partial** | Ng/PY bulk writes `data/bulk/kcl.cr.dat` with c_short tail ~1e-6; residual/g(r) still elevated |
 | 11 | Mobile experience | **Still open / low** | UX polish; not blocking science |
 | 10 | Streamlit tabs jumping back | **Still open / low** | Likely Streamlit session state; retest on 1.67 |
 | 9 | Chart legend / axis labels | **Partial** | Bulk plots use clearer names; more polish welcome |

@@ -14,11 +14,12 @@ a long-form post can be assembled later for Databooth or a personal site.
 | 2026-11-19 | [Phase 2 — core package depth and thinner Streamlit pages](2026-11-19-phase-2-core-ui.md) |
 | 2026-11-19 | [Phase 3 — bulk c(r) pipeline](2026-11-19-phase-3-bulk-cr.md) |
 | 2026-11-19 | [Phase 4–5 — LJ2 fluid and Marimo explorer](2026-11-19-phase-4-5-fluids-marimo.md) |
+| 2026-11-19 | [**Capstone — before and after**](2026-11-19-capstone-before-after.md) |
 
-## Capstone comparison (in progress)
+## Capstone comparison
 
-At the end of the modernisation arc, publish a single comparative post built from
-[DRAFT-before-after-comparison.md](DRAFT-before-after-comparison.md). It is kept
+Published: [Before and after: modernising a lost-Fortran PhD](2026-11-19-capstone-before-after.md).
+Working notes remain in [DRAFT-before-after-comparison.md](DRAFT-before-after-comparison.md). It is kept
 updated with git anchors (`main` vs feature tips) so before/after claims stay
 verifiable. Progressive notes below feed that draft; they are not a substitute
 for it.

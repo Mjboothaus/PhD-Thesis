@@ -174,52 +174,85 @@ def solve_bulk_lj(
     )
 
 
+def dimensionless_coulomb_from_charge_pair(r: np.ndarray, charge_pair: np.ndarray) -> np.ndarray:
+    """Dimensionless beta*u_coulomb matching wall-fluid ``charge_pair`` scale.
+
+    ``charge_pair[l] = 2e10 * beta * q_i * q_j / epsilon`` from
+    :func:`charged_fluids.modelling.calc_charge_pair`, so
+    ``beta u_c(r) = charge_pair[l] / (2 r)``.
+    """
+    n_pair = charge_pair.size
+    out = np.zeros((n_pair, r.size))
+    mask = r > 0
+    for l in range(n_pair):
+        out[l, mask] = charge_pair[l] / (2.0 * r[mask])
+    return out
+
+
 def solve_bulk_binary_coulomb_lj(
     *,
     temperature: float,
     densities: tuple[float, float],
-    charges: tuple[float, float],
-    epsilon: float,
+    charge_pair: np.ndarray,
     sigmas: tuple[float, float],
     epsilons_lj: tuple[float, float, float],
     n_points: int = 2048,
     delta_r: float = 0.025,
     closure: Closure = "hnc",
-    mix: float = 0.25,
-    max_iter: int = 800,
-    tol: float = 1e-7,
+    mix: float = 0.15,
+    max_iter: int = 1500,
+    tol: float = 1e-6,
+    ng_alpha: float = 1.2,
 ) -> BulkResult:
-    """Two-component charged LJ + Coulomb with Ng short-range c extraction.
+    """Two-component LJ + Coulomb bulk OZ with Ng long-range renormalisation.
 
-    Pair order: (0,0), (0,1), (1,1) → indices 0,1,2 via i+j for n=2.
-    ``epsilons_lj`` is (e00, e01, e11).
+    Pair order: (0,0), (0,1), (1,1) via ``i+j`` for n=2.
+    Coulomb uses wall-fluid ``charge_pair`` units. Ng splits
+    ``beta u_c = beta u_long + beta u_c_short`` with
+    ``u_long ~ erf(alpha r)/r`` so the iterated potential is short-ranged;
+    final ``c_short = c_full + beta u_c`` (thesis) vanishes at large r when
+    ``c_full -> -beta u_c``.
     """
+    from scipy.special import erf
+
     beta = beta_from_temperature(temperature)
     r, k, delta_k = radial_grids(n_points, delta_r)
     n_comp = 2
     n_pair = 3
     rho = np.asarray(densities, dtype=float)
+    charge_pair = np.asarray(charge_pair, dtype=float).ravel()
+    if charge_pair.size != n_pair:
+        raise ValueError(f"charge_pair must have length {n_pair}, got {charge_pair.size}")
 
-    # Pair potentials
-    beta_u = np.zeros((n_pair, n_points))
-    beta_u_coul = np.zeros((n_pair, n_points))
     pair_list = [(0, 0), (0, 1), (1, 1)]
     eps_lj = {
         (0, 0): epsilons_lj[0],
         (0, 1): epsilons_lj[1],
         (1, 1): epsilons_lj[2],
     }
+
+    beta_u_c = dimensionless_coulomb_from_charge_pair(r, charge_pair)
+    # Ng long-range piece (screened Coulomb)
+    beta_u_long = np.zeros_like(beta_u_c)
+    beta_u_short_c = np.zeros_like(beta_u_c)
+    for l in range(n_pair):
+        # charge_pair/(2r) * erf(alpha r) is long-ranged and smooth at origin
+        beta_u_long[l] = np.where(
+            r > 0,
+            charge_pair[l] * erf(ng_alpha * r) / (2.0 * r),
+            charge_pair[l] * ng_alpha / np.sqrt(np.pi),
+        )
+        beta_u_short_c[l] = beta_u_c[l] - beta_u_long[l]
+
+    beta_u_s = np.zeros((n_pair, n_points))
     for i, j in pair_list:
         l = pair_index(i, j)
         sig = 0.5 * (sigmas[i] + sigmas[j])
         u_lj = lj_potential(r, eps_lj[(i, j)], sig)
-        u_c = coulomb_potential(r, charges[i], charges[j], epsilon)
-        beta_u[l] = beta * (u_lj + u_c)
-        beta_u_coul[l] = beta * u_c
+        beta_u_s[l] = beta * u_lj + beta_u_short_c[l]
 
-    # Picard on gamma for each pair (approximate multi-comp OZ via diagonal density weighting)
-    # Full multi-comp OZ matrix invert per k-point:
-    gamma = np.zeros((n_pair, n_points))
+    # Initial gamma: cancel long-range so first closure is better conditioned
+    gamma = -beta_u_long.copy()
     c = np.zeros((n_pair, n_points))
     g = np.zeros((n_pair, n_points))
     converged = False
@@ -229,9 +262,9 @@ def solve_bulk_binary_coulomb_lj(
     for iteration in range(1, max_iter + 1):
         n_iter = iteration
         for l in range(n_pair):
-            c[l], g[l] = apply_closure(closure, beta_u[l], gamma[l])
+            # HNC/PY on short-range potential + short-range gamma
+            c[l], g[l] = apply_closure(closure, beta_u_s[l], gamma[l])
 
-        # Fourier c
         c_k = np.zeros((n_comp, n_comp, n_points))
         for i, j in pair_list:
             l = pair_index(i, j)
@@ -241,17 +274,14 @@ def solve_bulk_binary_coulomb_lj(
 
         gamma_k = np.zeros((n_comp, n_comp, n_points))
         for ik in range(n_points):
-            # C matrix density-scaled: solve h = c + c rho h  => h = (I - c rho)^{-1} c
             C = c_k[:, :, ik]
-            # rho matrix diagonal
             R = np.diag(rho)
             A = np.eye(n_comp) - C @ R
             try:
                 H = np.linalg.solve(A, C)
             except np.linalg.LinAlgError:
                 H = C
-            G = H - C
-            gamma_k[:, :, ik] = G
+            gamma_k[:, :, ik] = H - C
 
         gamma_new = np.zeros_like(gamma)
         for i, j in pair_list:
@@ -259,21 +289,26 @@ def solve_bulk_binary_coulomb_lj(
             gamma_new[l] = inverse_sine(gamma_k[i, j], r, k, delta_k)
 
         residual = float(np.sqrt(np.mean((gamma_new - gamma) ** 2)))
-        gamma = (1.0 - mix) * gamma + mix * gamma_new
+        # Adaptive mix when residual grows
+        step = mix if residual < 1.0 else mix * 0.25
+        gamma = (1.0 - step) * gamma + step * gamma_new
         if residual < tol:
             converged = True
             break
 
     for l in range(n_pair):
-        c[l], g[l] = apply_closure(closure, beta_u[l], gamma[l])
+        c[l], g[l] = apply_closure(closure, beta_u_s[l], gamma[l])
 
-    # Thesis short-range: c_sr = c + beta * q_i q_j / (eps r) = c + beta_u_coul
-    # (beta_u_coul already includes 1/r Coulomb)
-    c_short = c + beta_u_coul
+    # Full direct correlation approx: short-range c minus long-range beta u
+    # (Ng: c = c_s - beta u_long). Thesis wall input wants c_short = c + beta u_c
+    # with beta u_c full Coulomb, equivalent to c_s + beta u_short_c when
+    # c = c_s - beta u_long and beta u_c = beta u_long + beta u_short_c.
+    c_full = c - beta_u_long
+    c_short = c + beta_u_short_c  # = c_full + beta_u_c
 
     return BulkResult(
         r=r,
-        c_full=c,
+        c_full=c_full,
         c_short=c_short,
         g=g,
         gamma=gamma,
@@ -283,16 +318,16 @@ def solve_bulk_binary_coulomb_lj(
         beta=beta,
         rho=rho,
         meta={
-            "fluid": "binary_coulomb_lj",
+            "fluid": "binary_coulomb_lj_ng",
             "closure": closure,
             "temperature": temperature,
-            "densities": list(densities),
-            "charges": list(charges),
-            "epsilon": epsilon,
+            "densities": list(map(float, densities)),
+            "charge_pair": charge_pair.tolist(),
             "sigmas": list(sigmas),
             "epsilons_lj": list(epsilons_lj),
             "n_points": n_points,
             "delta_r": delta_r,
-            "c_short_definition": "c + beta * u_coulomb",
+            "ng_alpha": ng_alpha,
+            "c_short_definition": "c_s + beta_u_c_short (= c_full + beta_u_coulomb)",
         },
     )

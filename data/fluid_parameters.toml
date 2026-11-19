@@ -11,7 +11,7 @@ concentration = [19.5, 19.5]
 epsilon_r = 1.0
 index = 1
 cr_filename = "nrcg-cr-approx-maybe.dat"
-status = "experimental"  # bulk short-range c(r) still incorrect
+status = "experimental"  # Ng/PY bulk c_short available; g(r) residual still elevated
 
 [kcl.potential]
 type = "ionic"
@@ -91,11 +91,15 @@ delta_r = 0.05
 closure = "hnc"
 
 [kcl.bulk]
-n_points = 1024
+n_points = 512
 delta_r = 0.05
-closure = "hnc"
-# Soft reduced LJ core under Coulomb (kJ/mol)
-epsilon_kJ_mol = 0.5
+closure = "py"
+# Soft LJ core (kJ/mol) + Ng mixing for melt-density ionic OZ
+epsilon_kJ_mol = 5.0
+mix = 0.03
+ng_alpha = 1.2
+max_iter = 3000
+tol = 1.0e-5
 
 [lj2.bulk]
 sigma_A = 5.0

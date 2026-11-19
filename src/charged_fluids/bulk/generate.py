@@ -44,7 +44,8 @@ def generate_bulk_cr(
     n_pts = int(n_points if n_points is not None else bulk.get("n_points", 1024))
     dr = float(delta_r if delta_r is not None else bulk.get("delta_r", 0.05))
     clos = cast(
-        Literal["hnc", "py"], str(closure if closure is not None else bulk.get("closure", "hnc"))
+        Literal["hnc", "py"],
+        str(closure if closure is not None else bulk.get("closure", "hnc")),
     )
 
     if pot_type == "lj":
@@ -83,22 +84,21 @@ def generate_bulk_cr(
         epsilon = eps_kj * _K_J_PER_KJ_MOL
         eps_lj = (epsilon, epsilon, epsilon)
         dens = (float(fluid.rho[0]), float(fluid.rho[1]))
-        charges = (float(fluid.charge[0]), float(fluid.charge[1]))
         result = solve_bulk_binary_coulomb_lj(
             temperature=fluid.temperature,
             densities=dens,
-            charges=charges,
-            epsilon=float(fluid.epsilon),
+            charge_pair=np.asarray(fluid.charge_pair, dtype=float),
             sigmas=(float(sig[0]), float(sig[1])),
             epsilons_lj=eps_lj,
             n_points=n_pts,
             delta_r=dr,
             closure=clos,
-            mix=0.1,
-            max_iter=2000,
-            tol=1e-6,
+            mix=float(bulk.get("mix", 0.12)),
+            max_iter=int(bulk.get("max_iter", 2000)),
+            tol=float(bulk.get("tol", 1e-6)),
+            ng_alpha=float(bulk.get("ng_alpha", 1.2)),
         )
-        result.meta["note"] = "c_short = c_full + beta * u_coulomb (thesis long-range split)"
+        result.meta["note"] = "Ng bulk OZ; c_short uses wall-fluid charge_pair Coulomb scale"
     else:
         raise ValueError(
             f"Bulk generation not configured for symbol={symbol!r} type={pot_type!r} "

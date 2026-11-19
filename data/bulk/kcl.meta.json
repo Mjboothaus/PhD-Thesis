@@ -1,0 +1,44 @@
+{
+  "created_at": "2026-11-19T03:56:23.992771+00:00",
+  "stem": "kcl",
+  "use_short": true,
+  "converged": false,
+  "n_iter": 3000,
+  "residual": 1.1757780006985812,
+  "beta": 6.737646991665042e+19,
+  "rho": [
+    0.011743174482,
+    0.011743174482
+  ],
+  "n_pair": 3,
+  "n_points": 512,
+  "r_max": 25.6,
+  "solver_meta": {
+    "fluid": "binary_coulomb_lj_ng",
+    "closure": "py",
+    "temperature": 1075.0,
+    "densities": [
+      0.011743174482,
+      0.011743174482
+    ],
+    "charge_pair": [
+      310.8854823907947,
+      -310.8854823907947,
+      310.8854823907947
+    ],
+    "sigmas": [
+      1.463,
+      1.585
+    ],
+    "epsilons_lj": [
+      8.302695335869233e-21,
+      8.302695335869233e-21,
+      8.302695335869233e-21
+    ],
+    "n_points": 512,
+    "delta_r": 0.05,
+    "ng_alpha": 1.2,
+    "c_short_definition": "c_s + beta_u_c_short (= c_full + beta_u_coulomb)"
+  },
+  "tail_abs_max_c_short": 7.886240383755225e-07
+}
