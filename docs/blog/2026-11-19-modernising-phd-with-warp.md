@@ -5,7 +5,7 @@
 **Suggested slug:** `modernising-phd-with-warp`  
 **Suggested URL:** https://www.databooth.com.au/posts/modernising-phd-with-warp/  
 **Tags:** AI-assisted development, Python, scientific computing, Warp, uv, Marimo, engineering practices  
-**App:** [https://phd.databooth.com.au](https://phd.databooth.com.au)  
+**App:** [https://phd-thesis-mjb.onrender.com](https://phd-thesis-mjb.onrender.com) (Render; Cloud Run deprecated)  
 **Repo:** [Mjboothaus/PhD-Thesis](https://github.com/Mjboothaus/PhD-Thesis)  
 **PRs:** [#22](https://github.com/Mjboothaus/PhD-Thesis/pull/22)–[#32](https://github.com/Mjboothaus/PhD-Thesis/pull/32) (merged); [#33](https://github.com/Mjboothaus/PhD-Thesis/pull/33) bulk CLI; [#34](https://github.com/Mjboothaus/PhD-Thesis/pull/34) notebooks + this post
 
@@ -79,7 +79,7 @@ Architecture in one line:
 | UIs | production Streamlit + Marimo explorers (Plotly) |
 | Tests | top-level `tests/`; full suite green (no permanent KCl xfail) |
 
-Production demo: [phd.databooth.com.au](https://phd.databooth.com.au).
+Production demo: [phd-thesis-mjb.onrender.com](https://phd-thesis-mjb.onrender.com).
 
 ```bash
 just init
@@ -138,7 +138,7 @@ We also **removed a permanent xfail** that still pointed at a legacy dump (`nrcg
 
 ### 3. Marimo as research UI, Streamlit as demo
 
-Streamlit stays the Cloud Run face of the project. Marimo is where you poke grids, bulk OZ dry-runs, and wall solves with **one fluid selector** (no separate “bulk fluid” dropdown fighting the wall choice) and **Plotly** figures for interactive inspection—consistent with the app’s Plotly style.
+Streamlit stays the deployed face of the project (**Render**; Cloud Run is deprecated). Marimo is where you poke grids, bulk OZ dry-runs, and wall solves with **one fluid selector** (no separate “bulk fluid” dropdown fighting the wall choice) and **Plotly** figures for interactive inspection—consistent with the app’s Plotly style.
 
 Legacy Jupyter notebooks moved under `notebooks/legacy/` with a mapping table. Do not extend them; do not pretend they are the product.
 
@@ -240,7 +240,7 @@ If you maintain research or “demo that became production” codebases, the pat
 
 - Progressive notes in-repo: [`docs/blog/`](https://github.com/Mjboothaus/PhD-Thesis/tree/main/docs/blog)
 - Capstone comparison: [Before and after](https://github.com/Mjboothaus/PhD-Thesis/blob/main/docs/blog/2026-11-19-capstone-before-after.md)
-- Production app: [phd.databooth.com.au](https://phd.databooth.com.au)
+- Production app: [phd-thesis-mjb.onrender.com](https://phd-thesis-mjb.onrender.com)
 - Earlier Databooth themes: [deterministic guardrails with prek](https://www.databooth.com.au/posts/deterministic-llm-guardrails-with-prek/), [hyper-team software](https://www.databooth.com.au/posts/hyper-team-software/), [coding beyond the vibe](https://www.databooth.com.au/posts/coding-vibe/)
 - Warp pricing: [warp.dev/pricing](https://www.warp.dev/pricing)
 

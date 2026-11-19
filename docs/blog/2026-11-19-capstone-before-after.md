@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-19  
 **Status:** Capstone comparison (post Phases 0–5)  
-**App:** [https://phd.databooth.com.au](https://phd.databooth.com.au)  
+**App:** [https://phd-thesis-mjb.onrender.com](https://phd-thesis-mjb.onrender.com) (Render; Cloud Run deprecated)  
 **PRs:** [#22](https://github.com/Mjboothaus/PhD-Thesis/pull/22) · [#23](https://github.com/Mjboothaus/PhD-Thesis/pull/23) · [#24](https://github.com/Mjboothaus/PhD-Thesis/pull/24) · [#25](https://github.com/Mjboothaus/PhD-Thesis/pull/25)
 
 ---
@@ -191,7 +191,7 @@ not a claim that the salt problem is “solved”.
 | | Streamlit | Marimo |
 |--|-----------|--------|
 | Entry | `just app` | `just marimo` |
-| Role | Deployed demo (Cloud Run) | Research exploration |
+| Role | Deployed demo (Render) | Research exploration |
 | Code | `render_fluid_page("lj1")` etc. | `prepare_fluid_run` + `solve_model` |
 
 Neither UI owns the physics. That was the point of Phase 0–2.

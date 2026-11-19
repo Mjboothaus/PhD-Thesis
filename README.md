@@ -4,7 +4,9 @@ Modern Python reimplementation of the 1998 Ph.D. thesis *Charged fluids near int
 
 ## Web app
 
-Production: [https://phd.databooth.com.au](https://phd.databooth.com.au) (Streamlit on Google Cloud Run).
+Production (Render): [https://phd-thesis-mjb.onrender.com](https://phd-thesis-mjb.onrender.com)  
+Deploy: Docker via `render.yaml` / `Dockerfile` (`just deploy-render-service`).  
+**Google Cloud Run is deprecated** for this app and is no longer the production target.
 
 ## Background
 
@@ -87,6 +89,7 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 - Full CF1 bulk OZ regeneration (beyond digitised c(r)); tighter 2-2 thermodynamics
 - Optional further speed work on wall `calc_tw` pair convolutions
 - Refresh `WARP.md` to match this stack (tooling is ruff/ty/prek, not black/mypy)
+- Optional: attach a custom domain to the Render service (Cloud Run retired)
 
 ## License
 
