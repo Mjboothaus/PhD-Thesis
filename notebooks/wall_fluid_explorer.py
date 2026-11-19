@@ -8,72 +8,199 @@ Run:
 
 Display rule (marimo): the last *expression* in a cell is what appears in the UI.
 Do not assign the only visual to a throwaway name without referring to it again.
+
+Figures use Plotly (interactive zoom/pan). One fluid selection drives wall and bulk.
 """
+
+from __future__ import annotations
 
 import marimo
 
 __generated_with = "0.25.2"
-app = marimo.App(width="medium")
+app = marimo.App(width="full", app_title="Charged fluids near interfaces")
+
 
 with app.setup:
-    import matplotlib.pyplot as plt
+    import numpy as np
+    import plotly.graph_objects as go
+    import plotly.io as pio
+    from plotly.subplots import make_subplots
+
+    pio.templates.default = "plotly_white"
+
+    # Fluids that can appear in the shared selector
+    FLUID_OPTIONS = ("lj1", "lj2", "kcl", "h2o", "2_2", "1_1")
+    # Bulk OZ regenerate is not defined for digitised CF1 water
+    BULK_OZ_SYMBOLS = frozenset({"lj1", "lj2", "kcl", "2_2", "1_1"})
+
+
+def _pair_labels(components: list[str]) -> list[str]:
+    labels: list[str] = []
+    for i, a in enumerate(components):
+        for b in components[i:]:
+            labels.append(f"{a}–{b}" if a != b else f"{a}–{a}")
+    return labels
+
+
+def _series_from_array(x, y_2d):
+    """Yield (name_suffix_index, y) for each pair series."""
+    y = np.asarray(y_2d)
+    if y.ndim == 1:
+        yield 0, y
+        return
+    if y.shape[0] == len(x):
+        for i in range(y.shape[1]):
+            yield i, y[:, i]
+    else:
+        for i in range(y.shape[0]):
+            yield i, y[i]
+
+
+def _add_series(fig, x, y_2d, *, row=None, col=None, labels=None, legendgroup=None):
+    for i, yi in _series_from_array(x, y_2d):
+        name = labels[i] if labels and i < len(labels) else f"pair {i}"
+        tr = go.Scatter(
+            x=x,
+            y=yi,
+            mode="lines",
+            name=name,
+            legendgroup=legendgroup or name,
+            hovertemplate="%{x:.3g} Å<br>%{y:.4g}<extra>" + name + "</extra>",
+        )
+        if row is None:
+            fig.add_trace(tr)
+        else:
+            fig.add_trace(tr, row=row, col=col)
+
+
+def _style_fig(fig, *, height=420, title=None):
+    fig.update_layout(
+        title=dict(text=title, x=0.02, xanchor="left") if title else None,
+        height=height,
+        margin=dict(l=56, r=24, t=56 if title else 36, b=48),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1.0,
+            font=dict(size=11),
+        ),
+        hovermode="x unified",
+    )
+    fig.update_xaxes(showgrid=True, zeroline=False)
+    fig.update_yaxes(showgrid=True, zeroline=False)
+    return fig
 
 
 @app.cell
-def _intro():
+def _():
     import marimo as mo
 
-    intro = mo.md(
-        r"""
-        # Fluids near interfaces — research notebook
-
-        Same **`charged_fluids`** core as the Streamlit app and bulk CLI:
-
-        - TOML parameters (`data/fluid_parameters.toml`)
-        - Bulk \(c_\mathrm{short}(r)\) artefacts under `data/bulk/`
-        - Singlet wall residual via Newton–Krylov
-
-        **How to use**
-
-        1. Change **Fluid** / grid controls — setup metrics and bulk plots update.
-        2. Press **Run wall-fluid solve** for \(g_{wi}(z)\).
-        3. Optional: bulk OZ regenerate at the bottom (keep dry-run on).
-
-        Unit conventions: `charged_fluids.units` (Å grids, joule potentials, `charge_pair` scale).
-        """
-    )
-    intro
     return (mo,)
 
 
 @app.cell
-def _controls(mo):
+def _(mo):
     from charged_fluids import list_fluid_symbols
 
-    symbols = [s for s in list_fluid_symbols() if s in {"lj1", "lj2", "kcl", "h2o", "2_2", "1_1"}]
-    symbol = mo.ui.dropdown(options=symbols, value="lj1", label="Fluid")
-    n_point = mo.ui.slider(101, 801, value=201, step=50, label="n_point")
-    z_cutoff = mo.ui.slider(10.0, 40.0, value=20.0, step=1.0, label="z_cutoff (A)")
-    psi_0 = mo.ui.slider(-200.0, 200.0, value=0.0, step=10.0, label="psi_0 (mV)")
-    tolerance = mo.ui.number(start=1e-9, stop=1e-3, step=1e-7, value=1e-6, label="tolerance")
-    max_iter = mo.ui.slider(5, 100, value=30, step=5, label="max_iteration")
-    run_solve = mo.ui.run_button(label="Run wall-fluid solve")
-    controls = mo.vstack(
-        [
-            mo.md("### Controls"),
-            mo.hstack([symbol, n_point, z_cutoff], justify="start"),
-            mo.hstack([psi_0, tolerance, max_iter, run_solve], justify="start"),
-        ]
+    available = [s for s in list_fluid_symbols() if s in FLUID_OPTIONS]
+    if not available:
+        available = list(FLUID_OPTIONS)
+
+    symbol = mo.ui.dropdown(
+        options=available,
+        value="lj1" if "lj1" in available else available[0],
+        label="Fluid",
     )
-    controls
-    return max_iter, n_point, psi_0, run_solve, symbol, tolerance, z_cutoff
+    n_point = mo.ui.slider(101, 801, value=201, step=50, label="Wall grid points")
+    z_cutoff = mo.ui.slider(10.0, 40.0, value=20.0, step=1.0, label="z cutoff (Å)")
+    psi_0 = mo.ui.slider(-200.0, 200.0, value=0.0, step=10.0, label="ψ₀ (mV)")
+    tolerance = mo.ui.number(
+        start=1e-9, stop=1e-3, step=1e-7, value=1e-6, label="Solver tolerance"
+    )
+    max_iter = mo.ui.slider(5, 100, value=30, step=5, label="Max iterations")
+    bulk_n = mo.ui.slider(256, 2048, value=512, step=256, label="Bulk OZ points")
+    dry_run = mo.ui.checkbox(value=True, label="Dry-run bulk write")
+    run_solve = mo.ui.run_button(label="Solve wall–fluid")
+    run_bulk = mo.ui.run_button(label="Run bulk OZ")
+
+    header = mo.vstack(
+        [
+            mo.md(
+                r"""
+                # Fluids near interfaces
+                Shared **`charged_fluids`** core · Plotly figures · one fluid for wall **and** bulk
+                """
+            ),
+            mo.callout(
+                mo.md(
+                    "Choose a **fluid** once below. Wall solve and optional bulk OZ both "
+                    "use that selection. Prefer dry-run when regenerating \(c(r)\)."
+                ),
+                kind="info",
+            ),
+        ],
+        gap=0.5,
+    )
+    header
+    return (
+        bulk_n,
+        dry_run,
+        max_iter,
+        n_point,
+        psi_0,
+        run_bulk,
+        run_solve,
+        symbol,
+        tolerance,
+        z_cutoff,
+    )
 
 
 @app.cell
-def _prepare(max_iter, mo, n_point, psi_0, symbol, tolerance, z_cutoff):
+def _(
+    bulk_n,
+    dry_run,
+    max_iter,
+    mo,
+    n_point,
+    psi_0,
+    run_bulk,
+    run_solve,
+    symbol,
+    tolerance,
+    z_cutoff,
+):
+    controls = mo.vstack(
+        [
+            mo.md("### Fluid & numerics"),
+            mo.hstack(
+                [symbol, n_point, z_cutoff, psi_0],
+                justify="start",
+                gap=1.0,
+                wrap=True,
+            ),
+            mo.hstack(
+                [tolerance, max_iter, bulk_n, dry_run],
+                justify="start",
+                gap=1.0,
+                wrap=True,
+            ),
+            mo.hstack([run_solve, run_bulk], justify="start", gap=1.0),
+        ],
+        gap=0.75,
+    )
+    controls
+    return
+
+
+@app.cell
+def _(max_iter, mo, n_point, psi_0, symbol, tolerance, z_cutoff):
     from charged_fluids import prepare_fluid_run
 
     run = None
+    err = None
     try:
         run = prepare_fluid_run(
             symbol.value,
@@ -83,116 +210,104 @@ def _prepare(max_iter, mo, n_point, psi_0, symbol, tolerance, z_cutoff):
             max_iteration=int(max_iter.value),
             psi_0_mv=float(psi_0.value),
         )
-        fluid = run.fluid
-        charged = fluid.symbol not in {"lj1", "lj2"}
-        lines = [
-            f"**{fluid.name}** (`{fluid.symbol}`) · status `{fluid.status}`",
-            f"c(r) artefact: `{run.cr_path.name}`",
-            f"T = {fluid.temperature} K · conc = {fluid.concentration} M · "
-            f"components = {', '.join(fluid.component)}",
-            f"n_point = {run.discrete.n_point} · z_cutoff = {run.model.z[-1]:.3g} A · "
-            f"psi_0 = {run.psi_0_mv:.3g} mV",
+    except Exception as exc:  # noqa: BLE001 — surface in UI
+        err = f"{type(exc).__name__}: {exc}"
+
+    if err is not None:
+        summary = mo.callout(mo.md(f"**Setup failed** — `{err}`"), kind="danger")
+    else:
+        f = run.fluid
+        charged = f.symbol not in {"lj1", "lj2"}
+        stats = [
+            mo.stat(label="Fluid", value=f"{f.name}", caption=f"`{f.symbol}` · {f.status}"),
+            mo.stat(
+                label="T / conc",
+                value=f"{f.temperature:g} K",
+                caption=f"{f.concentration} M · {', '.join(f.component)}",
+            ),
+            mo.stat(
+                label="Grid",
+                value=f"{run.discrete.n_point}",
+                caption=f"z ≤ {run.model.z[-1]:.3g} Å · ψ₀ {run.psi_0_mv:g} mV",
+            ),
+            mo.stat(
+                label="κ" if charged else "Potential",
+                value=f"{run.kappa:.4g} Å⁻¹" if charged else str(run.potential.get("type", "—")),
+                caption=f"c_short {tuple(run.model.c_short.shape)} · `{run.cr_path.name}`",
+            ),
         ]
-        if charged:
-            lines.append(f"Inverse Debye length kappa = **{run.kappa:.4g}** 1/A")
-        msg = "  \n".join(lines)
-    except Exception as exc:  # noqa: BLE001 — surface setup errors in the UI
-        msg = f"**Setup failed:** `{type(exc).__name__}: {exc}`"
-    setup_md = mo.md(msg)
-    setup_md
+        summary = mo.hstack(stats, justify="space-between", gap=1.0, wrap=True)
+    summary
     return (run,)
 
 
 @app.cell
-def _bulk_metrics(mo, run):
-    if run is not None:
-        f = run.fluid
-        metrics = mo.md(
-            f"""
-            ### Bulk / wall setup metrics
-
-            | Quantity | Value |
-            |---|---|
-            | Temperature (K) | {f.temperature} |
-            | Concentration (M) | {f.concentration} |
-            | n_component / n_pair | {f.n_component} / {f.n_pair} |
-            | Potential type | `{run.potential.get("type", "?")}` |
-            | kappa (1/A) | {run.kappa:.6g} |
-            | c_short shape | `{run.model.c_short.shape}` |
-            """
-        )
-    else:
-        metrics = mo.md("_No fluid run._")
-    metrics
-    return
-
-
-@app.cell
-def _bulk_plots(mo, run):
+def _(mo, run):
     if run is None:
-        bulk_out = mo.md("_No run to plot._")
+        bulk_fig = mo.md("_Fix setup errors to see bulk inputs._")
     else:
-        z_grid = run.model.z
+        z = run.model.z
+        labels = _pair_labels(list(run.fluid.component))
         is_charged = run.fluid.symbol not in {"lj1", "lj2"}
         bu_ylim = [0, 10000] if is_charged else [-1, 10]
-        r_max = min(10.0, float(z_grid[-1]))
+        r_max = min(10.0, float(z[-1]))
 
-        fig_bulk, axes = plt.subplots(2, 2, figsize=(10, 7))
-        ax_c, ax_u, ax_f1, ax_f2 = axes.ravel()
+        fig = make_subplots(
+            rows=2,
+            cols=2,
+            subplot_titles=(
+                r"Bulk \(c_\mathrm{short}(r)\)",
+                r"Pair potential \(\beta u\)",
+                r"\(f_1(z)\)",
+                r"\(f_2(z)\)",
+            ),
+            vertical_spacing=0.14,
+            horizontal_spacing=0.10,
+        )
+        _add_series(fig, z, run.model.c_short, row=1, col=1, labels=labels)
+        _add_series(fig, z, run.beta_u, row=1, col=2, labels=labels)
+        _add_series(fig, z, run.model.f1, row=2, col=1, labels=labels)
+        _add_series(fig, z, run.model.f2, row=2, col=2, labels=labels)
 
-        for pair_i in range(run.model.c_short.shape[1]):
-            ax_c.plot(z_grid, run.model.c_short[:, pair_i], label=f"pair {pair_i}")
-        ax_c.set_xlim(0, r_max)
-        ax_c.set_xlabel("r (A)")
-        ax_c.set_ylabel("c_short")
-        ax_c.set_title("Bulk short-range c(r)")
-        ax_c.legend(fontsize=8)
-
-        bu = run.beta_u
-        if bu.ndim == 1:
-            ax_u.plot(z_grid, bu)
-        else:
-            for pair_i in range(bu.shape[1]):
-                ax_u.plot(z_grid, bu[:, pair_i], label=f"pair {pair_i}")
-            ax_u.legend(fontsize=8)
-        ax_u.set_xlim(0, r_max)
-        ax_u.set_ylim(*bu_ylim)
-        ax_u.set_xlabel("r (A)")
-        ax_u.set_ylabel(r"$\beta u$")
-        ax_u.set_title("Pair potential")
-
-        for pair_i in range(run.model.f1.shape[1]):
-            ax_f1.plot(z_grid, run.model.f1[:, pair_i], label=f"pair {pair_i}")
-            ax_f2.plot(z_grid, run.model.f2[:, pair_i], label=f"pair {pair_i}")
-        ax_f1.set_xlim(0, r_max)
-        ax_f1.set_xlabel("z (A)")
-        ax_f1.set_ylabel("f1")
-        ax_f1.set_title(r"$f_1(z)=\int_z^\infty z'\,c_\mathrm{short}\,dz'$")
-        ax_f1.legend(fontsize=8)
-        ax_f2.set_xlim(0, r_max)
-        ax_f2.set_xlabel("z (A)")
-        ax_f2.set_ylabel("f2")
-        ax_f2.set_title(r"$f_2(z)=\int_z^\infty (z')^2 c_\mathrm{short}\,dz'$")
-        ax_f2.legend(fontsize=8)
-
-        fig_bulk.tight_layout()
-        bulk_out = fig_bulk
-    bulk_out
+        fig.update_xaxes(range=[0, r_max], title_text="r, z (Å)")
+        fig.update_yaxes(title_text="c_short", row=1, col=1)
+        fig.update_yaxes(title_text="βu", range=bu_ylim, row=1, col=2)
+        fig.update_yaxes(title_text="f₁", row=2, col=1)
+        fig.update_yaxes(title_text="f₂", row=2, col=2)
+        # avoid duplicate legend entries across subplots
+        names_seen: set[str] = set()
+        for tr in fig.data:
+            if tr.name in names_seen:
+                tr.showlegend = False
+            else:
+                names_seen.add(tr.name)
+        _style_fig(fig, height=560, title=f"Bulk inputs · {run.fluid.symbol}")
+        bulk_fig = mo.ui.plotly(fig)
+    bulk_fig
     return
 
 
 @app.cell
-def _solve(mo, run, run_solve):
+def _(mo, run, run_solve):
     from charged_fluids import calc_hw, opt_func, solve_model
 
     g = None
+    solve_banner = mo.md("")
 
-    if run is None or not run_solve.value:
-        solve_out = mo.md("_Press **Run wall-fluid solve** when ready._")
+    if run is None:
+        solve_banner = mo.md("_Wall solve unavailable until setup succeeds._")
+    elif not run_solve.value:
+        solve_banner = mo.callout(
+            mo.md("Press **Solve wall–fluid** to run Newton–Krylov on the singlet residual."),
+            kind="neutral",
+        )
     elif run.fluid.status not in {"ready", "experimental"}:
-        solve_out = mo.md(f"Fluid status `{run.fluid.status}` — solve skipped.")
+        solve_banner = mo.callout(
+            mo.md(f"Fluid status `{run.fluid.status}` — solve skipped."),
+            kind="warn",
+        )
     else:
-        with mo.status.spinner("Solving wall-fluid residual (Newton–Krylov)…"):
+        with mo.status.spinner("Solving wall–fluid residual…"):
             sol = solve_model(
                 opt_func,
                 run.model.tw.copy(),
@@ -204,120 +319,155 @@ def _solve(mo, run, run_solve):
             )
         hw = calc_hw(sol.x, run.fluid.n_component, run.beta_phiw)
         g = hw + 1.0
-        solve_status = "converged" if sol.success else "failed"
+        ok = bool(sol.success)
         nit = getattr(sol, "nit", "?")
         g_inf = ", ".join(f"{g[-1, i]:.4f}" for i in range(g.shape[1]))
-        solve_out = mo.md(
-            f"Solve **{solve_status}** after {nit} iterations.  \n"
-            f"Message: `{getattr(sol, 'message', '')}`  \n"
-            f"g(z→∞) ≈ [{g_inf}]"
+        kind = "success" if ok else "danger"
+        solve_banner = mo.callout(
+            mo.md(
+                f"**{'Converged' if ok else 'Failed'}** after {nit} iterations.  \n"
+                f"`{getattr(sol, 'message', '')}`  \n"
+                f"\(g(z\\to\\infty) \\approx [{g_inf}]\)"
+            ),
+            kind=kind,
         )
-    solve_out
+    solve_banner
     return (g,)
 
 
 @app.cell
-def _wall_plot(g, mo, run):
+def _(g, mo, run):
     if run is None or g is None:
-        wall_out = mo.md(r"_Wall \(g_{wi}(z)\) appears here after a successful solve._")
+        wall_fig = mo.md(r"_Wall \(g_{wi}(z)\) will appear here after a solve._")
     else:
-        z_wall = run.model.z
-        fig_wall, ax_wall = plt.subplots(figsize=(7, 3.8))
-        for comp_i, name in enumerate(run.fluid.component):
-            ax_wall.plot(z_wall, g[:, comp_i], label=rf"$g_{{w,{name}}}$")
-        ax_wall.axhline(1.0, color="grey", ls="--", lw=0.8)
-        ax_wall.set_xlabel("z (A)")
-        ax_wall.set_ylabel(r"$g_{wi}(z)$")
-        ax_wall.set_xlim(0, min(15.0, float(z_wall[-1])))
-        ax_wall.legend()
-        ax_wall.set_title("Wall–fluid distribution")
-        fig_wall.tight_layout()
-        wall_out = fig_wall
-    wall_out
+        z = run.model.z
+        fig = go.Figure()
+        for i, name in enumerate(run.fluid.component):
+            fig.add_trace(
+                go.Scatter(
+                    x=z,
+                    y=g[:, i],
+                    mode="lines",
+                    name=rf"g<sub>w,{name}</sub>",
+                    hovertemplate="%{x:.3g} Å<br>%{y:.4g}<extra>" + name + "</extra>",
+                )
+            )
+        fig.add_hline(y=1.0, line_dash="dot", line_color="#888", line_width=1)
+        fig.update_xaxes(title_text="z (Å)", range=[0, min(15.0, float(z[-1]))])
+        fig.update_yaxes(title_text=r"g<sub>wi</sub>(z)")
+        _style_fig(fig, height=400, title=f"Wall–fluid distribution · {run.fluid.symbol}")
+        wall_fig = mo.ui.plotly(fig)
+    wall_fig
     return
 
 
 @app.cell
-def _bulk_oz_section(mo):
-    bulk_symbol = mo.ui.dropdown(options=["lj1", "lj2", "kcl", "2_2", "1_1"], value="lj1", label="Bulk fluid")
-    bulk_n = mo.ui.slider(256, 2048, value=512, step=256, label="bulk n_points")
-    dry_run = mo.ui.checkbox(value=True, label="Dry-run (do not write artefacts)")
-    run_bulk = mo.ui.run_button(label="Run bulk OZ")
-    bulk_controls = mo.vstack(
-        [
-            mo.md(
-                r"""
-                ---
-                ## Optional: regenerate bulk \(c(r)\) (dry-run)
-
-                Uses `charged_fluids.bulk.generate.generate_bulk_cr` (same path as
-                `just bulk-cr`). Leave **Dry-run** checked to avoid overwriting `data/bulk/`.
-                """
-            ),
-            mo.hstack([bulk_symbol, bulk_n, dry_run, run_bulk], justify="start"),
-        ]
-    )
-    bulk_controls
-    return bulk_n, bulk_symbol, dry_run, run_bulk
-
-
-@app.cell
-def _bulk_oz_run(bulk_n, bulk_symbol, dry_run, mo, run_bulk):
+def _(bulk_n, dry_run, mo, run_bulk, symbol):
     from charged_fluids.bulk.generate import generate_bulk_cr
 
     result = None
-    if not run_bulk.value:
-        oz_msg = mo.md("_Press **Run bulk OZ** to solve Picard HNC/PY (may take a few seconds)._")
+    sym = symbol.value
+
+    if sym not in BULK_OZ_SYMBOLS:
+        oz_banner = mo.callout(
+            mo.md(
+                f"**`{sym}`** has no live bulk OZ path here "
+                f"(e.g. digitised CF1). Use the stored artefact above, "
+                f"or switch fluid to one of `{', '.join(sorted(BULK_OZ_SYMBOLS))}`."
+            ),
+            kind="warn",
+        )
+    elif not run_bulk.value:
+        mode = "dry-run" if dry_run.value else "**will write** `data/bulk/`"
+        oz_banner = mo.callout(
+            mo.md(
+                f"Optional: regenerate bulk \(c(r)\) for **`{sym}`** "
+                f"({int(bulk_n.value)} points, {mode}). "
+                "Same entry point as `just bulk-cr`."
+            ),
+            kind="neutral",
+        )
     else:
-        with mo.status.spinner(f"Bulk OZ for {bulk_symbol.value}…"):
+        with mo.status.spinner(f"Bulk OZ · {sym}…"):
             try:
                 result, cr_path, meta_path = generate_bulk_cr(
-                    bulk_symbol.value,
+                    sym,
                     n_points=int(bulk_n.value),
                     write=not bool(dry_run.value),
                 )
             except Exception as exc:  # noqa: BLE001
-                oz_msg = mo.md(f"**Bulk OZ failed:** `{type(exc).__name__}: {exc}`")
+                oz_banner = mo.callout(
+                    mo.md(f"**Bulk OZ failed:** `{type(exc).__name__}: {exc}`"),
+                    kind="danger",
+                )
                 result = None
             else:
-                oz_status = "converged" if result.converged else "NOT converged"
+                ok = bool(result.converged)
                 tail = float(abs(result.c_short[:, -max(5, result.r.size // 20) :]).max())
                 paths = ""
                 if cr_path is not None:
-                    paths = f"  \nWrote `{cr_path}` and `{meta_path}`"
-                oz_msg = mo.md(
-                    f"**{bulk_symbol.value}**: {oz_status} after {result.n_iter} iterations  \n"
-                    f"residual = `{result.residual:.3e}` · "
-                    f"closure = `{result.meta.get('closure')}`  \n"
-                    f"|c_short| tail max = `{tail:.3e}`{paths}"
+                    paths = f"  \nWrote `{cr_path}` · `{meta_path}`"
+                oz_banner = mo.callout(
+                    mo.md(
+                        f"**{sym}**: {'converged' if ok else 'not converged'} "
+                        f"· {result.n_iter} iters · residual `{result.residual:.3e}`  \n"
+                        f"closure `{result.meta.get('closure')}` · "
+                        f"|c_short| tail max `{tail:.3e}`{paths}"
+                    ),
+                    kind="success" if ok else "warn",
                 )
-    oz_msg
+    oz_banner
     return (result,)
 
 
 @app.cell
-def _bulk_oz_plot(mo, result):
+def _(mo, result, run, symbol):
     if result is None:
-        oz_plot = mo.md("_Bulk OZ plots appear here after **Run bulk OZ**._")
+        oz_fig = mo.md("")
     else:
-        fig_oz, ax_oz = plt.subplots(1, 2, figsize=(10, 3.5))
-        for pair_j in range(result.c_short.shape[0]):
-            ax_oz[0].plot(result.r, result.c_short[pair_j], label=f"pair {pair_j}")
-            ax_oz[1].plot(result.r, result.g[pair_j], label=f"pair {pair_j}")
-        ax_oz[0].set_xlabel("r (A)")
-        ax_oz[0].set_ylabel("c_short")
-        ax_oz[0].set_title("Generated c_short(r)")
-        ax_oz[0].set_xlim(0, min(15.0, float(result.r[-1])))
-        ax_oz[0].legend(fontsize=8)
-        ax_oz[1].set_xlabel("r (A)")
-        ax_oz[1].set_ylabel("g(r)")
-        ax_oz[1].set_title("g(r)")
-        ax_oz[1].set_xlim(0, min(15.0, float(result.r[-1])))
-        ax_oz[1].axhline(1.0, color="grey", ls="--", lw=0.8)
-        ax_oz[1].legend(fontsize=8)
-        fig_oz.tight_layout()
-        oz_plot = fig_oz
-    oz_plot
+        labels = None
+        if run is not None and run.fluid.symbol == symbol.value:
+            labels = _pair_labels(list(run.fluid.component))
+        r_max = min(15.0, float(result.r[-1]))
+        fig = make_subplots(
+            rows=1,
+            cols=2,
+            subplot_titles=(r"Generated \(c_\mathrm{short}(r)\)", r"\(g(r)\)"),
+            horizontal_spacing=0.10,
+        )
+        _add_series(fig, result.r, result.c_short, row=1, col=1, labels=labels)
+        _add_series(fig, result.r, result.g, row=1, col=2, labels=labels)
+        fig.add_hline(y=1.0, line_dash="dot", line_color="#888", line_width=1, row=1, col=2)
+        names_seen: set[str] = set()
+        for tr in fig.data:
+            if tr.name in names_seen:
+                tr.showlegend = False
+            else:
+                names_seen.add(tr.name)
+        fig.update_xaxes(range=[0, r_max], title_text="r (Å)")
+        fig.update_yaxes(title_text="c_short", row=1, col=1)
+        fig.update_yaxes(title_text="g(r)", row=1, col=2)
+        _style_fig(fig, height=380, title=f"Bulk OZ · {symbol.value}")
+        oz_fig = mo.ui.plotly(fig)
+    oz_fig
+    return
+
+
+@app.cell
+def _(mo):
+    footer = mo.accordion(
+        {
+            "Units & companions": mo.md(
+                r"""
+                - Length: Å · concentration: mol L⁻¹ · potentials → \(\beta u\)
+                - Coulomb scale: `charge_pair / (2 r)` (see `charged_fluids.units`)
+                - Bulk-only explorer: `just marimo-bulk`
+                - Legacy Jupyter: `notebooks/legacy/`
+                """
+            )
+        }
+    )
+    footer
     return
 
 

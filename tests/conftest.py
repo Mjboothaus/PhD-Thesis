@@ -36,7 +36,8 @@ def lj1_cr_path(data_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def kcl_cr_path(data_dir: Path) -> Path:
-    path = data_dir / "nrcg-cr-approx-maybe.dat"
+    """Modern Ng/PY short-range KCl artefact (not the legacy nrcg dump)."""
+    path = data_dir / "bulk" / "kcl.cr.dat"
     assert path.is_file(), f"Missing bulk c(r) fixture: {path}"
     return path
 

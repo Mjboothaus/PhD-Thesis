@@ -970,6 +970,7 @@ docs = [
 notebook = [
     { name = "ipython" },
     { name = "marimo" },
+    { name = "plotly" },
 ]
 
 [package.metadata]
@@ -1005,6 +1006,7 @@ docs = [
 notebook = [
     { name = "ipython", specifier = ">=8.21.0" },
     { name = "marimo", specifier = ">=0.13.0" },
+    { name = "plotly", specifier = ">=5.23.0" },
 ]
 
 [[package]]

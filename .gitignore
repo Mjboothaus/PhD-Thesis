@@ -1,5 +1,6 @@
+# macOS Finder metadata (any depth)
 .DS_Store
-*/.DS_Store
+**/.DS_Store
 .vscode/
 
 src/pyoz/
@@ -8,6 +9,7 @@ output/
 data/solver_out.txt
 
 #*.dat
+# Legacy approximate KCl dump (optional archival); modern path is data/bulk/kcl.cr.dat
 !data/nrcg-cr-approx-maybe.dat
 
 # Byte-compiled / optimized / DLL files

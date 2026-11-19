@@ -34,8 +34,9 @@ just init            # uv sync (Python 3.14)
 just test            # pytest
 just quality         # ruff + ty + pytest
 just app             # Streamlit (localhost)
-just bulk-cr lj1     # write data/bulk/{symbol}.cr.dat (+ .meta.json)
-just marimo          # wall-fluid Marimo explorer
+just bulk-cr lj1     # write data/bulk/{symbol}.cr.dat (+ .meta.json; TOML defaults)
+just marimo          # wall-fluid Marimo explorer (Plotly)
+just marimo-bulk     # bulk c(r) / parameters explorer (Plotly)
 just hooks-install   # prek git hooks
 ```
 

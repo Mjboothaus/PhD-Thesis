@@ -112,12 +112,17 @@ hooks:
 # Format, typecheck, lint, test
 quality: format typecheck lint test
 
-# --- Marimo notebook ---
+# --- Marimo notebooks (Plotly figures) ---
 
 # Edit the wall-fluid Marimo explorer (installs notebook group on demand)
 marimo:
     uv sync --group notebook
     uv run marimo edit notebooks/wall_fluid_explorer.py
+
+# Bulk c(r) / parameters / optional OZ explorer
+marimo-bulk:
+    uv sync --group notebook
+    uv run marimo edit notebooks/bulk_fluid_explorer.py
 
 # --- Blog notes ---
 
