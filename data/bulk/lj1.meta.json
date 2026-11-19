@@ -1,0 +1,35 @@
+{
+  "created_at": "2026-11-19T03:24:12.384210+00:00",
+  "stem": "lj1",
+  "use_short": true,
+  "converged": true,
+  "n_iter": 16,
+  "residual": 8.944079201964966e-10,
+  "beta": 2.429304214670441e+20,
+  "rho": [
+    0.000301107038
+  ],
+  "n_pair": 1,
+  "n_points": 512,
+  "r_max": 25.6,
+  "solver_meta": {
+    "fluid": "lj1",
+    "closure": "hnc",
+    "epsilon": 1.6605390671738469e-22,
+    "sigma": 5.0,
+    "temperature": 298.15,
+    "density": 0.000301107038,
+    "n_points": 512,
+    "delta_r": 0.05,
+    "fluid_symbol": "lj1",
+    "cr_filename_legacy": "lj1-cr.data",
+    "bulk_params": {
+      "sigma_A": 5.0,
+      "epsilon_kJ_mol": 0.1,
+      "n_points": 1024,
+      "delta_r": 0.05,
+      "closure": "hnc"
+    }
+  },
+  "tail_abs_max_c_short": 1.1946537140523326e-05
+}

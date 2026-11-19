@@ -28,7 +28,7 @@ Use `git show <ref>:path` when refreshing snippets so the post stays honest.
 | Quality | black / isort / flake8 / mypy | **prek + ruff + ty** |
 | Science vs UI | `modelling.py` imports Streamlit `@cache_data` | **`charged_fluids`** package is UI-free |
 | Tests | 3 helpers under `src/tests/` | Top-level `tests/`, residual/`calc_tw` coverage ~99% |
-| Bulk c(r) | Hand-dropped files; charged tail wrong | _Phase 3: first-class artefacts + generation path_ |
+| Bulk c(r) | Hand-dropped files; charged tail wrong | **Phase 3:** `data/bulk/` artefacts + `charged_fluids.bulk` OZ (LJ ready; KCl experimental) |
 | Fluids | LJ credible; KCl/water/2-2 incomplete | _Phase 4: staged readiness flags_ |
 | Exploration UI | Streamlit only | _Phase 5: Marimo on same core_ |
 

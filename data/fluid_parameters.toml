@@ -81,3 +81,18 @@ epsilon_r = 78.3
 index = 5
 cr_filename = "TO_BE_DEFINED.dat"
 status = "not_implemented"
+
+[lj1.bulk]
+# Match historical pyoz nrcg-lj-1comp (sigma 0.5 nm, eps 0.1 kJ/mol)
+sigma_A = 5.0
+epsilon_kJ_mol = 0.1
+n_points = 1024
+delta_r = 0.05
+closure = "hnc"
+
+[kcl.bulk]
+n_points = 1024
+delta_r = 0.05
+closure = "hnc"
+# Soft reduced LJ core under Coulomb (kJ/mol)
+epsilon_kJ_mol = 0.5

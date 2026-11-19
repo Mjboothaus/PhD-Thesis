@@ -42,9 +42,18 @@ app-opt app_name="src/oo_refactoring/Main.py":
 update-st-config:
     uv run streamlit config show > .streamlit/config.toml
 
-# --- Bulk fluid (legacy pyOZ path) ---
+# --- Bulk c(r) generation (Phase 3) ---
 
-# Run bulk-fluid (pyOz) - default 1 component LJ
+# Generate bulk short-range c(r) into data/bulk/{symbol}.cr.dat
+bulk-cr symbol="lj1" n_points="1024" delta_r="0.05":
+    uv run python -m charged_fluids.bulk.cli {{symbol}} --n-points {{n_points}} --delta-r {{delta_r}}
+
+# Generate both LJ and KCl bulk artefacts
+bulk-cr-all:
+    just bulk-cr lj1
+    just bulk-cr kcl
+
+# Legacy pyOZ path (vendored; see docs/LEGACY.md)
 bulk-fluid-pyoz input_file="lj/nrcg-lj-1comp.in":
     cd src/pyoz && uv run python pyoz.py -i tests/{{input_file}}
 
