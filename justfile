@@ -45,20 +45,25 @@ update-st-config:
 # --- Bulk c(r) generation (Phase 3) ---
 
 # Generate bulk short-range c(r) into data/bulk/{symbol}.cr.dat
-bulk-cr symbol="lj1" n_points="1024" delta_r="0.05":
+# Grid/closure defaults come from data/fluid_parameters.toml [symbol.bulk].
+bulk-cr symbol="lj1":
+    uv run python -m charged_fluids.bulk.cli {{symbol}}
+
+# Optional explicit grid override
+bulk-cr-grid symbol="lj1" n_points="1024" delta_r="0.05":
     uv run python -m charged_fluids.bulk.cli {{symbol}} --n-points {{n_points}} --delta-r {{delta_r}}
 
-# Generate both LJ and KCl bulk artefacts
-bulk-cr-all:
-    just bulk-cr lj1
-    just bulk-cr kcl
-    just bulk-cr 2_2
-    just bulk-cr 1_1
-    just bulk-cr-h2o
+# List fluids that support bulk generation
+bulk-cr-list:
+    uv run python -m charged_fluids.bulk.cli --list
 
-# Build CF1 water bulk c(r) from digitised thesis Fig 3.12
+# Generate all supported bulk artefacts (lj, ionic, cf1 digitised)
+bulk-cr-all:
+    uv run python -m charged_fluids.bulk.cli --all
+
+# Build CF1 water bulk c(r) from digitised thesis Fig 3.12 (alias of bulk-cr h2o)
 bulk-cr-h2o:
-    uv run python -m charged_fluids.bulk.build_digitised_h2o
+    uv run python -m charged_fluids.bulk.cli h2o
 
 # Legacy pyOZ path (vendored; see docs/LEGACY.md)
 bulk-fluid-pyoz input_file="lj/nrcg-lj-1comp.in":

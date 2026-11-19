@@ -20,6 +20,68 @@ from charged_fluids.setup import enrich_fluid
 _K_J_PER_KJ_MOL = 1000.0 / Avogadro
 
 
+def c_short_tail_max(result: BulkResult, *, fraction: float = 0.05) -> float:
+    """Max |c_short| on the outer ``fraction`` of the radial grid."""
+    n = result.r.size
+    n_tail = max(5, int(n * fraction))
+    return float(np.max(np.abs(result.c_short[:, -n_tail:])))
+
+
+def wall_usable_c_short(result: BulkResult, *, tail_tol: float = 1e-2) -> bool:
+    """Whether short-range c is small enough at large r for wall-fluid input."""
+    return c_short_tail_max(result) < tail_tol
+
+
+def bulk_potential_type(symbol: str, toml_path: Path | None = None) -> str | None:
+    """Return potential type for ``symbol``, or None if unknown / no potential."""
+    fluid = set_fluid_parameters(symbol, toml_path=toml_path)
+    if fluid is None:
+        return None
+    pot = fluid.potential or {}
+    t = str(pot.get("type", "")).lower().strip()
+    return t or None
+
+
+def list_bulk_symbols(toml_path: Path | None = None) -> list[str]:
+    """Symbols that ``generate_bulk_cr`` can handle (lj, ionic binary, cf1)."""
+    table = load_fluid_table(toml_path)
+    out: list[str] = []
+    for key, raw in table.items():
+        if not isinstance(raw, dict) or "component" not in raw:
+            continue
+        pot = dict(raw.get("potential", {}) or {})
+        pot_type = str(pot.get("type", "")).lower()
+        n_comp = len(raw.get("component", []))
+        if pot_type == "lj" or (pot_type == "ionic" and n_comp == 2) or pot_type == "cf1":
+            out.append(str(raw.get("symbol", key)))
+    return sorted(set(out))
+
+
+def generate_all_bulk_cr(
+    *,
+    bulk_dir: Path | None = None,
+    toml_path: Path | None = None,
+    n_points: int | None = None,
+    delta_r: float | None = None,
+    closure: str | None = None,
+    write: bool = True,
+) -> list[tuple[str, BulkResult, Path | None, Path | None]]:
+    """Generate bulk artefacts for every supported fluid symbol."""
+    rows: list[tuple[str, BulkResult, Path | None, Path | None]] = []
+    for symbol in list_bulk_symbols(toml_path=toml_path):
+        result, cr_path, meta_path = generate_bulk_cr(
+            symbol,
+            bulk_dir=bulk_dir,
+            toml_path=toml_path,
+            n_points=n_points,
+            delta_r=delta_r,
+            closure=closure,
+            write=write,
+        )
+        rows.append((symbol, result, cr_path, meta_path))
+    return rows
+
+
 def generate_bulk_cr(
     symbol: str,
     *,
