@@ -12,6 +12,14 @@ a long-form post can be assembled later for Databooth or a personal site.
 | 2026-11-19 | [Rebuilding confidence without the Fortran](2026-11-19-characterisation-tests.md) |
 | 2026-11-19 | [Phase 1b — residual coverage without a Fortran oracle](2026-11-19-calc-tw-coverage.md) |
 
+## Capstone comparison (in progress)
+
+At the end of the modernisation arc, publish a single comparative post built from
+[DRAFT-before-after-comparison.md](DRAFT-before-after-comparison.md). It is kept
+updated with git anchors (`main` vs feature tips) so before/after claims stay
+verifiable. Progressive notes below feed that draft; they are not a substitute
+for it.
+
 ## Themes
 
 - Lost Fortran 77 sources and what “correct” means without a gold master
@@ -20,3 +28,4 @@ a long-form post can be assembled later for Databooth or a personal site.
 - Characterisation tests before refactor
 - Bulk PyOZ pipeline as a first-class artefact
 - Streamlit for deployment, Marimo for research exploration
+- **Before/after comparison of key codebase elements** (capstone post)
