@@ -1,60 +1,83 @@
+# Single source of truth for fluid thermodynamic + potential parameters.
+# Loaded by charged_fluids.parameters (do not duplicate in Python dicts).
 
 [kcl]
 name = "Potassium Chloride"
+symbol = "kcl"
 component = ["K", "Cl"]
 valence = [1.0, -1.0]
-charge = nan
 temperature = 1075.0
 concentration = [19.5, 19.5]
 epsilon_r = 1.0
 index = 1
-charge_pair = nan
-rho = nan
-beta = 0.0
-epsilon = 0.0
+cr_filename = "nrcg-cr-approx-maybe.dat"
+status = "experimental"  # bulk short-range c(r) still incorrect
+
+[kcl.potential]
+type = "ionic"
+n_outer_shell = [8.0, 8.0]
+# alpha = 1 / 0.337 inverse angstrom
+alpha = 2.967359050445104
+b = 3.38e-20
+sigma = [1.463, 1.585]
+# Historical values were stored as X * 1e-19 joule units
+cap_c = [2.43e-18, 4.8e-18, 1.245e-17]
+cap_d = [2.4e-18, 7.3e-18, 2.5e-17]
 
 [lj1]
 name = "Lennard-Jones liquid (1-comp)"
+symbol = "lj1"
 component = ["LJ"]
-valence = [0]
-charge = nan
+valence = [0.0]
 temperature = 298.15
 concentration = [0.5]
-epsilon_r = 1
+epsilon_r = 1.0
 index = 2
-charge_pair = nan
-rho = nan
-beta = 0.0
-epsilon = 0.0
+cr_filename = "lj1-cr.data"
+status = "ready"
+
+[lj1.potential]
+type = "lj"
+epsilon_lj = [0.1]
+sigma_lj = [0.5]
 
 [lj2]
 name = "Lennard-Jones liquid (2-comp)"
-component = ["A1", "A2"]
+symbol = "lj2"
+component = ["1", "2"]
 valence = [0.0, 0.0]
-charge = nan
 temperature = 298.15
 concentration = [0.5, 0.5]
-epsilon_r = 1
+epsilon_r = 1.0
 index = 5
-charge_pair = nan
-rho = nan
-beta = 0.0
-epsilon = 0.0
+cr_filename = "pyoz-cr-lj-equal-2-comp.data"
+status = "experimental"  # bulk file may be missing
+
+[lj2.potential]
+type = "lj"
+epsilon_lj = [0.1, 0.1, 0.1]
+sigma_lj = [0.5, 0.5, 0.5]
 
 [h2o]
 name = "Liquid water"
+symbol = "h2o"
 component = ["H", "2O"]
 valence = [1.0, -1.0]
 temperature = 298.0
 concentration = [1.0, 1.0]
 epsilon_r = 1.0
 index = 2
+cr_filename = "TO_BE_DEFINED.dat"
+status = "not_implemented"
 
 [2_2]
 name = "2-2 Aqueous electrolyte"
+symbol = "2_2"
 component = ["+2", "-2"]
 valence = [2.0, -2.0]
-temperature = 298.0
+temperature = 298.15
 concentration = [1.0, 1.0]
 epsilon_r = 78.3
-index = 3
+index = 5
+cr_filename = "TO_BE_DEFINED.dat"
+status = "not_implemented"

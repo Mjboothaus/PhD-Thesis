@@ -33,12 +33,16 @@ from charged_fluids.numerics import Discretisation, set_num_parameters
 from charged_fluids.parameters import (
     Fluid,
     fluid_specific_parameters,
+    list_fluid_symbols,
+    load_fluid_table,
     set_fluid_parameters,
 )
+from charged_fluids.setup import FluidRun, enrich_fluid, prepare_fluid_run
 
 __all__ = [
     "Discretisation",
     "Fluid",
+    "FluidRun",
     "Model",
     "calc_beta",
     "calc_beta_pauling",
@@ -56,12 +60,16 @@ __all__ = [
     "calc_tw",
     "calc_u",
     "calc_u_lj",
+    "enrich_fluid",
     "fluid_specific_parameters",
     "integral_z_infty_dr_r2_c_short",
     "integral_z_infty_dr_r_c_short",
     "interpolate_cr",
+    "list_fluid_symbols",
     "load_and_interpolate_cr",
+    "load_fluid_table",
     "opt_func",
+    "prepare_fluid_run",
     "set_fluid_parameters",
     "set_num_parameters",
     "solve_model",
