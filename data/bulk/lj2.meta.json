@@ -1,0 +1,38 @@
+{
+  "created_at": "2026-11-19T03:31:08.009356+00:00",
+  "stem": "lj2",
+  "use_short": true,
+  "converged": true,
+  "n_iter": 20,
+  "residual": 7.400910772943133e-10,
+  "beta": 2.429304214670441e+20,
+  "rho": [
+    0.000301107038,
+    0.000301107038
+  ],
+  "n_pair": 3,
+  "n_points": 256,
+  "r_max": 12.8,
+  "solver_meta": {
+    "fluid": "lj1",
+    "closure": "hnc",
+    "epsilon": 1.6605390671738469e-22,
+    "sigma": 5.0,
+    "temperature": 298.15,
+    "density": 0.000602214076,
+    "n_points": 256,
+    "delta_r": 0.05,
+    "n_component": 2,
+    "note": "Equal multi-comp LJ: pair c(r) from 1-comp OZ at total density",
+    "fluid_symbol": "lj2",
+    "cr_filename_legacy": "pyoz-cr-lj-equal-2-comp.data",
+    "bulk_params": {
+      "sigma_A": 5.0,
+      "epsilon_kJ_mol": 0.1,
+      "n_points": 1024,
+      "delta_r": 0.05,
+      "closure": "hnc"
+    }
+  },
+  "tail_abs_max_c_short": 0.000742850428645647
+}
