@@ -10,6 +10,7 @@ a long-form post can be assembled later for Databooth or a personal site.
 |------|------|
 | 2026-11-19 | [From mixed requirements to uv-only + Astral quality gates](2026-11-19-uv-astral-tooling.md) |
 | 2026-11-19 | [Rebuilding confidence without the Fortran](2026-11-19-characterisation-tests.md) |
+| 2026-11-19 | [Phase 1b — residual coverage without a Fortran oracle](2026-11-19-calc-tw-coverage.md) |
 
 ## Themes
 
