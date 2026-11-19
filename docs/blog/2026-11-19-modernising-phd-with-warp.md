@@ -11,8 +11,8 @@
 
 ## Executive summary
 
-- In 1998 I submitted *Charged fluids near interfaces: Integral equation theory*. The Fortran 77 sources are gone. What remained was a useful Python/Streamlit demo with almost no tests, mixed packaging, and bulk correlation inputs that did not quite behave for charged fluids.
-- Over a concentrated modernisation arc we rebuilt the stack around a UI-free science core (`charged_fluids`), uv-only packaging on Python 3.14, Astral quality gates (prek + ruff + ty), a bulk Ornstein–Zernike pipeline, multi-fluid readiness, and research notebooks in Marimo with Plotly.
+- In 1998 I submitted *Charged fluids near interfaces: Integral equation theory*. The numerical engine was Fortran 77; those sources are gone. From at least **July 2022** (see this repo’s git history) I started a **new** Python reimplementation—not a salvage of leftover thesis code—building wall–fluid numerics, pyOZ experiments, and a Streamlit app from scratch.
+- By the **2026 modernisation tip** that stack was a useful demo, but still thin on tests, mixed packaging, and bulk correlation inputs that did not quite behave for charged fluids. A concentrated modernisation arc then rebuilt it around a UI-free science core (`charged_fluids`), uv-only packaging on Python 3.14, Astral quality gates (prek + ruff + ty), a bulk Ornstein–Zernike pipeline, multi-fluid readiness, and research notebooks in Marimo with Plotly.
 - Warp’s agentic environment accelerated the work: phased PRs, characterisation tests before refactors, bulk CLI design, KCl short-range stabilisation, and notebook consolidation. Humans still owned physics judgement, merge discipline, and “do not overclaim Fortran parity”.
 - **Cost of Warp assistance is real and metered.** On current Warp pricing, agent usage is charged at provider API rates (plus optional cloud compute/platform). For a day of dense multi-PR agent work on a mid-size repo, a practical planning band is **on the order of tens of US dollars of included/add-on agent usage**—not “free coding”, and not a substitute for domain skill. Exact invoices vary with model choice, conversation length, and tool-call depth; check *Settings → Billing and usage* for your run.
 
@@ -22,17 +22,29 @@
 
 Most AI coding stories stop at “we shipped faster”. Scientific and long-lived research code has a harder test:
 
-1. **There may be no gold master.** Lost Fortran means you cannot diff against truth; you characterise behaviour and lock physical invariants.
-2. **UI is not the product.** Streamlit is a demo. The equations must live somewhere importable by tests, notebooks, and CLIs.
+1. **There may be no gold master.** Lost Fortran means a greenfield Python rewrite cannot diff against the original engine; you characterise behaviour and lock physical invariants.
+2. **UI is not the product.** Streamlit is a demo surface on top of a multi-year reimplementation. The equations must live somewhere importable by tests, notebooks, and CLIs.
 3. **Speed without guardrails is just faster entropy.** Agents will happily duplicate fluid selectors, leave xfail markers forever, and regenerate bulk metadata timestamps if you let them.
 
 This project is a small case study in that combination: **intent-driven development with deterministic checks**, applied to integral equation theory rather than a CRUD app.
 
 ---
 
+## Timeline (so the story stays honest)
+
+| When | What |
+|------|------|
+| **1998** | PhD submitted; numerical work in **Fortran 77** |
+| **Later** | F77 sources no longer available (not recoverable from the old online-resources path) |
+| **2022-07 onward** | **New** Python implementation in this repo (`Initial setup`, pyOZ bring-up, Streamlit app, digitised thesis figures)—a rewrite, not residual Fortran glue |
+| **Pre-2026 modernisation tip** | Working demo; sparse tests; packaging/UI still tangled (`879767c`) |
+| **2026-11** | Phased modernisation PRs #22–#34 (this post) |
+
 ## The before picture (honest)
 
-| Theme | Before |
+“Before” here means **immediately prior to the 2026 modernisation arc**—after years of the 2022+ Python rewrite—not “whatever was left of the thesis tarball”.
+
+| Theme | Before (≈ `879767c`) |
 |-------|--------|
 | Confidence | “LJ seems to work in the app” |
 | Packaging | `requirements*.txt` + uv; Streamlit in core deps |
@@ -42,7 +54,7 @@ This project is a small case study in that combination: **intent-driven developm
 | Bulk c(r) | Hand-dropped files; KCl short-range tail dubious |
 | Exploration | Streamlit only |
 
-Git anchor for “before”: `879767c` on `main` (pre-modernisation tip).
+Git anchor for that snapshot: `879767c` on `main`.
 
 ---
 
@@ -211,7 +223,7 @@ Practical habit: after a heavy session, open **Settings → Billing and usage**,
 
 Lost sources force humility. Agents force discipline.
 
-The durable outcome is not that Warp “rewrote my PhD”. It is that the **equations now live in a tested package**, bulk \(c(r)\) is a first-class artefact, charged short-range tails are measurable, and exploration UIs share one engine—with a **known, metered cost** for the assistance that got us there faster.
+The durable outcome is not that Warp “rewrote my PhD”. The 2022 Python rewrite already did the hard restart without Fortran. This arc made that rewrite **operable**: equations in a tested package, bulk \(c(r)\) a first-class artefact, charged short-range tails measurable, exploration UIs sharing one engine—with a **known, metered cost** for the agent assistance that accelerated the last mile.
 
 If you maintain research or “demo that became production” codebases, the pattern is portable:
 

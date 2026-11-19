@@ -10,10 +10,13 @@
 ## Why this post exists
 
 In 1998 I submitted *Charged fluids near interfaces: Integral equation theory*.
-The numerical engine was Fortran 77. Those sources are gone. A Python/Streamlit
-reimplementation grew over the years as a useful demo — but with almost no
-tests, mixed packaging, and charged-fluid bulk inputs that never quite
-behaved.
+The numerical engine was Fortran 77. Those sources are gone. From at least
+**July 2022** this repository records a **new** Python reimplementation
+(wall–fluid numerics, pyOZ experiments, Streamlit app)—started deliberately
+once it was clear the F77 code was not coming back—not a leftover thesis
+demo. That rewrite grew into a useful app, but by the 2026 modernisation tip
+it still had almost no tests, mixed packaging, and charged-fluid bulk inputs
+that never quite behaved.
 
 This post is not a changelog. It is a **before/after** of the codebase after a
 deliberate modernisation arc: tooling → tests → package boundaries → bulk c(r)
