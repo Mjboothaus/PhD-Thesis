@@ -51,7 +51,7 @@ concentration = [0.5, 0.5]
 epsilon_r = 1.0
 index = 5
 cr_filename = "pyoz-cr-lj-equal-2-comp.data"
-status = "experimental"  # bulk file may be missing
+status = "ready"
 
 [lj2.potential]
 type = "lj"
@@ -96,3 +96,10 @@ delta_r = 0.05
 closure = "hnc"
 # Soft reduced LJ core under Coulomb (kJ/mol)
 epsilon_kJ_mol = 0.5
+
+[lj2.bulk]
+sigma_A = 5.0
+epsilon_kJ_mol = 0.1
+n_points = 1024
+delta_r = 0.05
+closure = "hnc"

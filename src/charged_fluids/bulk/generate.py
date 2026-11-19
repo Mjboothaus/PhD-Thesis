@@ -14,7 +14,7 @@ from charged_fluids.bulk.oz_solver import (
     solve_bulk_binary_coulomb_lj,
     solve_bulk_lj,
 )
-from charged_fluids.parameters import set_fluid_parameters
+from charged_fluids.parameters import load_fluid_table, set_fluid_parameters
 from charged_fluids.setup import enrich_fluid
 
 _K_J_PER_KJ_MOL = 1000.0 / Avogadro
@@ -37,24 +37,24 @@ def generate_bulk_cr(
     fluid = enrich_fluid(fluid)
     pot = fluid.potential
     pot_type = str(pot.get("type", "")).lower()
-    from charged_fluids.parameters import load_fluid_table
 
     table = load_fluid_table(toml_path)
     bulk = dict(table.get(symbol, {}).get("bulk", {}) or {})
 
     n_pts = int(n_points if n_points is not None else bulk.get("n_points", 1024))
     dr = float(delta_r if delta_r is not None else bulk.get("delta_r", 0.05))
-    clos = str(closure if closure is not None else bulk.get("closure", "hnc"))
+    clos = cast(
+        Literal["hnc", "py"], str(closure if closure is not None else bulk.get("closure", "hnc"))
+    )
 
-    if pot_type == "lj" and fluid.n_component == 1:
+    if pot_type == "lj":
         sigma = float(bulk.get("sigma_A", float(np.asarray(pot["sigma_lj"]).ravel()[0])))
         if "epsilon_kJ_mol" in bulk:
             epsilon = float(bulk["epsilon_kJ_mol"]) * _K_J_PER_KJ_MOL
         else:
-            # Treat epsilon_lj as reduced eps* => epsilon = eps* kT
             eps_star = float(np.asarray(pot["epsilon_lj"]).ravel()[0])
             epsilon = eps_star * Boltzmann * fluid.temperature
-        density = float(fluid.rho[0])
+        density = float(np.sum(fluid.rho))
         result = solve_bulk_lj(
             temperature=fluid.temperature,
             density=density,
@@ -62,11 +62,21 @@ def generate_bulk_cr(
             sigma=sigma,
             n_points=n_pts,
             delta_r=dr,
-            closure=cast(Literal["hnc", "py"], clos),
+            closure=clos,
             mix=0.75,
             max_iter=2000,
             tol=1e-9,
         )
+        if fluid.n_component > 1:
+            n_pair = fluid.n_pair
+            c1 = result.c_short[0]
+            result.c_full = np.vstack([c1] * n_pair)
+            result.c_short = result.c_full.copy()
+            result.g = np.vstack([result.g[0]] * n_pair)
+            result.gamma = np.vstack([result.gamma[0]] * n_pair)
+            result.rho = fluid.rho.copy()
+            result.meta["n_component"] = fluid.n_component
+            result.meta["note"] = "Equal multi-comp LJ: pair c(r) from 1-comp OZ at total density"
     elif pot_type == "ionic" and fluid.n_component == 2:
         sig = np.asarray(pot["sigma"], dtype=float)
         eps_kj = float(bulk.get("epsilon_kJ_mol", 0.5))
@@ -83,7 +93,7 @@ def generate_bulk_cr(
             epsilons_lj=eps_lj,
             n_points=n_pts,
             delta_r=dr,
-            closure=cast(Literal["hnc", "py"], clos),
+            closure=clos,
             mix=0.1,
             max_iter=2000,
             tol=1e-6,
