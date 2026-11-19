@@ -19,8 +19,8 @@ The original thesis included electronic resources at the University of Sydney (F
 | **lj1** | Ready | `data/bulk/lj1.cr.dat` | One-component LJ |
 | **lj2** | Ready | `data/bulk/lj2.cr.dat` | Two-component LJ |
 | **kcl** | Experimental | `data/bulk/kcl.cr.dat` (Ng/PY) | Short-range tail improved; \(g(r)\) residual still elevated |
-| **h2o** | Stub | — | Parameters only (`not_implemented`) |
-| **2_2** | Stub | — | Parameters only (`not_implemented`) |
+| **h2o** | Experimental | `data/bulk/h2o.cr.dat` (digitised Fig 3.12) | **CF1** central-force water (O, H) |
+| **2_2** | Experimental | `data/bulk/2_2.cr.dat` | Soft-core 2:2 electrolyte (Ng/PY) |
 
 Core package: **`src/charged_fluids/`** (Python 3.14). Streamlit pages under `src/pages/` are thin shims. Shared preparation: `prepare_fluid_run` → `FluidRun`.
 
@@ -79,7 +79,7 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 
 - Tighten KCl bulk residual / \(g(r)\) and wall smoke with the Ng artefact
 - Literature benchmarks (e.g. Pihlajamaa & Janssen PRE 2024 closures; Hansen–McDonald LJ tables)
-- Water and 2–2 electrolyte models
+- Full CF1 bulk OZ regeneration (beyond digitised c(r)); tighter 2-2 thermodynamics
 - Optional further speed work on wall `calc_tw` pair convolutions
 - Refresh `WARP.md` to match this stack (tooling is ruff/ty/prek, not black/mypy)
 
