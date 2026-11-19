@@ -21,6 +21,7 @@ The original thesis included electronic resources at the University of Sydney (F
 | **kcl** | Experimental | `data/bulk/kcl.cr.dat` (Ng/PY) | Short-range tail improved; \(g(r)\) residual still elevated |
 | **h2o** | Experimental | `data/bulk/h2o.cr.dat` (digitised Fig 3.12) | **CF1** central-force water (O, H) |
 | **2_2** | Experimental | `data/bulk/2_2.cr.dat` | Soft-core 2:2 electrolyte (Ng/PY) |
+| **1_1** | Experimental | `data/bulk/1_1.cr.dat` | Soft-core 1:1 aqueous electrolyte (Ng/HNC) |
 
 Core package: **`src/charged_fluids/`** (Python 3.14). Streamlit pages under `src/pages/` are thin shims. Shared preparation: `prepare_fluid_run` → `FluidRun`.
 
@@ -62,6 +63,7 @@ data/bulk/                  # generated c(r) artefacts
 tests/                      # pytest suite for charged_fluids
 docs/blog/                  # progressive notes + capstone
 docs/LEGACY.md              # historical trees (do not expand)
+docs/FLUIDS.md               # how to add a fluid
 ```
 
 ## Bulk correlation heritage

@@ -53,6 +53,7 @@ bulk-cr-all:
     just bulk-cr lj1
     just bulk-cr kcl
     just bulk-cr 2_2
+    just bulk-cr 1_1
     just bulk-cr-h2o
 
 # Build CF1 water bulk c(r) from digitised thesis Fig 3.12

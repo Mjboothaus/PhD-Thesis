@@ -62,6 +62,32 @@ def list_fluid_symbols(toml_path: Path | None = None) -> list[str]:
     return sorted(load_fluid_table(toml_path).keys())
 
 
+def clear_fluid_cache() -> None:
+    """Drop cached TOML tables (call after editing the parameter file in-process)."""
+    _load_toml.cache_clear()
+
+
+def fluids_with_status(*statuses: str, toml_path: Path | None = None) -> list[str]:
+    """Return fluid symbols whose TOML ``status`` is in ``statuses``."""
+    wanted = {s.lower() for s in statuses}
+    table = load_fluid_table(toml_path)
+    out: list[str] = []
+    for key, raw in table.items():
+        if not isinstance(raw, dict):
+            continue
+        if "component" not in raw:
+            continue  # skip nested bulk-only mistakes
+        status = str(raw.get("status", "")).lower()
+        if status in wanted:
+            out.append(str(raw.get("symbol", key)))
+    return sorted(set(out))
+
+
+def wall_ready_symbols(toml_path: Path | None = None) -> list[str]:
+    """Fluids that can attempt a wall solve (ready or experimental with bulk data)."""
+    return fluids_with_status("ready", "experimental", toml_path=toml_path)
+
+
 def set_fluid_parameters(symbol: str, toml_path: Path | None = None) -> Fluid | None:
     """Return a :class:`Fluid` for ``symbol``, or ``None`` if unknown."""
     symbol = symbol.lower()
