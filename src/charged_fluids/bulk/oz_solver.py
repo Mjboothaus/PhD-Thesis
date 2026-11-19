@@ -251,16 +251,41 @@ def solve_bulk_binary_coulomb_lj(
             c_k[i, j] = ck
             c_k[j, i] = ck
 
+        # OZ in k-space: H = (I - C R)^{-1} C, gamma = H - C
+        # For binary fluids use a vectorised 2x2 inverse (hot path).
         gamma_k = np.zeros((n_comp, n_comp, n_points))
-        for ik in range(n_points):
-            C = c_k[:, :, ik]
-            R = np.diag(rho)
-            A = np.eye(n_comp) - C @ R
-            try:
-                H = np.linalg.solve(A, C)
-            except np.linalg.LinAlgError:
-                H = C
-            gamma_k[:, :, ik] = H - C
+        if n_comp == 2:
+            r0, r1 = float(rho[0]), float(rho[1])
+            c00, c01 = c_k[0, 0], c_k[0, 1]
+            c10, c11 = c_k[1, 0], c_k[1, 1]
+            # A = I - C @ diag(rho)
+            a00 = 1.0 - c00 * r0
+            a01 = -c01 * r1
+            a10 = -c10 * r0
+            a11 = 1.0 - c11 * r1
+            det = a00 * a11 - a01 * a10
+            det = np.where(np.abs(det) < 1e-14, np.sign(det) * 1e-14 + 1e-14, det)
+            inv00 = a11 / det
+            inv01 = -a01 / det
+            inv10 = -a10 / det
+            inv11 = a00 / det
+            h00 = inv00 * c00 + inv01 * c10
+            h01 = inv00 * c01 + inv01 * c11
+            h10 = inv10 * c00 + inv11 * c10
+            h11 = inv10 * c01 + inv11 * c11
+            gamma_k[0, 0] = h00 - c00
+            gamma_k[0, 1] = h01 - c01
+            gamma_k[1, 0] = h10 - c10
+            gamma_k[1, 1] = h11 - c11
+        else:
+            for ik in range(n_points):
+                C = c_k[:, :, ik]
+                A = np.eye(n_comp) - C @ np.diag(rho)
+                try:
+                    H = np.linalg.solve(A, C)
+                except np.linalg.LinAlgError:
+                    H = C
+                gamma_k[:, :, ik] = H - C
 
         gamma_new = np.zeros_like(gamma)
         for i, j in pair_list:
