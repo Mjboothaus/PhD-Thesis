@@ -91,16 +91,16 @@ def test_generate_lj1_writes_artefact(tmp_path):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(reason="Charged multi-comp bulk OZ experimental at melt density", strict=False)
 def test_kcl_generated_c_short_tail_small(tmp_path):
+    """Ng/PY ionic bulk: short-range c must vanish at large r (thesis)."""
     result, _cr_path, _ = generate_bulk_cr(
         "kcl",
         bulk_dir=tmp_path,
-        n_points=512,
-        delta_r=0.05,
+        n_points=256,
+        delta_r=0.1,
         write=True,
     )
+    assert np.isfinite(result.c_short).all()
     tail = np.abs(result.c_short[:, -max(10, result.r.size // 20) :])
     tail_max = float(tail.max())
-    # Physical requirement after long-range split
     assert tail_max < 1e-2, f"KCl |c_short| tail max={tail_max}"
