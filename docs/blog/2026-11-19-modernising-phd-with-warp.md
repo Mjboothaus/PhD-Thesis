@@ -1,20 +1,22 @@
 # Modernising a lost-Fortran PhD with Warp: equations first, agents second
 
+**Status:** Ready for Databooth publication  
 **Date:** 2026-11-19  
-**Audience:** readers of [databooth.com.au/posts](https://www.databooth.com.au/posts)  
+**Suggested slug:** `modernising-phd-with-warp`  
+**Suggested URL:** https://www.databooth.com.au/posts/modernising-phd-with-warp/  
 **Tags:** AI-assisted development, Python, scientific computing, Warp, uv, Marimo, engineering practices  
 **App:** [https://phd.databooth.com.au](https://phd.databooth.com.au)  
 **Repo:** [Mjboothaus/PhD-Thesis](https://github.com/Mjboothaus/PhD-Thesis)  
-**PRs:** [#22](https://github.com/Mjboothaus/PhD-Thesis/pull/22)–[#34](https://github.com/Mjboothaus/PhD-Thesis/pull/34)
+**PRs:** [#22](https://github.com/Mjboothaus/PhD-Thesis/pull/22)–[#32](https://github.com/Mjboothaus/PhD-Thesis/pull/32) (merged); [#33](https://github.com/Mjboothaus/PhD-Thesis/pull/33) bulk CLI; [#34](https://github.com/Mjboothaus/PhD-Thesis/pull/34) notebooks + this post
 
 ---
 
 ## Executive summary
 
-- In 1998 I submitted *Charged fluids near interfaces: Integral equation theory*. The numerical engine was Fortran 77; those sources are gone. From at least **July 2022** (see this repo’s git history) I started a **new** Python reimplementation—not a salvage of leftover thesis code—building wall–fluid numerics, pyOZ experiments, and a Streamlit app from scratch.
+- In 1998 I submitted *Charged fluids near interfaces: Integral equation theory*. The numerical engine was Fortran 77; those sources are gone. From at least **July 2022** (see this repository’s git history) I started a **new** Python reimplementation—not a salvage of leftover thesis code—building wall–fluid numerics, pyOZ experiments, and a Streamlit app from scratch.
 - By the **2026 modernisation tip** that stack was a useful demo, but still thin on tests, mixed packaging, and bulk correlation inputs that did not quite behave for charged fluids. A concentrated modernisation arc then rebuilt it around a UI-free science core (`charged_fluids`), uv-only packaging on Python 3.14, Astral quality gates (prek + ruff + ty), a bulk Ornstein–Zernike pipeline, multi-fluid readiness, and research notebooks in Marimo with Plotly.
-- Warp’s agentic environment accelerated the work: phased PRs, characterisation tests before refactors, bulk CLI design, KCl short-range stabilisation, and notebook consolidation. Humans still owned physics judgement, merge discipline, and “do not overclaim Fortran parity”.
-- **Cost of Warp assistance is real and metered.** On current Warp pricing, agent usage is charged at provider API rates (plus optional cloud compute/platform). For a day of dense multi-PR agent work on a mid-size repo, a practical planning band is **on the order of tens of US dollars of included/add-on agent usage**—not “free coding”, and not a substitute for domain skill. Exact invoices vary with model choice, conversation length, and tool-call depth; check *Settings → Billing and usage* for your run.
+- Warp’s agentic environment accelerated the work: phased pull requests, characterisation tests before refactors, bulk CLI design, KCl short-range stabilisation, and notebook consolidation. Humans still owned physics judgement, merge discipline, and “do not overclaim Fortran parity”.
+- **Cost of Warp assistance is real and metered.** On current Warp pricing, agent usage is charged at provider API rates (plus optional cloud compute and platform charges). For a day of dense multi-PR agent work on a mid-size repository, a practical planning band is **on the order of tens of US dollars of included or add-on agent usage**—not “free coding”, and not a substitute for domain skill. Exact invoices vary with model choice, conversation length, and tool-call depth; check *Settings → Billing and usage* for your own run.
 
 ---
 
@@ -36,9 +38,11 @@ This project is a small case study in that combination: **intent-driven developm
 |------|------|
 | **1998** | PhD submitted; numerical work in **Fortran 77** |
 | **Later** | F77 sources no longer available (not recoverable from the old online-resources path) |
-| **2022-07 onward** | **New** Python implementation in this repo (`Initial setup`, pyOZ bring-up, Streamlit app, digitised thesis figures)—a rewrite, not residual Fortran glue |
-| **Pre-2026 modernisation tip** | Working demo; sparse tests; packaging/UI still tangled (`879767c`) |
-| **2026-11** | Phased modernisation PRs #22–#34 (this post) |
+| **2022-07 onward** | **New** Python implementation in this repository (`Initial setup`, pyOZ bring-up, Streamlit app, digitised thesis figures)—a rewrite, not residual Fortran glue |
+| **Pre-2026 modernisation tip** | Working demo; sparse tests; packaging and UI still tangled (`879767c`) |
+| **2026-11** | Phased modernisation PRs #22–#34 |
+
+---
 
 ## The before picture (honest)
 
@@ -47,7 +51,7 @@ This project is a small case study in that combination: **intent-driven developm
 | Theme | Before (≈ `879767c`) |
 |-------|--------|
 | Confidence | “LJ seems to work in the app” |
-| Packaging | `requirements*.txt` + uv; Streamlit in core deps |
+| Packaging | `requirements*.txt` + uv; Streamlit in core dependencies |
 | Quality | black / isort / flake8 / mypy |
 | Science vs UI | `modelling.py` imported Streamlit `@cache_data` |
 | Tests | ~3 helpers under `src/tests/` |
@@ -73,7 +77,7 @@ Architecture in one line:
 | Bulk | `charged_fluids.bulk` + `data/bulk/{symbol}.cr.dat` (+ `.meta.json`) |
 | Fluids | lj1/lj2 **ready**; kcl, h2o (CF1), 2_2, 1_1 **experimental** |
 | UIs | production Streamlit + Marimo explorers (Plotly) |
-| Tests | top-level `tests/`; **67 passed** on the Plotly/notebook tip (no permanent KCl xfail) |
+| Tests | top-level `tests/`; full suite green (no permanent KCl xfail) |
 
 Production demo: [phd.databooth.com.au](https://phd.databooth.com.au).
 
@@ -90,7 +94,7 @@ just bulk-cr lj1         # regenerate bulk c(r)
 
 ## Story arc in phases (not a changelog dump)
 
-The work was deliberately **phased**, each landing as a PR with a short progressive note under `docs/blog/`:
+The work was deliberately **phased**, each landing as a pull request with a short progressive note under `docs/blog/`:
 
 | Phase | Outcome | PR |
 |-------|---------|-----|
@@ -100,9 +104,10 @@ The work was deliberately **phased**, each landing as a PR with a short progress
 | 4–5 | LJ2 ready + first Marimo explorer | [#25](https://github.com/Mjboothaus/PhD-Thesis/pull/25) |
 | Capstone + KCl Ng/PY | honest bulk short-range tail; before/after write-up | [#26](https://github.com/Mjboothaus/PhD-Thesis/pull/26) |
 | Hardening | bulk CLI TOML defaults, CF1/2-2/1-1, core `calc_tw`, Marimo display fixes | [#27](https://github.com/Mjboothaus/PhD-Thesis/pull/27)–[#32](https://github.com/Mjboothaus/PhD-Thesis/pull/32) |
-| Notebooks | Plotly Marimo, single fluid selector, legacy Jupyter archived, modern KCl tests | [#33](https://github.com/Mjboothaus/PhD-Thesis/pull/33)–[#34](https://github.com/Mjboothaus/PhD-Thesis/pull/34) |
+| Bulk CLI polish | list/all/validate, wall-usable tails | [#33](https://github.com/Mjboothaus/PhD-Thesis/pull/33) (companion) |
+| Notebooks + narrative | Plotly Marimo, single fluid selector, legacy Jupyter archived, modern KCl tests, this post | [#34](https://github.com/Mjboothaus/PhD-Thesis/pull/34) |
 
-From the pre-modernisation tip to the Marimo/Plotly branch tip: on the order of **~90 files touched**, **~9k insertions / ~3k deletions**—mostly package extraction, tests, bulk solver, and docs, not vanity rewrites.
+From the pre-modernisation tip through this arc: on the order of **~90 files touched**, **~9k insertions / ~3k deletions**—mostly package extraction, tests, bulk solver, and documentation, not vanity rewrites.
 
 ---
 
@@ -141,10 +146,10 @@ Legacy Jupyter notebooks moved under `notebooks/legacy/` with a mapping table. D
 
 ## Guardrails: agents generate, policy enforces
 
-This matches the stance in my earlier writing on deterministic guardrails and “more than just the vibe”:
+This matches the stance in earlier Databooth writing on deterministic guardrails and “more than just the vibe”:
 
 - **prek + ruff + ty + pytest** as non-optional gates (`just quality`);
-- feature branches and small PRs (standard git workflow);
+- feature branches and small pull requests (standard git workflow);
 - progressive `docs/blog/` notes so the narrative is reconstructable;
 - Australian English in docs; US spelling in identifiers;
 - explicit LEGACY trees rather than silent dual implementations.
@@ -157,7 +162,7 @@ Agents are excellent at drafting the bulk CLI, wiring Marimo cells, and proposin
 
 ### How Warp bills agent work (as of late 2025 / 2026)
 
-Warp’s paid **Build** plan is commonly cited around **US$20/month** with **included agent usage metered at public API rates** (Max tiers include more allowance). Usage is not a flat “one prompt = one dollar”:
+Warp’s paid **Build** plan is commonly cited around **US$20/month** with **included agent usage metered at public API rates** (higher tiers include more allowance). Usage is not a flat “one prompt = one dollar”:
 
 | Component | What it is |
 |-----------|------------|
@@ -165,34 +170,34 @@ Warp’s paid **Build** plan is commonly cited around **US$20/month** with **inc
 | **Compute** | Warp-hosted sandboxes for **cloud** agents (local runs use your machine) |
 | **Platform** | Billable agent time on some cloud / team configurations |
 
-See Warp’s current [pricing](https://www.warp.dev/pricing) and [usage & billing](https://docs.warp.dev/support-and-community/plans-and-billing/credits/) docs—the product surface moves; **your invoice is the source of truth**.
+See Warp’s current [pricing](https://www.warp.dev/pricing) and [usage and billing](https://docs.warp.dev/support-and-community/plans-and-billing/credits/) docs—the product surface moves; **your invoice is the source of truth**.
 
 ### What this modernisation looked like as agent load
 
 Qualitative drivers that **raise** cost:
 
-- multi-hour conversations with large repo context;
+- multi-hour conversations with large repository context;
 - frontier models for architecture and numerical debugging;
-- many tool rounds (tests, bulk OZ solves, PR creation);
+- many tool rounds (tests, bulk OZ solves, pull request creation);
 - re-reading long transcripts instead of starting a fresh thread per phase.
 
 Drivers that **lower** cost:
 
 - phased prompts (“Phase 3 only”) and new conversations per phase;
 - cheaper / auto-efficient models for mechanical edits;
-- strong local gates so the agent does not thrash on format/lint;
+- strong local gates so the agent does not thrash on format and lint;
 - project rules (`WARP.md`, uv-only, Australian English) so preferences are not re-explained every turn;
-- BYOK if you already pay Anthropic/OpenAI directly (inference leaves Warp’s meter; harness/platform rules still apply).
+- bring-your-own-key if you already pay Anthropic or OpenAI directly (inference leaves Warp’s meter; harness and platform rules still apply).
 
 ### Order-of-magnitude planning numbers (not a receipt)
 
 I am **not** pasting a private billing export into this post. For planning peer work of similar density, these bands are useful:
 
 | Scenario | Rough Warp-related spend (USD) | Notes |
-|----------|----------------------------------|--------|
+|----------|--------------------------------|--------|
 | Light assist (a few hours, efficient models, local agent) | **~$5–20** | Fits inside a light Build allowance day |
-| This project’s dense multi-PR arc (tooling → tests → bulk → fluids → Marimo), mostly local agents | **~$20–80** agent usage band is a sensible planning range | Often one Build month + modest reload, **or** a chunk of a Max allowance—**highly** model-dependent |
-| Same arc with heavy frontier models + long single chat + cloud agents | **$100+** easily | Cloud compute/platform stack on top of inference |
+| This project’s dense multi-PR arc (tooling → tests → bulk → fluids → Marimo), mostly local agents | **~$20–80** agent usage band is a sensible planning range | Often one Build month + modest reload, **or** a chunk of a higher allowance—**highly** model-dependent |
+| Same arc with heavy frontier models + long single chat + cloud agents | **$100+** easily | Cloud compute and platform stack on top of inference |
 
 **Relative value frame:** even at the upper end of the dense band, agent spend is typically **small compared with a day of senior scientific-software time**, provided you keep tests and physics review in the loop. The failure mode is not the invoice—it is **accepting plausible numerics without characterisation tests**.
 
@@ -204,7 +209,7 @@ Practical habit: after a heavy session, open **Settings → Billing and usage**,
 
 **Repeat**
 
-- Phase the work; one PR narrative each.
+- Phase the work; one pull-request narrative each.
 - Characterise before rewriting bulk inputs.
 - Keep the science package UI-free from day one of the refactor.
 - Treat Marimo and Streamlit as skins.
@@ -231,12 +236,14 @@ If you maintain research or “demo that became production” codebases, the pat
 
 ---
 
-## Links
+## Related reading
 
-- Progressive notes: [`docs/blog/`](./README.md) (tooling, tests, phases, capstone)
-- Capstone comparison: [Before and after](./2026-11-19-capstone-before-after.md)
-- Legacy trees: [`docs/LEGACY.md`](../LEGACY.md)
-- Fluids guide: [`docs/FLUIDS.md`](../FLUIDS.md)
+- Progressive notes in-repo: [`docs/blog/`](https://github.com/Mjboothaus/PhD-Thesis/tree/main/docs/blog)
+- Capstone comparison: [Before and after](https://github.com/Mjboothaus/PhD-Thesis/blob/main/docs/blog/2026-11-19-capstone-before-after.md)
+- Production app: [phd.databooth.com.au](https://phd.databooth.com.au)
+- Earlier Databooth themes: [deterministic guardrails with prek](https://www.databooth.com.au/posts/deterministic-llm-guardrails-with-prek/), [hyper-team software](https://www.databooth.com.au/posts/hyper-team-software/), [coding beyond the vibe](https://www.databooth.com.au/posts/coding-vibe/)
 - Warp pricing: [warp.dev/pricing](https://www.warp.dev/pricing)
+
+---
 
 *Australian English in documentation. Code identifiers keep US spelling.*

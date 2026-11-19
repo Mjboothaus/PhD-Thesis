@@ -15,17 +15,16 @@ a long-form post can be assembled later for Databooth or a personal site.
 | 2026-11-19 | [Phase 3 — bulk c(r) pipeline](2026-11-19-phase-3-bulk-cr.md) |
 | 2026-11-19 | [Phase 4–5 — LJ2 fluid and Marimo explorer](2026-11-19-phase-4-5-fluids-marimo.md) |
 | 2026-11-19 | [**Capstone — before and after**](2026-11-19-capstone-before-after.md) |
-| 2026-11-19 | [**Databooth-ready — modernising with Warp + cost framing**](2026-11-19-modernising-phd-with-warp.md) |
+| 2026-11-19 | [**Published — modernising with Warp + cost framing**](2026-11-19-modernising-phd-with-warp.md) |
 
 ## Capstone comparison
 
-Published: [Before and after: modernising a lost-Fortran PhD](2026-11-19-capstone-before-after.md).
-External-facing narrative (Databooth style, includes Warp cost bands):
-[Modernising a lost-Fortran PhD with Warp](2026-11-19-modernising-phd-with-warp.md).
-Working notes remain in [DRAFT-before-after-comparison.md](DRAFT-before-after-comparison.md). It is kept
-updated with git anchors (`main` vs feature tips) so before/after claims stay
-verifiable. Progressive notes below feed that draft; they are not a substitute
-for it.
+Internal before/after: [Before and after: modernising a lost-Fortran PhD](2026-11-19-capstone-before-after.md).
+
+**External Databooth post (copy to site):** [Modernising a lost-Fortran PhD with Warp](2026-11-19-modernising-phd-with-warp.md)  
+Suggested slug: `modernising-phd-with-warp` → https://www.databooth.com.au/posts/modernising-phd-with-warp/
+
+Working notes remain in [DRAFT-before-after-comparison.md](DRAFT-before-after-comparison.md). Progressive notes feed both posts; they are not a substitute for the long-form narratives.
 
 ## Themes
 
