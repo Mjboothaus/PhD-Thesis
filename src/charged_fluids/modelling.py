@@ -21,9 +21,17 @@ from charged_fluids.memory import monitor_memory
 
 @dataclass
 class Model:
+    """Discrete wall-fluid fields on a common z-grid.
+
+    All pair/wall arrays that the solver and UI share live here (issue #21):
+    ``hw``, ``tw``, ``c_short``, ``f1``, ``f2`` - not mixed between free variables
+    and ad-hoc locals.
+    """
+
     z: np.ndarray
     z_index: np.ndarray
     hw: np.ndarray
+    tw: np.ndarray
     c_short: np.ndarray
     f1: np.ndarray
     f2: np.ndarray

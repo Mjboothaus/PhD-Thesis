@@ -106,7 +106,8 @@ from charged_fluids.memory import monitor_memory
 **Why it matters:** refactor and vectorisation can proceed behind tests;
 Streamlit and future Marimo share one engine.
 
-_Update this section after Phase 2 (TOML single source, thin pages)._
+**Phase 2 update:** TOML is the sole parameter source; `prepare_fluid_run` owns
+setup; Streamlit LJ/KCl pages are thin; `Model` holds `hw`/`tw`/`c_short`/`f1`/`f2`.
 
 ---
 

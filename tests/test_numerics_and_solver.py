@@ -48,6 +48,7 @@ def test_lj1_solver_smoke_converges(lj1_fluid, lj1_params, lj1_cr_path, small_gr
         z=z,
         z_index=z_index,
         hw=wall_zeros,
+        tw=wall_zeros.copy(),
         c_short=c_short,
         f1=f1,
         f2=f2,
