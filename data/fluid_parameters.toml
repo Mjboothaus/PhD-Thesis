@@ -59,18 +59,31 @@ epsilon_lj = [0.1, 0.1, 0.1]
 sigma_lj = [0.5, 0.5, 0.5]
 
 [h2o]
-name = "Liquid water"
+# CF1 central-force water (Haymet / Stillinger–Rahman family).
+# Components ordered O, H so pair columns are OO, OH, HH.
+name = "Liquid water (CF1)"
 symbol = "h2o"
-component = ["H", "2O"]
-valence = [1.0, -1.0]
-temperature = 298.0
-concentration = [1.0, 1.0]
+component = ["O", "H"]
+valence = [-0.65966, 0.32983]  # q_O = -2 q_H, q_H = 0.32983 e
+temperature = 298.15
+# Number densities as mol/L of O and H sites at 1 g/cm^3 H2O
+concentration = [55.508, 111.017]
 epsilon_r = 1.0
 index = 2
-cr_filename = "TO_BE_DEFINED.dat"
-status = "not_implemented"
+cr_filename = "h2o.cr.dat"
+status = "experimental"  # bulk c from digitised thesis Fig 3.12; full OZ bulk still open
+
+[h2o.potential]
+type = "cf1"
+
+[h2o.bulk]
+# Prefer thesis digitised bulk c(r); n_points used when regenerating grids
+n_points = 512
+delta_r = 0.025
+source = "digitised_fig3_12"
 
 [2_2]
+# Soft-core primitive-model 2:2 electrolyte in continuum water (epsilon_r = 78.3).
 name = "2-2 Aqueous electrolyte"
 symbol = "2_2"
 component = ["+2", "-2"]
@@ -79,8 +92,27 @@ temperature = 298.15
 concentration = [1.0, 1.0]
 epsilon_r = 78.3
 index = 5
-cr_filename = "TO_BE_DEFINED.dat"
-status = "not_implemented"
+cr_filename = "2_2.cr.dat"
+status = "experimental"  # Ng/PY bulk path like KCl; wall smoke only
+
+[2_2.potential]
+type = "ionic"
+n_outer_shell = [8.0, 8.0]
+alpha = 2.967359050445104
+b = 3.38e-20
+sigma = [2.1, 2.1]
+cap_c = [1.0e-18, 1.0e-18, 1.0e-18]
+cap_d = [1.0e-18, 1.0e-18, 1.0e-18]
+
+[2_2.bulk]
+n_points = 512
+delta_r = 0.05
+closure = "py"
+epsilon_kJ_mol = 1.0
+mix = 0.08
+ng_alpha = 1.2
+max_iter = 2000
+tol = 1.0e-5
 
 [lj1.bulk]
 # Match historical pyoz nrcg-lj-1comp (sigma 0.5 nm, eps 0.1 kJ/mol)

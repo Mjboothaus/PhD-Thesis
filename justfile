@@ -52,6 +52,12 @@ bulk-cr symbol="lj1" n_points="1024" delta_r="0.05":
 bulk-cr-all:
     just bulk-cr lj1
     just bulk-cr kcl
+    just bulk-cr 2_2
+    just bulk-cr-h2o
+
+# Build CF1 water bulk c(r) from digitised thesis Fig 3.12
+bulk-cr-h2o:
+    uv run python -m charged_fluids.bulk.build_digitised_h2o
 
 # Legacy pyOZ path (vendored; see docs/LEGACY.md)
 bulk-fluid-pyoz input_file="lj/nrcg-lj-1comp.in":

@@ -41,12 +41,12 @@ def test_kcl_potential_from_toml():
     assert float(pot["alpha"]) == pytest.approx(1.0 / 0.337)
 
 
-def test_h2o_has_no_potential_block_raises():
+def test_h2o_cf1_potential_block():
     fluid = set_fluid_parameters("h2o")
     assert fluid is not None
-    assert fluid.status == "not_implemented"
-    with pytest.raises(KeyError):
-        fluid_specific_parameters("h2o")
+    assert fluid.status == "experimental"
+    pot = fluid_specific_parameters("h2o")["h2o"]
+    assert pot["type"] == "cf1"
 
 
 def test_prepare_lj1_run_small_grid(data_dir):

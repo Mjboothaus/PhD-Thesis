@@ -1,20 +1,13 @@
-"""Liquid water page - not yet fully implemented."""
+"""Liquid water (CF1 central-force model)."""
 
-import streamlit as st
-from sidebar import create_sidebar
+from components.fluid_page import render_fluid_page
 
-from charged_fluids import set_fluid_parameters
-
-fluid_symbol = "h2o"
-fluid = set_fluid_parameters(fluid_symbol)
-if fluid is None:
-    st.error("Invalid choice of fluid")
-    st.stop()
-
-_ = create_sidebar(fluid)
-st.subheader(f"Charged fluids near an interface: {fluid.name}")
-st.warning(
-    "Liquid water is **not implemented** yet: bulk c(r) and the molecular model "
-    "are still outstanding (see `data/fluid_parameters.toml` status)."
+render_fluid_page(
+    "h2o",
+    title_prefix="Charged fluids near an interface",
+    experimental_message=(
+        "CF1 water: bulk c(r) from digitised thesis Fig 3.12 (OO, OH, HH). "
+        "Full bulk OZ regeneration of CF1 remains experimental."
+    ),
+    beta_u_ylim=[-50, 200],
 )
-st.info("Status from TOML: **" + fluid.status + "**")

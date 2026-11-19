@@ -10,6 +10,6 @@ Active science code lives in **`src/charged_fluids/`**.
 | `src/pyoz/` | Vendored PyOZ bulk solver | Reference only (`just bulk-fluid-pyoz`) |
 | `src/tests/` | Old nested tests | Superseded by top-level `tests/` |
 | `data/fluid_parameters.toml` | Fluid parameter table | **Current** single source of truth (loaded by `charged_fluids.parameters`) |
-| `requirements*.txt` | Pre-uv freezes | Prefer `uv.lock`; export via `just export-reqs` if deploy needs a freeze |
+| `requirements*.txt` (removed) | Pre-uv freezes | Use `uv.lock`; `just export-reqs` writes a freeze on demand |
 
 Streamlit entrypoints under `src/Main.py` and `src/pages/` import thin shims that delegate to `charged_fluids`.

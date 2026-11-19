@@ -87,4 +87,4 @@ def test_ionic_potential_finite_away_from_origin(kcl_fluid, small_grid):
 
 def test_fluid_specific_unknown_raises():
     with pytest.raises(KeyError):
-        fluid_specific_parameters("h2o")
+        fluid_specific_parameters("not-a-real-fluid")

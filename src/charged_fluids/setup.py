@@ -30,6 +30,7 @@ from charged_fluids.modelling import (
 )
 from charged_fluids.numerics import Discretisation, set_num_parameters
 from charged_fluids.parameters import Fluid, set_fluid_parameters
+from charged_fluids.potentials.cf1 import calc_u_cf1
 
 
 def default_data_dir() -> Path:
@@ -92,6 +93,8 @@ def _pair_potential(
             fluid.n_pair,
             r,
         )
+    if pot_type == "cf1":
+        return calc_u_cf1(n_point, r)
     if pot_type == "ionic":
         beta_pauling = calc_beta_pauling(
             fluid.valence,
