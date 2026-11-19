@@ -5,6 +5,9 @@ Run:
   # or
   uv sync --group notebook
   uv run marimo edit notebooks/wall_fluid_explorer.py
+
+Display rule (marimo): the last *expression* in a cell is what appears in the UI.
+Do not assign the only visual to a throwaway name without referring to it again.
 """
 
 import marimo
@@ -20,7 +23,7 @@ with app.setup:
 def _intro():
     import marimo as mo
 
-    mo.md(
+    intro = mo.md(
         r"""
         # Fluids near interfaces — research notebook
 
@@ -30,9 +33,16 @@ def _intro():
         - Bulk \(c_\mathrm{short}(r)\) artefacts under `data/bulk/`
         - Singlet wall residual via Newton–Krylov
 
+        **How to use**
+
+        1. Change **Fluid** / grid controls — setup metrics and bulk plots update.
+        2. Press **Run wall-fluid solve** for \(g_{wi}(z)\).
+        3. Optional: bulk OZ regenerate at the bottom (keep dry-run on).
+
         Unit conventions: `charged_fluids.units` (Å grids, joule potentials, `charge_pair` scale).
         """
     )
+    intro
     return (mo,)
 
 
@@ -48,17 +58,19 @@ def _controls(mo):
     tolerance = mo.ui.number(start=1e-9, stop=1e-3, step=1e-7, value=1e-6, label="tolerance")
     max_iter = mo.ui.slider(5, 100, value=30, step=5, label="max_iteration")
     run_solve = mo.ui.run_button(label="Run wall-fluid solve")
-    _ = mo.vstack(
+    controls = mo.vstack(
         [
+            mo.md("### Controls"),
             mo.hstack([symbol, n_point, z_cutoff], justify="start"),
             mo.hstack([psi_0, tolerance, max_iter, run_solve], justify="start"),
         ]
     )
+    controls
     return max_iter, n_point, psi_0, run_solve, symbol, tolerance, z_cutoff
 
 
 @app.cell
-def _prepare(symbol, n_point, z_cutoff, psi_0, tolerance, max_iter, mo):
+def _prepare(max_iter, mo, n_point, psi_0, symbol, tolerance, z_cutoff):
     from charged_fluids import prepare_fluid_run
 
     run = None
@@ -86,15 +98,16 @@ def _prepare(symbol, n_point, z_cutoff, psi_0, tolerance, max_iter, mo):
         msg = "  \n".join(lines)
     except Exception as exc:  # noqa: BLE001 — surface setup errors in the UI
         msg = f"**Setup failed:** `{type(exc).__name__}: {exc}`"
-    _ = mo.md(msg)
+    setup_md = mo.md(msg)
+    setup_md
     return (run,)
 
 
 @app.cell
-def _bulk_metrics(run, mo):
+def _bulk_metrics(mo, run):
     if run is not None:
         f = run.fluid
-        _ = mo.md(
+        metrics = mo.md(
             f"""
             ### Bulk / wall setup metrics
 
@@ -109,13 +122,16 @@ def _bulk_metrics(run, mo):
             """
         )
     else:
-        _ = mo.md("_No fluid run._")
+        metrics = mo.md("_No fluid run._")
+    metrics
     return
 
 
 @app.cell
-def _bulk_plots(run, mo):
-    if run is not None:
+def _bulk_plots(mo, run):
+    if run is None:
+        bulk_out = mo.md("_No run to plot._")
+    else:
         z_grid = run.model.z
         is_charged = run.fluid.symbol not in {"lj1", "lj2"}
         bu_ylim = [0, 10000] if is_charged else [-1, 10]
@@ -160,24 +176,21 @@ def _bulk_plots(run, mo):
         ax_f2.legend(fontsize=8)
 
         fig_bulk.tight_layout()
-        _ = mo.mpl.interactive(fig_bulk)
-    else:
-        _ = mo.md("_No run to plot._")
+        bulk_out = fig_bulk
+    bulk_out
     return
 
 
 @app.cell
-def _solve(run, run_solve, mo):
+def _solve(mo, run, run_solve):
     from charged_fluids import calc_hw, opt_func, solve_model
 
     g = None
-    hw = None
-    sol = None
 
     if run is None or not run_solve.value:
-        _ = mo.md("_Press **Run wall-fluid solve** when ready._")
+        solve_out = mo.md("_Press **Run wall-fluid solve** when ready._")
     elif run.fluid.status not in {"ready", "experimental"}:
-        _ = mo.md(f"Fluid status `{run.fluid.status}` — solve skipped.")
+        solve_out = mo.md(f"Fluid status `{run.fluid.status}` — solve skipped.")
     else:
         with mo.status.spinner("Solving wall-fluid residual (Newton–Krylov)…"):
             sol = solve_model(
@@ -194,17 +207,20 @@ def _solve(run, run_solve, mo):
         solve_status = "converged" if sol.success else "failed"
         nit = getattr(sol, "nit", "?")
         g_inf = ", ".join(f"{g[-1, i]:.4f}" for i in range(g.shape[1]))
-        _ = mo.md(
+        solve_out = mo.md(
             f"Solve **{solve_status}** after {nit} iterations.  \n"
             f"Message: `{getattr(sol, 'message', '')}`  \n"
             f"g(z→∞) ≈ [{g_inf}]"
         )
-    return g, hw, sol
+    solve_out
+    return (g,)
 
 
 @app.cell
-def _wall_plot(run, g, mo):
-    if run is not None and g is not None:
+def _wall_plot(g, mo, run):
+    if run is None or g is None:
+        wall_out = mo.md(r"_Wall \(g_{wi}(z)\) appears here after a successful solve._")
+    else:
         z_wall = run.model.z
         fig_wall, ax_wall = plt.subplots(figsize=(7, 3.8))
         for comp_i, name in enumerate(run.fluid.component):
@@ -216,37 +232,42 @@ def _wall_plot(run, g, mo):
         ax_wall.legend()
         ax_wall.set_title("Wall–fluid distribution")
         fig_wall.tight_layout()
-        _ = mo.mpl.interactive(fig_wall)
+        wall_out = fig_wall
+    wall_out
     return
 
 
 @app.cell
 def _bulk_oz_section(mo):
-    _ = mo.md(
-        r"""
-        ---
-        ## Optional: regenerate bulk \(c(r)\) (dry-run)
-
-        Uses `charged_fluids.bulk.generate.generate_bulk_cr` with the same path as
-        `just bulk-cr` / `python -m charged_fluids.bulk.cli`. Does **not** overwrite
-        `data/bulk/` unless you uncheck dry-run (careful).
-        """
-    )
     bulk_symbol = mo.ui.dropdown(options=["lj1", "lj2", "kcl", "2_2"], value="lj1", label="Bulk fluid")
     bulk_n = mo.ui.slider(256, 2048, value=512, step=256, label="bulk n_points")
     dry_run = mo.ui.checkbox(value=True, label="Dry-run (do not write artefacts)")
     run_bulk = mo.ui.run_button(label="Run bulk OZ")
-    _ = mo.hstack([bulk_symbol, bulk_n, dry_run, run_bulk], justify="start")
+    bulk_controls = mo.vstack(
+        [
+            mo.md(
+                r"""
+                ---
+                ## Optional: regenerate bulk \(c(r)\) (dry-run)
+
+                Uses `charged_fluids.bulk.generate.generate_bulk_cr` (same path as
+                `just bulk-cr`). Leave **Dry-run** checked to avoid overwriting `data/bulk/`.
+                """
+            ),
+            mo.hstack([bulk_symbol, bulk_n, dry_run, run_bulk], justify="start"),
+        ]
+    )
+    bulk_controls
     return bulk_n, bulk_symbol, dry_run, run_bulk
 
 
 @app.cell
-def _bulk_oz_run(bulk_symbol, bulk_n, dry_run, run_bulk, mo):
+def _bulk_oz_run(bulk_n, bulk_symbol, dry_run, mo, run_bulk):
     from charged_fluids.bulk.generate import generate_bulk_cr
 
     result = None
     if not run_bulk.value:
-        _ = mo.md("_Press **Run bulk OZ** to solve Picard HNC/PY (may take a few seconds)._")
+        oz_msg = mo.md("_Press **Run bulk OZ** to solve Picard HNC/PY (may take a few seconds)._")
     else:
         with mo.status.spinner(f"Bulk OZ for {bulk_symbol.value}…"):
             try:
@@ -256,7 +277,7 @@ def _bulk_oz_run(bulk_symbol, bulk_n, dry_run, run_bulk, mo):
                     write=not bool(dry_run.value),
                 )
             except Exception as exc:  # noqa: BLE001
-                _ = mo.md(f"**Bulk OZ failed:** `{type(exc).__name__}: {exc}`")
+                oz_msg = mo.md(f"**Bulk OZ failed:** `{type(exc).__name__}: {exc}`")
                 result = None
             else:
                 oz_status = "converged" if result.converged else "NOT converged"
@@ -264,18 +285,21 @@ def _bulk_oz_run(bulk_symbol, bulk_n, dry_run, run_bulk, mo):
                 paths = ""
                 if cr_path is not None:
                     paths = f"  \nWrote `{cr_path}` and `{meta_path}`"
-                _ = mo.md(
+                oz_msg = mo.md(
                     f"**{bulk_symbol.value}**: {oz_status} after {result.n_iter} iterations  \n"
                     f"residual = `{result.residual:.3e}` · "
                     f"closure = `{result.meta.get('closure')}`  \n"
                     f"|c_short| tail max = `{tail:.3e}`{paths}"
                 )
+    oz_msg
     return (result,)
 
 
 @app.cell
-def _bulk_oz_plot(result, mo):
-    if result is not None:
+def _bulk_oz_plot(mo, result):
+    if result is None:
+        oz_plot = mo.md("_Bulk OZ plots appear here after **Run bulk OZ**._")
+    else:
         fig_oz, ax_oz = plt.subplots(1, 2, figsize=(10, 3.5))
         for pair_j in range(result.c_short.shape[0]):
             ax_oz[0].plot(result.r, result.c_short[pair_j], label=f"pair {pair_j}")
@@ -292,7 +316,8 @@ def _bulk_oz_plot(result, mo):
         ax_oz[1].axhline(1.0, color="grey", ls="--", lw=0.8)
         ax_oz[1].legend(fontsize=8)
         fig_oz.tight_layout()
-        _ = mo.mpl.interactive(fig_oz)
+        oz_plot = fig_oz
+    oz_plot
     return
 
 
