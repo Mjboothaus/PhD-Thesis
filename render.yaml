@@ -1,3 +1,5 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Docker runtime: Python version comes from Dockerfile (3.14), not PYTHON_VERSION.
 services:
   - type: web
     name: phd-thesis
@@ -5,14 +7,19 @@ services:
     plan: starter
     region: oregon
     branch: main
+    rootDir: .
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    buildCommand: echo "Using Docker build - Python version controlled by Dockerfile"
+    # Docker builds do not use buildCommand; kept as a no-op for clarity
+    autoDeploy: true
+    healthCheckPath: /_stcore/health
+    numInstances: 1
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.13"
       - key: PORT
         value: "8080"
-    healthCheckPath: /
-    numInstances: 1
-    autoDeploy: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: STREAMLIT_SERVER_HEADLESS
+        value: "true"
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: "false"

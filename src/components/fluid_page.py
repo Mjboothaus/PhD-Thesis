@@ -56,9 +56,9 @@ def render_fluid_page(
     if experimental_message:
         st.warning(experimental_message)
     if charged:
-        st.sidebar.markdown(f"__Inverse Debye length (1/A): {run.kappa:.3f}__")
+        st.sidebar.markdown(f"**Inverse Debye length (1/Å):** {run.kappa:.4g}")
 
-    calc_status = "ready" if fluid.status == "ready" else fluid.status
+    calc_status = fluid.status
     tab_calc, tab_out, tab_bulk = st.tabs(["Calculation", "Output graphs", "Bulk properties"])
 
     with tab_calc:
@@ -95,9 +95,12 @@ def render_fluid_page(
         st.markdown("#")
         col1, col2, col3 = st.columns(3)
         col1.metric("Temperature (K)", f"{fluid.temperature}")
-        col2.metric("Concentration (M/dm3)", f"{fluid.concentration[0]}")
+        col2.metric("Concentration (mol/L)", f"{fluid.concentration[0]}")
         col3.metric("Components", f"{', '.join(fluid.component)}")
-        st.caption(f"Bulk c(r) file: `{run.cr_path.name}` · status `{fluid.status}`")
+        st.caption(
+            f"Bulk c(r): `{run.cr_path}` · status `{fluid.status}` · "
+            f"c_short shape `{model.c_short.shape}` · via `charged_fluids.prepare_fluid_run`"
+        )
 
         ylim = beta_u_ylim if beta_u_ylim is not None else ([-1, 10] if not charged else [0, 10000])
         r_plots = {
