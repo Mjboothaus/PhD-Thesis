@@ -139,3 +139,36 @@ epsilon_kJ_mol = 0.1
 n_points = 1024
 delta_r = 0.05
 closure = "hnc"
+
+[1_1]
+# Soft-core primitive-model 1:1 aqueous electrolyte (Booth et al. JCP 1995 family).
+name = "1-1 Aqueous electrolyte"
+symbol = "1_1"
+component = ["+", "-"]
+valence = [1.0, -1.0]
+temperature = 298.15
+concentration = [1.0, 1.0]
+epsilon_r = 78.3
+index = 4
+cr_filename = "1_1.cr.dat"
+status = "experimental"
+
+[1_1.potential]
+type = "ionic"
+n_outer_shell = [8.0, 8.0]
+alpha = 2.967359050445104
+b = 3.38e-20
+# Typical hydrated ion size scale (A)
+sigma = [2.5, 2.5]
+cap_c = [5.0e-19, 5.0e-19, 5.0e-19]
+cap_d = [5.0e-19, 5.0e-19, 5.0e-19]
+
+[1_1.bulk]
+n_points = 512
+delta_r = 0.05
+closure = "hnc"
+epsilon_kJ_mol = 0.5
+mix = 0.15
+ng_alpha = 1.2
+max_iter = 2000
+tol = 1.0e-6

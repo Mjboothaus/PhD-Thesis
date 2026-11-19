@@ -99,6 +99,45 @@ def generate_bulk_cr(
             ng_alpha=float(bulk.get("ng_alpha", 1.2)),
         )
         result.meta["note"] = "Ng bulk OZ; c_short uses wall-fluid charge_pair Coulomb scale"
+    elif pot_type == "cf1":
+        # Full CF1 bulk OZ is not yet stable; rebuild digitised thesis Fig 3.12 artefact.
+        from charged_fluids.bulk.artefacts import read_meta
+        from charged_fluids.bulk.build_digitised_h2o import build_h2o_cr
+        from charged_fluids.bulk.oz_solver import BulkResult
+
+        out_dir = bulk_dir or default_bulk_dir()
+        cr_path, meta_path = build_h2o_cr(
+            bulk_dir=out_dir,
+            n_points=n_pts,
+            r_max=float(bulk.get("r_max", 9.0)),
+        )
+        data = np.loadtxt(cr_path)
+        r = data[:, 0]
+        c_short = data[:, 1:].T  # (n_pair, n_r)
+        meta = read_meta(meta_path) if meta_path.is_file() else {}
+        result = BulkResult(
+            r=r,
+            c_full=c_short.copy(),
+            c_short=c_short,
+            g=np.ones_like(c_short),
+            gamma=np.zeros_like(c_short),
+            n_iter=0,
+            converged=True,
+            residual=0.0,
+            beta=fluid.beta,
+            rho=fluid.rho.copy(),
+            meta={
+                "fluid": "cf1_digitised",
+                "note": "Digitised thesis Fig 3.12 bulk c(r); not a live OZ solve",
+                **{k: v for k, v in meta.items() if k not in {"created_at"}},
+            },
+        )
+        result.meta["fluid_symbol"] = fluid.symbol
+        result.meta["cr_filename_legacy"] = fluid.cr_filename
+        result.meta["bulk_params"] = bulk
+        if write:
+            return result, cr_path, meta_path
+        return result, None, None
     else:
         raise ValueError(
             f"Bulk generation not configured for symbol={symbol!r} type={pot_type!r} "

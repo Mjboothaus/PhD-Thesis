@@ -50,7 +50,7 @@ def _intro():
 def _controls(mo):
     from charged_fluids import list_fluid_symbols
 
-    symbols = [s for s in list_fluid_symbols() if s in {"lj1", "lj2", "kcl", "h2o", "2_2"}]
+    symbols = [s for s in list_fluid_symbols() if s in {"lj1", "lj2", "kcl", "h2o", "2_2", "1_1"}]
     symbol = mo.ui.dropdown(options=symbols, value="lj1", label="Fluid")
     n_point = mo.ui.slider(101, 801, value=201, step=50, label="n_point")
     z_cutoff = mo.ui.slider(10.0, 40.0, value=20.0, step=1.0, label="z_cutoff (A)")
@@ -239,7 +239,7 @@ def _wall_plot(g, mo, run):
 
 @app.cell
 def _bulk_oz_section(mo):
-    bulk_symbol = mo.ui.dropdown(options=["lj1", "lj2", "kcl", "2_2"], value="lj1", label="Bulk fluid")
+    bulk_symbol = mo.ui.dropdown(options=["lj1", "lj2", "kcl", "2_2", "1_1"], value="lj1", label="Bulk fluid")
     bulk_n = mo.ui.slider(256, 2048, value=512, step=256, label="bulk n_points")
     dry_run = mo.ui.checkbox(value=True, label="Dry-run (do not write artefacts)")
     run_bulk = mo.ui.run_button(label="Run bulk OZ")
