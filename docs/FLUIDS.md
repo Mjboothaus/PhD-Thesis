@@ -43,3 +43,17 @@ run = prepare_fluid_run("1_1", z_cutoff=12.0, n_point=101)
 
 Experimental fluids should pass a short Newton–Krylov smoke (finite residual step)
 even when full convergence is not required. See `tests/test_fluid_wall_smoke.py`.
+
+## Bulk generation CLI
+
+```bash
+just bulk-cr-list                 # symbols with bulk support
+just bulk-cr lj1                  # TOML defaults for grid/closure
+just bulk-cr-grid kcl 512 0.05    # explicit grid
+just bulk-cr-all                  # every supported fluid
+uv run python -m charged_fluids.bulk.cli --dry-run 1_1
+uv run python -m charged_fluids.bulk.cli h2o   # digitised CF1 Fig 3.12
+```
+
+Success for ionic melts is ``converged`` **or** a small ``|c_short|`` tail (usable wall input).
+

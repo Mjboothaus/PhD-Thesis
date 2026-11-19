@@ -82,3 +82,41 @@ def resolve_cr_path(
         f"No bulk c(r) for {fluid_symbol!r}: tried {preferred}"
         + (f" and {Path(data_dir) / legacy_name}" if legacy_name else "")
     )
+
+
+def validate_cr_artefact(
+    cr_path: Path,
+    *,
+    expected_n_pair: int | None = None,
+    tail_tol: float = 1e-2,
+) -> dict[str, Any]:
+    """Load a ``.cr.dat`` file and return basic validation metrics.
+
+    Raises ``ValueError`` if the file is empty, malformed, or the tail is too large
+    when ``tail_tol`` is finite.
+    """
+    path = Path(cr_path)
+    data = np.loadtxt(path)
+    if data.ndim != 2 or data.shape[0] < 2 or data.shape[1] < 2:
+        raise ValueError(
+            f"Malformed bulk c(r) artefact: {path} shape={getattr(data, 'shape', None)}"
+        )
+    r = data[:, 0]
+    c = data[:, 1:]
+    n_pair = int(c.shape[1])
+    if expected_n_pair is not None and n_pair != expected_n_pair:
+        raise ValueError(f"{path}: expected {expected_n_pair} pair columns, got {n_pair}")
+    if not np.all(np.diff(r) > 0):
+        raise ValueError(f"{path}: radial grid is not strictly increasing")
+    n_tail = max(5, c.shape[0] // 20)
+    tail = float(np.max(np.abs(c[-n_tail:, :])))
+    if tail_tol is not None and tail >= tail_tol:
+        raise ValueError(f"{path}: |c_short| tail max={tail:.3e} exceeds tol={tail_tol}")
+    return {
+        "path": str(path),
+        "n_points": int(r.size),
+        "n_pair": n_pair,
+        "r_min": float(r[0]),
+        "r_max": float(r[-1]),
+        "tail_abs_max": tail,
+    }
