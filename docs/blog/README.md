@@ -12,6 +12,7 @@ a long-form post can be assembled later for Databooth or a personal site.
 | 2026-11-19 | [Rebuilding confidence without the Fortran](2026-11-19-characterisation-tests.md) |
 | 2026-11-19 | [Phase 1b — residual coverage without a Fortran oracle](2026-11-19-calc-tw-coverage.md) |
 | 2026-11-19 | [Phase 2 — core package depth and thinner Streamlit pages](2026-11-19-phase-2-core-ui.md) |
+| 2026-11-19 | [Phase 3 — bulk c(r) pipeline](2026-11-19-phase-3-bulk-cr.md) |
 
 ## Capstone comparison (in progress)
 

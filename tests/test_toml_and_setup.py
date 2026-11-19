@@ -64,7 +64,7 @@ def test_prepare_lj1_run_small_grid(data_dir):
     assert run.model.f1.shape == run.model.f2.shape == (64, 1)
     assert np.isfinite(run.beta_u[1:]).all()
     assert run.fluid.beta > 0
-    assert run.cr_path.name == "lj1-cr.data"
+    assert run.cr_path.name in {"lj1-cr.data", "lj1.cr.dat"}
 
 
 def test_load_toml_cache_is_path_keyed(tmp_path):

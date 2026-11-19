@@ -151,7 +151,13 @@ def prepare_fluid_run(
     wall_zeros = np.zeros((n_point, n_component))
 
     data_root = Path(data_dir) if data_dir is not None else default_data_dir()
-    cr_path = data_root / fluid.cr_filename
+    from charged_fluids.bulk.artefacts import resolve_cr_path
+
+    cr_path = resolve_cr_path(
+        fluid.symbol,
+        data_dir=data_root,
+        legacy_name=fluid.cr_filename or None,
+    )
     c_short, _ = load_and_interpolate_cr(cr_path, n_point, n_pair, z)
     f1 = integral_z_infty_dr_r_c_short(c_short, n_pair, n_point, z)
     f2 = integral_z_infty_dr_r2_c_short(c_short, n_pair, n_point, z)
