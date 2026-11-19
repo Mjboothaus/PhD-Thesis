@@ -195,7 +195,7 @@ _Fill after Phases 3–4._
 - [ ] Refresh all `git show` snippets against final `main`
 - [ ] Replace “target” rows with actual Phase 2–5 outcomes
 - [ ] Link progressive notes (tooling, characterisation, calc_tw, …)
-- [ ] Link PR(s) and production app https://phd.databooth.com.au
+- [ ] Link PR(s) and production app https://phd-thesis-mjb.onrender.com (Cloud Run deprecated)
 - [ ] Australian English pass; no overclaim on Fortran equivalence
 - [ ] Optional: assemble into Databooth long-form from this draft + dated notes
 

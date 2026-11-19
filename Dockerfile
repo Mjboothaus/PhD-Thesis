@@ -1,4 +1,5 @@
-# UV + Python 3.14 slim image for Render / Cloud Run / local containers
+# UV + Python 3.14 slim image for Render (production) and local containers.
+# Google Cloud Run is deprecated for this app.
 FROM python:3.14-slim-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

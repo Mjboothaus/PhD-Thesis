@@ -15,6 +15,11 @@ Active science code lives in **`src/charged_fluids/`**.
 
 Streamlit entrypoints under `src/Main.py` and `src/pages/` import thin shims that delegate to `charged_fluids`.
 
+## Deployment
+
+- **Current production:** Render service `PhD-Thesis-MJB` — https://phd-thesis-mjb.onrender.com
+- **Deprecated:** Google Cloud Run (and any former custom-domain path that depended on it). Do not target Cloud Run for new deploys.
+
 ## Notebooks
 
 Active Marimo explorers (Plotly figures):

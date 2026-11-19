@@ -15,14 +15,14 @@ This project is a reimplementation of PhD thesis research on "Charged fluids nea
 
 ## Technology Stack
 
-- **Language**: Python 3.13
-- **Frontend**: Streamlit 1.37+
+- **Language**: Python 3.14
+- **Frontend**: Streamlit (app dependency group)
 - **Scientific Computing**: NumPy, SciPy, Matplotlib, Plotly
 - **Data Management**: Pandas, DuckDB
 - **Build Tool**: UV (Python package manager)
 - **Task Runner**: Just (justfile)
 - **Containerisation**: Docker
-- **Deployment**: Google Cloud Run (production at https://phd.databooth.com.au)
+- **Deployment**: Render (https://phd-thesis-mjb.onrender.com). Google Cloud Run is deprecated.
 
 ## Project Structure
 
@@ -211,9 +211,10 @@ just container
 
 ### Production
 
-- Deployed on Google Cloud Run
-- Production URL: https://phd.databooth.com.au
-- Uses containerised deployment with optimised configuration
+- Render web service `PhD-Thesis-MJB` (Docker from `Dockerfile` / `render.yaml`)
+- Production URL: https://phd-thesis-mjb.onrender.com
+- Deploy helpers: `just deploy-render-service`, `render deploys create …`
+- Google Cloud Run / former phd.databooth.com.au hosting: **deprecated**
 
 ## Dependencies
 

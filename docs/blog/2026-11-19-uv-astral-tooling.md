@@ -53,6 +53,6 @@ source builds on Python 3.14.
 
 ## Open questions
 
-- Whether Cloud Run still needs an exported `requirements.prod.txt` or can rely
-  solely on `uv sync --frozen` in the image build.
+- Production is **Render** (Cloud Run deprecated). Docker uses `uv sync --frozen
+  --group app`; `just export-reqs` remains an optional freeze escape hatch.
 - When to pull Marimo into the default dev group versus keeping it optional.
