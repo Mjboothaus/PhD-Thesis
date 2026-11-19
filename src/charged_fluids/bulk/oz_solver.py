@@ -3,6 +3,9 @@
 Implements Picard iteration with HNC or PY closures and optional Ng-style
 long-range Coulomb separation so short-range direct correlations vanish at
 large r (thesis c_sr = c + beta q_i q_j / (eps r) for bare Coulomb).
+
+Closures live in :mod:`charged_fluids.bulk.closures`; sine transforms in
+:mod:`charged_fluids.bulk.transforms`.
 """
 
 from __future__ import annotations
@@ -13,7 +16,9 @@ from typing import Literal
 import numpy as np
 from scipy.constants import Boltzmann
 
+from charged_fluids.bulk.closures import apply_closure as _apply_closure
 from charged_fluids.bulk.transforms import forward_sine, inverse_sine, radial_grids
+from charged_fluids.modelling import calc_l_index, n_pairs
 
 Closure = Literal["hnc", "py"]
 
@@ -34,12 +39,8 @@ class BulkResult:
 
 
 def pair_index(i: int, j: int) -> int:
-    """Upper-triangle pair index matching wall-fluid calc_l_index for n<=2."""
-    return i + j
-
-
-def n_pairs(n_component: int) -> int:
-    return n_component * (n_component + 1) // 2
+    """Upper-triangle pair index matching wall-fluid :func:`calc_l_index`."""
+    return calc_l_index(i, j)
 
 
 def beta_from_temperature(temperature: float) -> float:
@@ -62,29 +63,12 @@ def coulomb_potential(r: np.ndarray, qi: float, qj: float, epsilon: float) -> np
 
 
 def apply_closure(
-    closure: Closure,
+    closure: Closure | str,
     beta_u: np.ndarray,
     gamma: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return c(r), g(r) from beta*u and gamma = h - c."""
-    # Soften infinite cores
-    bu = np.where(np.isfinite(beta_u), beta_u, 1.0e6)
-    if closure == "hnc":
-        # c = exp(-bu + gamma) - 1 - gamma
-        t = -bu + gamma
-        t = np.clip(t, -100.0, 50.0)
-        e = np.exp(t)
-        c = e - 1.0 - gamma
-        g = e
-    elif closure == "py":
-        # c = (e^{-bu}-1)(1+gamma)
-        t = np.clip(-bu, -100.0, 50.0)
-        f = np.exp(t) - 1.0
-        c = f * (1.0 + gamma)
-        g = (1.0 + f) * (1.0 + gamma)
-    else:
-        raise ValueError(f"Unknown closure: {closure}")
-    return c, g
+    """Return c(r), g(r) from beta*u and gamma = h - c (registry-backed)."""
+    return _apply_closure(closure, beta_u, gamma)
 
 
 def oz_one_component_fourier(c_k: np.ndarray, rho: float) -> tuple[np.ndarray, np.ndarray]:
@@ -181,11 +165,11 @@ def dimensionless_coulomb_from_charge_pair(r: np.ndarray, charge_pair: np.ndarra
     :func:`charged_fluids.modelling.calc_charge_pair`, so
     ``beta u_c(r) = charge_pair[l] / (2 r)``.
     """
-    n_pair = charge_pair.size
-    out = np.zeros((n_pair, r.size))
+    charge_pair = np.asarray(charge_pair, dtype=float).ravel()
+    out = np.zeros((charge_pair.size, r.size))
     mask = r > 0
-    for l in range(n_pair):
-        out[l, mask] = charge_pair[l] / (2.0 * r[mask])
+    # broadcast: (n_pair, 1) / (1, n_r)
+    out[:, mask] = charge_pair[:, None] / (2.0 * r[None, mask])
     return out
 
 
@@ -206,7 +190,7 @@ def solve_bulk_binary_coulomb_lj(
 ) -> BulkResult:
     """Two-component LJ + Coulomb bulk OZ with Ng long-range renormalisation.
 
-    Pair order: (0,0), (0,1), (1,1) via ``i+j`` for n=2.
+    Pair order: (0,0), (0,1), (1,1) via :func:`pair_index` for n=2.
     Coulomb uses wall-fluid ``charge_pair`` units. Ng splits
     ``beta u_c = beta u_long + beta u_c_short`` with
     ``u_long ~ erf(alpha r)/r`` so the iterated potential is short-ranged;
@@ -218,7 +202,7 @@ def solve_bulk_binary_coulomb_lj(
     beta = beta_from_temperature(temperature)
     r, k, delta_k = radial_grids(n_points, delta_r)
     n_comp = 2
-    n_pair = 3
+    n_pair = n_pairs(n_comp)
     rho = np.asarray(densities, dtype=float)
     charge_pair = np.asarray(charge_pair, dtype=float).ravel()
     if charge_pair.size != n_pair:
@@ -235,14 +219,9 @@ def solve_bulk_binary_coulomb_lj(
     # Ng long-range piece (screened Coulomb)
     beta_u_long = np.zeros_like(beta_u_c)
     beta_u_short_c = np.zeros_like(beta_u_c)
-    for l in range(n_pair):
-        # charge_pair/(2r) * erf(alpha r) is long-ranged and smooth at origin
-        beta_u_long[l] = np.where(
-            r > 0,
-            charge_pair[l] * erf(ng_alpha * r) / (2.0 * r),
-            charge_pair[l] * ng_alpha / np.sqrt(np.pi),
-        )
-        beta_u_short_c[l] = beta_u_c[l] - beta_u_long[l]
+    erf_term = np.where(r > 0, erf(ng_alpha * r) / (2.0 * r), ng_alpha / np.sqrt(np.pi))
+    beta_u_long = charge_pair[:, None] * erf_term[None, :]
+    beta_u_short_c = beta_u_c - beta_u_long
 
     beta_u_s = np.zeros((n_pair, n_points))
     for i, j in pair_list:

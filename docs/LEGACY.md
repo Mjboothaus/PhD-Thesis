@@ -1,16 +1,15 @@
-# Legacy trees (do not expand until Phase 2)
+# Legacy trees
 
-These directories remain in the repository for reference and historical behaviour.
-They are **out of scope** for the Phase 0/1 tooling and unit-test work.
+These directories remain for reference and historical behaviour. **Do not expand them.**
+Active science code lives in **`src/charged_fluids/`**.
 
-| Path | Role | Plan |
-|------|------|------|
-| `src/oo_refactoring/` | Partial object-oriented Streamlit rewrite | Inventory in Phase 2; merge useful pieces or delete |
-| `src/bulk/` | Bulk OZ / DFT experiment tree | Consolidate with `src/pyoz` in Phase 3 |
-| `src/pyoz/` | Vendored PyOZ bulk solver | Single bulk path decision in Phase 3 |
+| Path | Role | Status |
+|------|------|--------|
+| `src/oo_refactoring/` | Partial object-oriented Streamlit rewrite | Legacy; use main Streamlit + `charged_fluids` |
+| `src/bulk/` | Early bulk OZ / DFT experiment tree | Superseded by `charged_fluids.bulk` |
+| `src/pyoz/` | Vendored PyOZ bulk solver | Reference only (`just bulk-fluid-pyoz`) |
 | `src/tests/` | Old nested tests | Superseded by top-level `tests/` |
-| `data/fluid_parameters.toml` | Parallel parameter table | Single source of truth in Phase 2 (`charged_fluids`) |
-| `requirements*.txt` | Pre-uv freezes | Prefer `uv.lock`; export only if deploy needs a freeze |
+| `data/fluid_parameters.toml` | Fluid parameter table | **Current** single source of truth (loaded by `charged_fluids.parameters`) |
+| `requirements*.txt` | Pre-uv freezes | Prefer `uv.lock`; export via `just export-reqs` if deploy needs a freeze |
 
-Active science code lives in **`src/charged_fluids/`**. Streamlit entrypoints under
-`src/Main.py` and `src/pages/` still import thin shims (`src/modelling.py`, etc.).
+Streamlit entrypoints under `src/Main.py` and `src/pages/` import thin shims that delegate to `charged_fluids`.

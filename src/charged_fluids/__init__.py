@@ -26,6 +26,7 @@ from charged_fluids.modelling import (
     integral_z_infty_dr_r_c_short,
     interpolate_cr,
     load_and_interpolate_cr,
+    n_pairs,
     opt_func,
     solve_model,
 )
@@ -68,6 +69,7 @@ __all__ = [
     "list_fluid_symbols",
     "load_and_interpolate_cr",
     "load_fluid_table",
+    "n_pairs",
     "opt_func",
     "prepare_fluid_run",
     "set_fluid_parameters",

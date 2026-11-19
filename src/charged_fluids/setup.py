@@ -38,7 +38,12 @@ def default_data_dir() -> Path:
 
 @dataclass
 class FluidRun:
-    """Fully prepared state for a wall-fluid calculation."""
+    """Fully prepared state for a wall-fluid calculation.
+
+    Single entry point via :func:`prepare_fluid_run`: fluid parameters (TOML),
+    bulk ``c_short`` artefact, f1/f2 kernels, wall potentials, and :class:`Model`.
+    Apps and tests should prefer this over assembling pieces ad hoc.
+    """
 
     fluid: Fluid
     discrete: Discretisation

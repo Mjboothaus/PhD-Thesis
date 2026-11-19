@@ -104,3 +104,22 @@ def test_kcl_generated_c_short_tail_small(tmp_path):
     tail = np.abs(result.c_short[:, -max(10, result.r.size // 20) :])
     tail_max = float(tail.max())
     assert tail_max < 1e-2, f"KCl |c_short| tail max={tail_max}"
+
+
+def test_fft_sine_matches_direct():
+    """FFT odd-extension path must match dense sin(kr) @ v exactly."""
+    n, dr = 128, 0.05
+    r, k, dk = radial_grids(n, dr)
+    f = np.exp(-0.35 * r**2) * np.cos(0.2 * r)
+    fk_fft = forward_sine(f, r, k, dr, backend="fft")
+    fk_dir = forward_sine(f, r, k, dr, backend="direct")
+    np.testing.assert_allclose(fk_fft, fk_dir, rtol=1e-10, atol=1e-12)
+    back_fft = inverse_sine(fk_fft, r, k, dk, backend="fft")
+    back_dir = inverse_sine(fk_dir, r, k, dk, backend="direct")
+    np.testing.assert_allclose(back_fft, back_dir, rtol=1e-10, atol=1e-12)
+
+
+def test_closure_registry_lists_hnc_py():
+    from charged_fluids.bulk.closures import list_closures
+
+    assert list_closures() == ["hnc", "py"]

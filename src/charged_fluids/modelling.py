@@ -1,6 +1,9 @@
 """Integral-equation modelling helpers for fluids near interfaces.
 
 This module is UI-free. Streamlit caching belongs at the app edge, not here.
+
+Unit conventions (Å grids, joule potentials, charge_pair scale) are documented
+in :mod:`charged_fluids.units`.
 """
 
 from __future__ import annotations
@@ -14,7 +17,7 @@ import pandas as pd
 import scipy.optimize as optim
 from scipy import interpolate
 from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
-from scipy.integrate import trapezoid
+from scipy.integrate import cumulative_trapezoid, trapezoid
 
 from charged_fluids.memory import monitor_memory
 
@@ -47,12 +50,20 @@ def calc_epsilon(epsilon_r: float) -> float:
 
 
 def calc_l_index(i: int, j: int) -> int:
-    """Pair index used by the historical code (i + j).
+    """Upper-triangle pair index including the diagonal (symmetric in i, j).
 
-    Adequate for one- and two-component upper-triangle layouts used today;
-    multicomponent generality will be revisited under tests.
+    Uses ``l = j*(j+1)//2 + i`` with ``i <= j``. For one- and two-component
+    fluids this matches the historical ``i + j`` layout of thesis data files.
+    For ``n > 2`` it avoids collisions that ``i + j`` would produce.
     """
-    return i + j
+    if i > j:
+        i, j = j, i
+    return j * (j + 1) // 2 + i
+
+
+def n_pairs(n_component: int) -> int:
+    """Number of unique unordered pairs including like-like terms."""
+    return n_component * (n_component + 1) // 2
 
 
 def calc_beta_pauling(
@@ -147,12 +158,24 @@ def calc_u_lj(
     """Bulk Lennard-Jones pair potential on the radial grid ``r``."""
     u = np.zeros((n_point, n_pair))
     u[0, :] = np.inf
-    for ir in range(1, n_point):
-        for i in range(n_component):
-            for j in range(i, n_component):
-                l = calc_l_index(i, j)
-                ratio = sigma_lj[l] / r[ir]
-                u[ir, l] = 4.0 * epsilon_lj[l] * (ratio**12 - ratio**6)
+    if n_point < 2:
+        return u
+    r_tail = r[1:, None]  # (n_point-1, 1)
+    sigma = np.asarray(sigma_lj, dtype=float).reshape(1, -1)
+    eps = np.asarray(epsilon_lj, dtype=float).reshape(1, -1)
+    ratio = sigma / r_tail
+    u[1:, :] = 4.0 * eps * (ratio**12 - ratio**6)
+    # Only fill pair columns that belong to the component layout.
+    if n_pair != n_pairs(n_component):
+        # Defensive: fall back to historical loop if sizes disagree.
+        u = np.zeros((n_point, n_pair))
+        u[0, :] = np.inf
+        for ir in range(1, n_point):
+            for i in range(n_component):
+                for j in range(i, n_component):
+                    l = calc_l_index(i, j)
+                    ratio_ij = sigma_lj[l] / r[ir]
+                    u[ir, l] = 4.0 * epsilon_lj[l] * (ratio_ij**12 - ratio_ij**6)
     return u
 
 
@@ -166,12 +189,11 @@ def calc_kappa(beta: float, charge: np.ndarray, rho: np.ndarray, epsilon: float)
 
 
 def calc_phiw(z: np.ndarray, n_point: int, n_component: int) -> np.ndarray:
-    phiw = np.zeros((n_point, n_component))
     capital_a = 16.274e-19  # joules
     wall_d = 2.97  # inverse angstrom
-    for i in range(n_component):
-        phiw[:, i] = np.exp(-wall_d * z) * capital_a * (wall_d * z + 2)
-    return phiw
+    # Same wall potential on every component (historical thesis form).
+    profile = np.exp(-wall_d * z) * capital_a * (wall_d * z + 2)
+    return np.column_stack([profile] * n_component) if n_component else np.zeros((n_point, 0))
 
 
 def interpolate_cr(
@@ -205,51 +227,79 @@ def load_and_interpolate_cr(
 
 
 def calc_f1_integrand(c_short: np.ndarray, n_pair: int, z: np.ndarray, n_point: int) -> np.ndarray:
-    f1_integrand = np.zeros((n_point, n_pair))
-    for ij in range(n_pair):
-        f1_integrand[:, ij] = z * c_short[:, ij]
-    return f1_integrand
+    del n_pair, n_point  # shapes come from arrays
+    return z[:, None] * c_short
 
 
 def calc_f2_integrand(c_short: np.ndarray, n_pair: int, z: np.ndarray, n_point: int) -> np.ndarray:
-    f2_integrand = np.zeros((n_point, n_pair))
+    del n_pair, n_point
+    return (z * z)[:, None] * c_short
+
+
+def _integral_z_to_end(values: np.ndarray, z: np.ndarray) -> np.ndarray:
+    """For each k, trapezoid(values[k:], z[k:]) via one cumulative pass.
+
+    ``values`` and result have shape (n_point,) or (n_point, n_pair).
+    """
+    values = np.asarray(values, dtype=float)
+    z = np.asarray(z, dtype=float)
+    n_point = z.size
+    if values.ndim == 1:
+        out = np.zeros(n_point, dtype=float)
+        if n_point < 2:
+            return out
+        cum = np.zeros(n_point, dtype=float)
+        cum[1:] = cumulative_trapezoid(values, z)
+        out[:-1] = cum[-1] - cum[:-1]
+        return out
+
+    n_pair = values.shape[1]
+    out = np.zeros((n_point, n_pair), dtype=float)
+    if n_point < 2:
+        return out
+    cum = np.zeros((n_point, n_pair), dtype=float)
     for ij in range(n_pair):
-        f2_integrand[:, ij] = z * z * c_short[:, ij]
-    return f2_integrand
+        cum[1:, ij] = cumulative_trapezoid(values[:, ij], z)
+        out[:-1, ij] = cum[-1, ij] - cum[:-1, ij]
+    return out
 
 
 @monitor_memory
 def integral_z_infty_dr_r_c_short(
     c_short: np.ndarray, n_pair: int, n_point: int, z: np.ndarray
 ) -> np.ndarray:
-    f1 = np.zeros((n_point, n_pair))
-    for ij in range(n_pair):
-        zc = z * c_short[:, ij]
-        for k in range(n_point):
-            if k < n_point - 1:
-                f1[k, ij] = trapezoid(zc[k:], z[k:])
-    return f1
+    del n_pair, n_point
+    return _integral_z_to_end(z[:, None] * c_short, z)
 
 
 @monitor_memory
 def integral_z_infty_dr_r2_c_short(
     c_short: np.ndarray, n_pair: int, n_point: int, z: np.ndarray
 ) -> np.ndarray:
-    f2 = np.zeros((n_point, n_pair))
-    z2 = z * z
-    for ij in range(n_pair):
-        z2c = z2 * c_short[:, ij]
-        for k in range(n_point):
-            if k < n_point - 1:
-                f2[k, ij] = trapezoid(z2c[k:], z[k:])
-    return f2
+    del n_pair, n_point
+    return _integral_z_to_end((z * z)[:, None] * c_short, z)
 
 
 def calc_hw(tw: np.ndarray, n_component: int, beta_phiw: np.ndarray) -> np.ndarray:
-    hw = np.zeros((len(tw), n_component))
-    for i in range(n_component):
-        hw[:, i] = np.exp(tw[:, i] - beta_phiw[:, i]) - 1.0
-    return hw
+    del n_component
+    return np.exp(tw - beta_phiw) - 1.0
+
+
+def _prefix_trapezoid(y: np.ndarray, z: np.ndarray) -> np.ndarray:
+    """prefix[k] = trapezoid(y[:k], z[:k]) with prefix[0] = 0."""
+    n = z.size
+    out = np.zeros(n, dtype=float)
+    if n < 2:
+        return out
+    cum = np.zeros(n, dtype=float)
+    cum[1:] = cumulative_trapezoid(y, z)
+    # trapezoid(y[:k], z[:k]) == cum[k-1] for k>=1 when endpoints match...
+    # cumulative_trapezoid: cum[k] = int from z[0] to z[k] for k>=1, cum[0]=0.
+    # trapezoid(y[:k], z[:k]) integrates points 0..k-1, i.e. up to z[k-1] = cum[k-1].
+    out[1:] = cum[:-1]
+    # For k=1: trapezoid(y[:1], z[:1]) = 0 (single point) — cum[0]=0, out[1]=0 OK
+    # For k=2: trapezoid(y[:2], z[:2]) = cum[1], out[2]=cum[1] OK
+    return out
 
 
 @monitor_memory
@@ -266,30 +316,30 @@ def calc_tw(
     n_point: int,
     z_index: np.ndarray,
 ) -> np.ndarray:
+    """Singlet wall indirect correlation from bulk short-range kernels.
+
+    Pair loops follow the historical upper-triangle ``j >= i`` layout used by
+    the thesis discretisation (same numerical behaviour for n <= 2).
+    """
     two_pi = 2.0 * np.pi
     tw = np.zeros((n_point, n_component))
     hw = np.exp(tw_in - beta_phiw) - 1.0
 
-    def calc_integrals(hw_arr: np.ndarray, z_arr: np.ndarray, k: int, i: int):
-        if k > 0:
-            integral_0_z = trapezoid(hw_arr[:k, i], z_arr[:k])
-        else:
-            integral_0_z = 0.0
-        if k < n_point:
-            z_slice = z_arr[k:]
-            integral_z_infty = trapezoid(z_slice * hw_arr[k:, i], z_slice)
-        else:
-            integral_z_infty = 0.0
-        return integral_0_z, integral_z_infty
+    # Precompute charge-path integrals per species: int_0^z hw and int_z^∞ z hw
+    integral_0_z = np.zeros((n_point, n_component))
+    integral_z_infty = np.zeros((n_point, n_component))
+    for i in range(n_component):
+        integral_0_z[:, i] = _prefix_trapezoid(hw[:, i], z)
+        integral_z_infty[:, i] = _integral_z_to_end(z * hw[:, i], z)
 
     for i in range(n_component):
         for k in range(n_point):
-            integral_0_z_k, integral_z_infty_k = calc_integrals(hw, z, k, i)
+            # Historical structure: reset then accumulate over j >= i only.
             for j in range(i, n_component):
                 l = calc_l_index(i, j)
                 tw[k, i] = beta_psi_charge[i]
                 main_terms = z[k] * f1[k, l] - f2[k, l]
-                charge_terms = charge_pair[l] * (integral_z_infty_k + z[k] * integral_0_z_k)
+                charge_terms = charge_pair[l] * (integral_z_infty[k, i] + z[k] * integral_0_z[k, i])
                 if k > 0:
                     trap_term1 = trapezoid(hw[:k, j] * f1[np.flip(z_index[:k]), l])
                 else:

@@ -73,3 +73,13 @@ def test_kappa_kcl_matches_historical_characterisation(kcl_fluid):
 
 def test_charge_pair_neutral_for_uncharged_lj(lj1_fluid):
     np.testing.assert_allclose(lj1_fluid.charge_pair, 0.0)
+
+
+def test_calc_l_index_three_component_no_collision():
+    """For n>2, pair indices must be unique across the upper triangle."""
+    pairs = [(i, j) for i in range(3) for j in range(i, 3)]
+    indices = [calc_l_index(i, j) for i, j in pairs]
+    assert len(indices) == len(set(indices))
+    assert sorted(indices) == list(range(6))
+    # n<=2 historical layout unchanged
+    assert [calc_l_index(i, j) for i, j in [(0, 0), (0, 1), (1, 1)]] == [0, 1, 2]
