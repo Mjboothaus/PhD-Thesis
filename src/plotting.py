@@ -52,12 +52,70 @@ def plot_bulk_curves(n_component, r, r_plots, component):
 
 
     
-def plot_convergence(filename, log_y=True):
-    with open(filename, "r") as solver_out:
-        content = solver_out.readlines()
-    conv_table = list(map(np.float32, [line.replace(":", ",").replace("|F(x)| = ", "").split(";")[0].split(",") for line in content if line != "\n"]))
-    convergence_df = pd.DataFrame(conv_table, columns=["Iteration #", "|F(x)|"], dtype=np.float32)
-    fig = plotly_line(x=convergence_df["Iteration #"], y=convergence_df["|F(x)|"], column_names=["Iteration #", "|F(x)|"])
+def plot_convergence_history(history, log_y=True):
+    """Plot :class:`charged_fluids.ConvergenceHistory` from ``solve_model``."""
+    if history is None or not getattr(history, "iterations", None):
+        st.info("No convergence history recorded.")
+        return None
+    iters = np.asarray(history.iterations, dtype=float)
+    y = np.column_stack(
+        [
+            np.asarray(history.residuals, dtype=float),
+            np.asarray(history.max_abs, dtype=float),
+            np.asarray(history.mean_abs, dtype=float),
+        ]
+    )
+    fig = plotly_line(
+        iters,
+        y,
+        ["Iteration #", "|F|_2", "max |F|", "mean |F|"],
+        y_label="residual",
+        title="Newton–Krylov residual history",
+    )
     if log_y:
         fig.update_yaxes(type="log")
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
+    return fig
+
+
+def plot_convergence(filename=None, log_y=True, history=None):
+    """Plot solver residual vs iteration.
+
+    Prefer structured ``history`` from ``solve_model``; fall back to parsing a
+    SciPy ``disp=True`` log file (legacy path).
+    """
+    if history is not None and getattr(history, "iterations", None):
+        return plot_convergence_history(history, log_y=log_y)
+    if not filename:
+        st.info("No convergence log or history to plot.")
+        return None
+    with open(filename) as solver_out:
+        content = solver_out.readlines()
+    conv_table = list(
+        map(
+            np.float32,
+            [
+                line.replace(":", ",")
+                .replace("|F(x)| = ", "")
+                .split(";")[0]
+                .split(",")
+                for line in content
+                if line != "\n"
+            ],
+        )
+    )
+    if not conv_table:
+        st.info("Convergence log was empty.")
+        return None
+    convergence_df = pd.DataFrame(
+        conv_table, columns=["Iteration #", "|F(x)|"], dtype=np.float32
+    )
+    fig = plotly_line(
+        x=convergence_df["Iteration #"],
+        y=convergence_df["|F(x)|"],
+        column_names=["Iteration #", "|F(x)|"],
+    )
+    if log_y:
+        fig.update_yaxes(type="log")
+    st.plotly_chart(fig, use_container_width=True)
+    return fig

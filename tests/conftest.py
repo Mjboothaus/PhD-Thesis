@@ -29,7 +29,7 @@ def data_dir() -> Path:
 
 @pytest.fixture(scope="session")
 def lj1_cr_path(data_dir: Path) -> Path:
-    path = data_dir / "lj1-cr.data"
+    path = data_dir / "bulk" / "lj1.cr.dat"
     assert path.is_file(), f"Missing bulk c(r) fixture: {path}"
     return path
 

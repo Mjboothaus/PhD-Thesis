@@ -42,8 +42,7 @@ PhD-Thesis/
 │   ├── numerics.py               # Numerical computation utilities
 │   ├── plotting.py               # Plotting and visualisation functions
 │   ├── sidebar.py                # Streamlit sidebar components
-│   ├── bulk/                     # Bulk fluid calculations (PyOZ integration)
-│   └── oo_refactoring/           # Object-oriented refactoring (work in progress)
+│   └── bulk/                     # Legacy bulk experiments (superseded by charged_fluids.bulk)
 ├── data/                         # Data files and fluid parameters
 │   ├── fluid_parameters.toml     # Fluid configuration parameters
 │   ├── *.data                    # Correlation function data files
@@ -174,17 +173,15 @@ uv sync
 ### Current Limitations
 
 1. **Charged Fluid Correlations** - Short-range correlations don't approach zero as expected
-2. **OO Refactoring** - Object-oriented refactoring is only partially complete
-3. **Bulk Integration** - Automatic bulk fluid code integration needs improvement
-4. **Data Structures** - Discrete data structures could be optimised
+2. **Bulk Integration** - Further bulk OZ quality (KCl residual, CF1 bridge)
+3. **Data Structures** - Discrete data structures could be optimised
 
 ### Development Priorities
 
 1. Fix charged fluid correlation function behaviour
-2. Complete object-oriented refactoring
-3. Integrate bulk fluid calculations automatically
-4. Optimise data structures for better performance
-5. Implement automated solver output capture using Streamlit widgets
+2. Improve bulk OZ quality (KCl, CF1 bridge, electrolytes)
+3. Optimise data structures for better performance
+4. Solver residual history is now in `charged_fluids.ConvergenceHistory`
 
 ## Performance Considerations
 

@@ -33,7 +33,7 @@ temperature = 298.15
 concentration = [0.5]
 epsilon_r = 1.0
 index = 2
-cr_filename = "lj1-cr.data"
+cr_filename = "lj1.cr.dat"  # resolved via data/bulk/ first
 status = "ready"
 
 [lj1.potential]
@@ -50,7 +50,7 @@ temperature = 298.15
 concentration = [0.5, 0.5]
 epsilon_r = 1.0
 index = 5
-cr_filename = "pyoz-cr-lj-equal-2-comp.data"
+cr_filename = "lj2.cr.dat"  # resolved via data/bulk/ first
 status = "ready"
 
 [lj2.potential]

@@ -8,7 +8,7 @@ in :mod:`charged_fluids.units`.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +20,40 @@ from scipy.constants import Avogadro, Boltzmann, elementary_charge, epsilon_0
 from scipy.integrate import cumulative_trapezoid, trapezoid
 
 from charged_fluids.memory import monitor_memory
+
+
+@dataclass
+class ConvergenceHistory:
+    """Newton–Krylov residual history (UI-free; lifted from legacy oo_refactoring).
+
+    SciPy's nonlin Krylov path calls ``callback(x, f)`` after each iteration.
+    """
+
+    iterations: list[int] = field(default_factory=list)
+    residuals: list[float] = field(default_factory=list)
+    max_abs: list[float] = field(default_factory=list)
+    mean_abs: list[float] = field(default_factory=list)
+    step_sizes: list[float] = field(default_factory=list)
+
+    def update(self, iteration: int, fun: np.ndarray, step: float) -> None:
+        fun = np.asarray(fun, dtype=float)
+        residual = float(np.linalg.norm(fun))
+        self.iterations.append(int(iteration))
+        self.residuals.append(residual)
+        self.max_abs.append(float(np.max(np.abs(fun))) if fun.size else 0.0)
+        self.mean_abs.append(float(np.mean(np.abs(fun))) if fun.size else 0.0)
+        self.step_sizes.append(float(step))
+
+    def summary(self) -> dict[str, float | int]:
+        if not self.iterations:
+            return {}
+        return {
+            "n_iter_tracked": self.iterations[-1],
+            "final_residual": self.residuals[-1],
+            "final_max_abs": self.max_abs[-1],
+            "final_mean_abs": self.mean_abs[-1],
+            "final_step_size": self.step_sizes[-1],
+        }
 
 
 @dataclass
@@ -432,8 +466,17 @@ def solve_model(
     discrete: Any,
     beta_phiw: np.ndarray,
     beta_psi_charge: np.ndarray,
+    *,
+    track_history: bool = True,
+    disp: bool = True,
 ):
-    """Solve the singlet OZ residual with SciPy's Newton-Krylov method."""
+    """Solve the singlet OZ residual with SciPy's Newton-Krylov method.
+
+    When ``track_history`` is true (default), the result gains:
+
+    - ``convergence_history`` — :class:`ConvergenceHistory`
+    - ``convergence_summary`` — compact dict of final metrics
+    """
     charge_pair = fluid.charge_pair
     n_component = fluid.n_component
     rho = fluid.rho
@@ -456,12 +499,34 @@ def solve_model(
         n_point,
         z_index,
     )
-    return optim.root(
+
+    history = ConvergenceHistory() if track_history else None
+    state: dict[str, Any] = {"iteration": 0, "last_x": None}
+
+    def _callback(x: np.ndarray, f: np.ndarray | None = None) -> None:
+        if history is None:
+            return
+        x_arr = np.asarray(x, dtype=float)
+        if f is None:
+            fun = np.asarray(residual(x_arr, *tw_args), dtype=float)
+        else:
+            fun = np.asarray(f, dtype=float)
+        last = state["last_x"]
+        step = 0.0 if last is None else float(np.linalg.norm(x_arr - last))
+        state["iteration"] = int(state["iteration"]) + 1
+        history.update(int(state["iteration"]), fun, step)
+        state["last_x"] = x_arr.copy()
+
+    result = optim.root(
         residual,
         tw_initial,
         args=tw_args,
         method="krylov",
         jac=None,
-        callback=None,
-        options={"disp": True, "maxiter": max_iteration, "fatol": tolerance},
+        callback=_callback if track_history else None,
+        options={"disp": disp, "maxiter": max_iteration, "fatol": tolerance},
     )
+    if history is not None:
+        result.convergence_history = history
+        result.convergence_summary = history.summary()
+    return result

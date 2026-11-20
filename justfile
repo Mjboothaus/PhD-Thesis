@@ -46,10 +46,6 @@ export-reqs:
 app app_name="src/Main.py": sync-app
     uv run streamlit run {{app_name}} --server.address=localhost
 
-# Run the experimental OO Streamlit entry (legacy; see docs/LEGACY.md)
-app-opt app_name="src/oo_refactoring/Main.py": sync-app
-    uv run streamlit run {{app_name}} --server.address=localhost
-
 # Update Streamlit config snapshot
 update-st-config:
     uv run streamlit config show > .streamlit/config.toml

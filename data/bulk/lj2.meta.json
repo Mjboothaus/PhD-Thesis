@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-11-19T10:35:37.074268+00:00",
+  "created_at": "2026-11-20T11:09:04.217565+00:00",
   "stem": "lj2",
   "use_short": true,
   "converged": true,
@@ -25,7 +25,7 @@
     "n_component": 2,
     "note": "Equal multi-comp LJ: pair c(r) from 1-comp OZ at total density",
     "fluid_symbol": "lj2",
-    "cr_filename_legacy": "pyoz-cr-lj-equal-2-comp.data",
+    "cr_filename_legacy": "lj2.cr.dat",
     "bulk_params": {
       "sigma_A": 5.0,
       "epsilon_kJ_mol": 0.1,
