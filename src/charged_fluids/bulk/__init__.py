@@ -15,7 +15,12 @@ from charged_fluids.bulk.generate import (
     list_bulk_symbols,
     wall_usable_c_short,
 )
-from charged_fluids.bulk.oz_solver import BulkResult, solve_bulk_binary_coulomb_lj, solve_bulk_lj
+from charged_fluids.bulk.oz_solver import (
+    BulkResult,
+    solve_bulk_binary_coulomb_lj,
+    solve_bulk_cf1,
+    solve_bulk_lj,
+)
 
 __all__ = [
     "BulkResult",
@@ -29,6 +34,7 @@ __all__ = [
     "read_meta",
     "resolve_cr_path",
     "solve_bulk_binary_coulomb_lj",
+    "solve_bulk_cf1",
     "solve_bulk_lj",
     "validate_cr_artefact",
     "wall_usable_c_short",

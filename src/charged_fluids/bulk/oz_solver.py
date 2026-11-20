@@ -335,3 +335,331 @@ def solve_bulk_binary_coulomb_lj(
             "c_short_definition": "c_s + beta_u_c_short (= c_full + beta_u_coulomb)",
         },
     )
+
+
+def _binary_oz_gamma_k(
+    c_k: np.ndarray,
+    rho: np.ndarray,
+) -> np.ndarray:
+    """gamma_k = H - C for binary OZ in k-space; c_k shape (2,2,n_k)."""
+    r0, r1 = float(rho[0]), float(rho[1])
+    c00, c01 = c_k[0, 0], c_k[0, 1]
+    c10, c11 = c_k[1, 0], c_k[1, 1]
+    a00 = 1.0 - c00 * r0
+    a01 = -c01 * r1
+    a10 = -c10 * r0
+    a11 = 1.0 - c11 * r1
+    det = a00 * a11 - a01 * a10
+    det = np.where(np.abs(det) < 1e-14, np.sign(det) * 1e-14 + 1e-14, det)
+    inv00 = a11 / det
+    inv01 = -a01 / det
+    inv10 = -a10 / det
+    inv11 = a00 / det
+    h00 = inv00 * c00 + inv01 * c10
+    h01 = inv00 * c01 + inv01 * c11
+    h10 = inv10 * c00 + inv11 * c10
+    h11 = inv10 * c01 + inv11 * c11
+    gamma_k = np.empty_like(c_k)
+    gamma_k[0, 0] = h00 - c00
+    gamma_k[0, 1] = h01 - c01
+    gamma_k[1, 0] = h10 - c10
+    gamma_k[1, 1] = h11 - c11
+    return gamma_k
+
+
+def _anderson_mix(
+    gamma: np.ndarray,
+    gamma_new: np.ndarray,
+    hist_g: list[np.ndarray],
+    hist_f: list[np.ndarray],
+    *,
+    m_hist: int = 5,
+    damp: float = 0.15,
+) -> np.ndarray:
+    """Simple Anderson (DIIS-like) mixing on flattened pair fields."""
+    f = gamma_new - gamma
+    hist_g.append(gamma.copy())
+    hist_f.append(f.copy())
+    if len(hist_g) > m_hist:
+        hist_g.pop(0)
+        hist_f.pop(0)
+    m = len(hist_f)
+    if m < 2:
+        return (1.0 - damp) * gamma + damp * gamma_new
+    # Solve min || sum c_i F_i || with sum c_i = 1
+    dim = f.size
+    F = np.column_stack([fi.ravel() for fi in hist_f])  # (dim, m)
+    # Regularised least squares for coefficients with constraint via Lagrange
+    A = F.T @ F
+    A = A + 1e-8 * np.eye(m)
+    ones = np.ones(m)
+    try:
+        # Block system: [A 1; 1^T 0] [c; λ] = [0; 1]
+        top = np.hstack([A, ones[:, None]])
+        bot = np.hstack([ones, np.zeros(1)])
+        mat = np.vstack([top, bot])
+        rhs = np.zeros(m + 1)
+        rhs[-1] = 1.0
+        sol = np.linalg.solve(mat, rhs)
+        coeffs = sol[:-1]
+    except np.linalg.LinAlgError:
+        return (1.0 - damp) * gamma + damp * gamma_new
+    g_stack = np.column_stack([gi.ravel() for gi in hist_g])
+    f_stack = F
+    mixed = (g_stack + damp * f_stack) @ coeffs
+    return mixed.reshape(gamma.shape)
+
+
+def _cf1_temperature_ladder(t_final: float, anneal_steps: int) -> list[float]:
+    """Geometric cool-down from a hot start into the association regime."""
+    t_final = float(t_final)
+    if anneal_steps <= 1:
+        return [t_final]
+    # Deep CF1 OH well needs T ≳ 5e3 K before HNC Mayer f-bonds are mild.
+    t_hot = max(t_final * 20.0, 6000.0)
+    if anneal_steps <= 8:
+        return list(np.geomspace(t_hot, t_final, anneal_steps))
+    # Two-phase ladder: coarse cool to ~4 T_final, then fine steps to target.
+    t_mid = max(4.0 * t_final, 1200.0)
+    n_coarse = max(6, anneal_steps // 3)
+    n_fine = max(anneal_steps - n_coarse, 8)
+    coarse = list(np.geomspace(t_hot, t_mid, n_coarse))
+    fine = list(np.geomspace(t_mid, t_final, n_fine + 1))[1:]
+    return coarse + fine
+
+
+def _cf1_stage_controls(temperature: float, mix: float, max_iter: int, tol: float) -> tuple[float, int, float, float]:
+    """Return mix, max_iter, tol, exp_clip for one annealing temperature."""
+    t = float(temperature)
+    if t >= 2000.0:
+        return min(0.35, max(mix, 0.2)), min(max_iter, 400), max(tol, 5e-4), 20.0
+    if t >= 1000.0:
+        return min(0.15, max(mix, 0.1)), min(max_iter, 800), max(tol, 5e-4), 28.0
+    if t >= 600.0:
+        return min(0.08, max(mix * 1.2, 0.05)), min(max_iter, 1500), max(tol, 2e-4), 35.0
+    if t >= 400.0:
+        return min(0.05, max(mix, 0.03)), min(max_iter, 2500), max(tol, 1e-4), 45.0
+    return max(0.02, min(mix, 0.04)), max_iter, tol, 50.0
+
+
+def solve_bulk_cf1(
+    *,
+    temperature: float,
+    densities: tuple[float, float],
+    charge_pair: np.ndarray,
+    n_points: int = 1024,
+    delta_r: float = 0.025,
+    closure: Closure = "hnc",
+    mix: float = 0.05,
+    max_iter: int = 4000,
+    tol: float = 5e-5,
+    ng_alpha: float = 1.5,
+    anneal_steps: int = 24,
+    use_anderson: bool = True,
+    t_hot: float | None = None,
+) -> BulkResult:
+    """Bulk OZ for CF1 water (O, H) with Ng Coulomb split + temperature annealing.
+
+    Pair order OO, OH, HH. CF1 already contains Coulomb; long-range Coulomb is
+    taken from wall-fluid ``charge_pair`` (matches CF1 1/r coeffs to ~0.03%) and
+    removed from the iterated potential so Ng renormalisation is not double-counted.
+
+    Direct Picard at 298 K fails because the intramolecular OH Mayer f-bond is
+    enormous. A geometric temperature cool-down from ~6000 K with continuous
+    ``gamma`` (rescaled by β) converges HNC/Ng to a wall-usable ``c_short`` with
+    vanishing large-r tail. Bare HNC under-associates vs experiment/Duh–Haymet
+    bridge IE (coord_OH ≲ 2); bridge functions remain future work.
+    """
+    from scipy.special import erf
+
+    from charged_fluids.potentials.cf1 import calc_u_cf1
+
+    if closure not in ("hnc", "py"):
+        raise ValueError(f"CF1 bulk solver supports hnc|py, got {closure!r}")
+
+    rho = np.asarray(densities, dtype=float)
+    if rho.size != 2:
+        raise ValueError("CF1 densities must be (rho_O, rho_H)")
+    charge_pair_final = np.asarray(charge_pair, dtype=float).ravel()
+    n_comp = 2
+    n_pair = n_pairs(n_comp)
+    if charge_pair_final.size != n_pair:
+        raise ValueError(f"charge_pair must have length {n_pair}, got {charge_pair_final.size}")
+
+    pair_list = [(0, 0), (0, 1), (1, 1)]
+    r, k, delta_k = radial_grids(n_points, delta_r)
+    u_full = calc_u_cf1(n_points, r).T  # (n_pair, n_r) joules, OO/OH/HH
+
+    t_final = float(temperature)
+    beta_final = beta_from_temperature(t_final)
+    temps = _cf1_temperature_ladder(t_final, int(anneal_steps))
+    if t_hot is not None and len(temps) > 1:
+        temps = list(np.geomspace(float(t_hot), t_final, len(temps)))
+
+    gamma = np.zeros((n_pair, n_points))
+    c = np.zeros((n_pair, n_points))
+    g = np.zeros((n_pair, n_points))
+    converged = False
+    residual = np.inf
+    n_iter_total = 0
+    prev_t: float | None = None
+
+    def _hnc_like(beta_u_s_l: np.ndarray, gamma_l: np.ndarray, exp_clip: float) -> tuple[np.ndarray, np.ndarray]:
+        if closure == "hnc":
+            bu = np.where(np.isfinite(beta_u_s_l), beta_u_s_l, 1.0e6)
+            t = np.clip(-bu + gamma_l, -100.0, exp_clip)
+            e = np.exp(t)
+            return e - 1.0 - gamma_l, e
+        # PY with the same exp clip for association stability
+        bu = np.where(np.isfinite(beta_u_s_l), beta_u_s_l, 1.0e6)
+        t = np.clip(-bu, -100.0, exp_clip)
+        fbond = np.exp(t) - 1.0
+        c_l = fbond * (1.0 + gamma_l)
+        g_l = (1.0 + fbond) * (1.0 + gamma_l)
+        return c_l, g_l
+
+    for i_t, t_step in enumerate(temps):
+        t_step = float(t_step)
+        beta = beta_from_temperature(t_step)
+        scale = beta / beta_final
+        cp = charge_pair_final * scale
+        erf_term = np.where(
+            r > 0, erf(ng_alpha * r) / (2.0 * r), ng_alpha / np.sqrt(np.pi)
+        )
+        beta_u_long = cp[:, None] * erf_term[None, :]
+        # Short-range potential for the Picard unknown (Ng): full CF1 minus long Coulomb
+        beta_u_s = beta * u_full - beta_u_long
+
+        if prev_t is not None:
+            # Continuity in β when cooling; structural cores + Coulomb γ both track β roughly
+            gamma = gamma * (beta / beta_from_temperature(prev_t))
+        prev_t = t_step
+
+        mix_stage, stage_iters, stage_tol, exp_clip = _cf1_stage_controls(
+            t_step, mix, max_iter, tol
+        )
+        if i_t == len(temps) - 1:
+            stage_iters = max(stage_iters, max_iter)
+            stage_tol = tol
+            mix_stage = mix
+
+        hist_g: list[np.ndarray] = []
+        hist_f: list[np.ndarray] = []
+        best: tuple[float, np.ndarray, np.ndarray, np.ndarray] | None = None
+
+        for _iteration in range(1, stage_iters + 1):
+            n_iter_total += 1
+            for l in range(n_pair):
+                c[l], g[l] = _hnc_like(beta_u_s[l], gamma[l], exp_clip)
+
+            c_k = np.zeros((n_comp, n_comp, n_points))
+            for i, j in pair_list:
+                l = pair_index(i, j)
+                ck = forward_sine(c[l], r, k, delta_r)
+                c_k[i, j] = ck
+                c_k[j, i] = ck
+
+            gamma_k = _binary_oz_gamma_k(c_k, rho)
+            gamma_new = np.zeros_like(gamma)
+            for i, j in pair_list:
+                l = pair_index(i, j)
+                gamma_new[l] = inverse_sine(gamma_k[i, j], r, k, delta_k)
+
+            if not np.isfinite(gamma_new).all():
+                if best is not None:
+                    residual, gamma, c, g = best[0], best[1].copy(), best[2].copy(), best[3].copy()
+                converged = False
+                break
+
+            residual = float(np.sqrt(np.mean((gamma_new - gamma) ** 2)))
+            if best is None or residual < best[0]:
+                best = (residual, gamma.copy(), c.copy(), g.copy())
+
+            if use_anderson and tol < residual < 1.0:
+                gamma = _anderson_mix(
+                    gamma, gamma_new, hist_g, hist_f, m_hist=5, damp=mix_stage
+                )
+            else:
+                if residual > 1.0e3:
+                    step = mix_stage * 0.05
+                elif residual > 10.0:
+                    step = mix_stage * 0.2
+                elif residual > 1.0:
+                    step = mix_stage * 0.5
+                else:
+                    step = mix_stage
+                gamma = (1.0 - step) * gamma + step * gamma_new
+                hist_g.clear()
+                hist_f.clear()
+
+            if residual < stage_tol:
+                converged = i_t == len(temps) - 1
+                break
+        else:
+            converged = False
+            if best is not None:
+                residual, gamma, c, g = best[0], best[1].copy(), best[2].copy(), best[3].copy()
+
+        if not np.isfinite(gamma).all():
+            converged = False
+            break
+
+    # Final closure / c_short at the target temperature
+    beta = beta_final
+    erf_term = np.where(r > 0, erf(ng_alpha * r) / (2.0 * r), ng_alpha / np.sqrt(np.pi))
+    beta_u_c = dimensionless_coulomb_from_charge_pair(r, charge_pair_final)
+    beta_u_long = charge_pair_final[:, None] * erf_term[None, :]
+    beta_u_short_c = beta_u_c - beta_u_long
+    beta_u_s = beta * u_full - beta_u_long
+    for l in range(n_pair):
+        c[l], g[l] = _hnc_like(beta_u_s[l], gamma[l], 50.0)
+        g[l] = np.maximum(g[l], 0.0)
+
+    c_full = c - beta_u_long
+    c_short = c + beta_u_short_c  # = c_full + beta_u_c
+
+    def _coord(g_pair: np.ndarray, density: float, r_cut: float) -> float:
+        mask = r <= r_cut
+        return float(4.0 * np.pi * density * np.trapezoid(g_pair[mask] * r[mask] ** 2, r[mask]))
+
+    n_oh = _coord(g[pair_index(0, 1)], float(rho[1]), 1.3)
+    n_hh = _coord(g[pair_index(1, 1)], float(rho[1]), 1.9)
+    tail = float(np.max(np.abs(c_short[:, -max(5, n_points // 20) :])))
+    i_oh = int(np.argmax(g[pair_index(0, 1)]))
+
+    return BulkResult(
+        r=r,
+        c_full=c_full,
+        c_short=c_short,
+        g=g,
+        gamma=gamma,
+        n_iter=n_iter_total,
+        converged=converged,
+        residual=residual,
+        beta=beta,
+        rho=rho,
+        meta={
+            "fluid": "cf1_ng_anneal",
+            "closure": closure,
+            "temperature": t_final,
+            "densities": [float(rho[0]), float(rho[1])],
+            "charge_pair": charge_pair_final.tolist(),
+            "n_points": n_points,
+            "delta_r": delta_r,
+            "ng_alpha": ng_alpha,
+            "anneal_steps": len(temps),
+            "temperature_ladder": [float(t) for t in temps],
+            "use_anderson": use_anderson,
+            "coord_OH_1.3A": n_oh,
+            "coord_HH_1.9A": n_hh,
+            "g_OH_peak": float(g[pair_index(0, 1), i_oh]),
+            "g_OH_peak_r": float(r[i_oh]),
+            "tail_abs_max_c_short": tail,
+            "c_short_definition": "c_s + beta_u_c_short (= c_full + beta_u_coulomb)",
+            "note": (
+                "CF1 bulk OZ with Ng Coulomb split and temperature annealing; "
+                "HNC/PY without bridge (under-associates vs Duh–Haymet). "
+                "Aimed at wall-usable c_short with small large-r tail."
+            ),
+        },
+    )

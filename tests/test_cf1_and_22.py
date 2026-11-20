@@ -40,23 +40,43 @@ def test_calc_u_cf1_shape_and_finite():
     assert np.isfinite(u[1:]).all()
 
 
-def test_build_and_prepare_h2o(tmp_path, data_dir):
-    import shutil
-
-    from charged_fluids.bulk.artefacts import default_bulk_dir
+def test_build_digitised_h2o_and_prepare_from_tmp(tmp_path, data_dir, monkeypatch):
+    """Digitised Fig 3.12 path stays available; do not clobber data/bulk/h2o.cr.dat."""
+    from charged_fluids.bulk import artefacts as bulk_artefacts
 
     cr, meta = build_h2o_cr(bulk_dir=tmp_path, n_points=256, r_max=8.0)
     assert cr.is_file() and meta.is_file()
     data = np.loadtxt(cr)
     assert data.shape[1] == 4
-    dest = default_bulk_dir()
-    dest.mkdir(parents=True, exist_ok=True)
-    shutil.copy(cr, dest / "h2o.cr.dat")
-    shutil.copy(meta, dest / "h2o.meta.json")
+    # Point bulk resolution at tmp so prepare_fluid_run uses digitised data only here
+    monkeypatch.setattr(bulk_artefacts, "default_bulk_dir", lambda: tmp_path)
     run = prepare_fluid_run("h2o", z_cutoff=8.0, n_point=64, data_dir=data_dir)
     assert run.model.c_short.shape == (64, 3)
     assert run.u_r.shape == (64, 3)
     assert np.isfinite(run.beta_u[1:]).all()
+
+
+@pytest.mark.slow
+def test_cf1_bulk_oz_anneal_converges(tmp_path):
+    """Live CF1 Ng/HNC temperature anneal → finite c_short with small tail."""
+    result, cr_path, _ = generate_bulk_cr(
+        "h2o",
+        bulk_dir=tmp_path,
+        n_points=512,
+        delta_r=0.05,
+        write=True,
+    )
+    assert cr_path is not None and cr_path.is_file()
+    assert result.converged
+    assert np.isfinite(result.c_short).all()
+    assert np.isfinite(result.g).all()
+    tail = float(np.max(np.abs(result.c_short[:, -max(10, result.r.size // 20) :])))
+    assert tail < 1e-2, f"CF1 |c_short| tail max={tail}"
+    # Intramolecular OH peak near 1 Å; bare HNC under-associates (coord < 2)
+    g_oh = result.g[1]
+    r_peak = float(result.r[int(np.argmax(g_oh))])
+    assert 0.85 <= r_peak <= 1.15
+    assert float(result.meta.get("coord_OH_1.3A", 0.0)) > 0.5
 
 
 def test_2_2_parameters_and_bulk(tmp_path):

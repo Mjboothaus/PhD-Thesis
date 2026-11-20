@@ -17,7 +17,7 @@ Australian English. Parameter source of truth: `data/fluid_parameters.toml`.
 2. **`[symbol.potential]`** with `type`:
    - `lj` — neutral Lennard-Jones (`epsilon_lj`, `sigma_lj`)
    - `ionic` — soft-core + Coulomb (KCl / 1-1 / 2-2 style)
-   - `cf1` — central-force water (O, H); bulk from digitised Fig 3.12
+   - `cf1` — central-force water (O, H); bulk via live Ng/HNC OZ with temperature anneal (digitised Fig 3.12 still opt-in)
 3. **`[symbol.bulk]`** grid/closure/Ng knobs as needed.
 4. **Bulk artefact** via `just bulk-cr <symbol>` (or `just bulk-cr-h2o` for CF1).
 5. **Streamlit page** calling `render_fluid_page("symbol")`.
@@ -52,8 +52,10 @@ just bulk-cr lj1                  # TOML defaults for grid/closure
 just bulk-cr-grid kcl 512 0.05    # explicit grid
 just bulk-cr-all                  # every supported fluid
 uv run python -m charged_fluids.bulk.cli --dry-run 1_1
-uv run python -m charged_fluids.bulk.cli h2o   # digitised CF1 Fig 3.12
+uv run python -m charged_fluids.bulk.cli h2o   # live CF1 Ng/HNC anneal (default)
+# Opt-in digitised thesis bulk: set [h2o.bulk] source = "digitised_fig3_12"
 ```
 
-Success for ionic melts is ``converged`` **or** a small ``|c_short|`` tail (usable wall input).
+Success for ionic melts and CF1 is ``converged`` **or** a small ``|c_short|`` tail (usable wall input).
+Bare HNC CF1 under-associates vs Duh–Haymet bridge IE (``coord_OH`` ≲ 2); wall physics remains experimental.
 

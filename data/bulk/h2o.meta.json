@@ -1,14 +1,83 @@
 {
-  "created_at": "2026-11-19T10:35:36.128962+00:00",
+  "created_at": "2026-11-20T10:23:39.966707+00:00",
   "stem": "h2o",
   "use_short": true,
-  "source": "digitised_fig3_12",
-  "pair_order": [
-    "OO",
-    "OH",
-    "HH"
+  "converged": true,
+  "n_iter": 2332,
+  "residual": 2.43512304976384e-05,
+  "beta": 2.429304214670441e+20,
+  "rho": [
+    0.033427698930608,
+    0.066856000075292
   ],
-  "n_points": 256,
-  "r_max": 8.0,
-  "note": "Thesis Fig 3.12 digitised bulk c(r) for CF1 water pairs"
+  "n_pair": 3,
+  "n_points": 1024,
+  "r_max": 25.6,
+  "solver_meta": {
+    "fluid": "cf1_ng_anneal",
+    "closure": "hnc",
+    "temperature": 298.15,
+    "densities": [
+      0.033427698930608,
+      0.066856000075292
+    ],
+    "charge_pair": [
+      487.76922241503297,
+      -243.88461120751649,
+      121.94230560375824
+    ],
+    "n_points": 1024,
+    "delta_r": 0.025,
+    "ng_alpha": 1.5,
+    "anneal_steps": 24,
+    "temperature_ladder": [
+      6000.0,
+      4767.584428211109,
+      3788.310213353514,
+      3010.1814637362213,
+      2391.8823787664255,
+      1900.5835305198939,
+      1510.1987407701922,
+      1200.0,
+      1099.9795066152649,
+      1008.2957624779673,
+      924.2538961106477,
+      847.2169538591891,
+      776.6010724184315,
+      711.8710537297602,
+      652.5363087127922,
+      598.1471390887024,
+      548.2913291151027,
+      502.59102140121564,
+      460.6998531251424,
+      422.3003309485994,
+      387.1014247335864,
+      354.83636182376347,
+      325.2606051733826,
+      298.15
+    ],
+    "use_anderson": true,
+    "coord_OH_1.3A": 1.20846163170348,
+    "coord_HH_1.9A": 0.647103420170046,
+    "g_OH_peak": 30.515207843390407,
+    "g_OH_peak_r": 1.0,
+    "tail_abs_max_c_short": 0.0027752408989120837,
+    "c_short_definition": "c_s + beta_u_c_short (= c_full + beta_u_coulomb)",
+    "note": "CF1 bulk OZ with Ng Coulomb split and temperature annealing; HNC/PY without bridge (under-associates vs Duh\u2013Haymet). Aimed at wall-usable c_short with small large-r tail.",
+    "fluid_symbol": "h2o",
+    "cr_filename_legacy": "h2o.cr.dat",
+    "bulk_params": {
+      "n_points": 1024,
+      "delta_r": 0.025,
+      "closure": "hnc",
+      "mix": 0.03,
+      "ng_alpha": 1.5,
+      "max_iter": 4000,
+      "tol": 5e-05,
+      "anneal_steps": 24,
+      "use_anderson": true,
+      "source": "oz"
+    }
+  },
+  "tail_abs_max_c_short": 0.0027752408989120837
 }

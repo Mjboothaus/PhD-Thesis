@@ -42,10 +42,11 @@ def _u_hh_kcal(r: np.ndarray) -> np.ndarray:
     out = np.full_like(r, np.inf, dtype=float)
     m = r > 1.0e-8
     rm = r[m]
+    exp_hh = np.exp(np.clip(40.0 * (rm - 2.0), -60.0, 60.0))
     out[m] = (
         36.1345 / rm
-        + 18.0 / (1.0 + np.exp(40.0 * (rm - 2.0)))
-        - 17.0 * np.exp(-7.62177 * (rm - 1.45251) ** 2)
+        + 18.0 / (1.0 + exp_hh)
+        - 17.0 * np.exp(np.clip(-7.62177 * (rm - 1.45251) ** 2, -60.0, 0.0))
     )
     return out
 
@@ -55,11 +56,13 @@ def _u_oh_kcal(r: np.ndarray) -> np.ndarray:
     out = np.full_like(r, np.inf, dtype=float)
     m = r > 1.0e-8
     rm = r[m]
+    exp_oh1 = np.exp(np.clip(40.0 * (rm - 1.05), -60.0, 60.0))
+    exp_oh2 = np.exp(np.clip(5.49305 * (rm - 2.2), -60.0, 60.0))
     out[m] = (
         -72.269 / rm
         + 6.23403 / rm**9.19912
-        - 10.0 / (1.0 + np.exp(40.0 * (rm - 1.05)))
-        - 4.0 / (1.0 + np.exp(5.49305 * (rm - 2.2)))
+        - 10.0 / (1.0 + exp_oh1)
+        - 4.0 / (1.0 + exp_oh2)
     )
     return out
 
