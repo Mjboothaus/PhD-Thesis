@@ -86,7 +86,7 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 
 ## Open work
 
-- CF1 **bridge** bulk IE (coord_OH → 2); digitise thesis **Fig 3.2** wall curves for regression
+- CF1 **bridge** bulk IE (coord_OH → 2); **match digitised Fig 3.2** wall peaks (data in-repo; live wall residual still fails)
 - Full Pauling ionic core in bulk OZ (beyond soft LJ+Coulomb); melt g(r) vs MC
 - Literature table benchmarks (Hansen–McDonald LJ; modern closures)
 - Electrolyte thermodynamics (pressure / energy routes) beyond c_short artefacts

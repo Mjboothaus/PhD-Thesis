@@ -73,14 +73,26 @@ potential form used here.
 | Topic | Thesis / lit | This stack |
 |-------|--------------|------------|
 | CF1 bulk | Duh–Haymet HNC **+ bridge** (JCP 1995) | HNC only + anneal; coord_OH ~1.2 vs ~2 |
-| CF1 wall Fig 3.2 | Digitised wall–O/H profiles at ψ₀=0 | Live wall runs; **no in-repo Fig 3.2 regression curves yet** |
+| CF1 wall Fig 3.2 | Digitised wall–O/H at ψ₀=0 (peaks ~7 / ~8.5 near 1 Å) | **Digitised in-repo** (`data/Fig3.2_*`); live NK wall does **not** yet recover contact peaks (residual blow-up / g≈0–1) |
 | CF1 bulk Fig 3.12 | Digitised c(r) | Live OZ default; digitised opt-in |
 | KCl melt g(r) | Full ionic potential / MC | Soft LJ+Coulomb Ng/PY; improved residual with anneal |
 | 1-1 / 2-2 | Soft-core PM in continuum water | Runnable Ng bulk + wall smoke; not full free-energy suite |
 | LJ benchmarks | Hansen–McDonald tables | Qualitative; no automated table regression |
 
 Bridge functions for CF1 (and better ionic cores) remain the main physics
-extension. Wall Fig 3.2 digitisation would unlock a quantitative water wall test.
+extension. Fig 3.2 is digitised for regression; matching it requires a working
+CF1 wall residual (and likely bulk bridge), not only bulk c_short.
+
+### Fig 3.2 assets
+
+- Source scan: `data/Fig3.2.jpg` (Case 1, ψ₀ = 0 mV)
+- Curves: `data/Fig3.2_wO_digitised.csv`, `data/Fig3.2_wH_digitised.csv`
+- Manual knots: `data/Fig3.2_*_manual_points.csv`
+- Overlay: `data/Fig3.2_comparison.png` (thesis vs current live solve)
+- API: `load_fig32_profiles`, `compare_to_fig32`
+
+Thesis bulk c(r) is held **constant** across CF1 wall calculations (same bulk
+for all ψ₀ / wall cases).
 
 ## Validation commands
 
