@@ -73,11 +73,11 @@ bulk-cr-grid symbol="lj1" n_points="1024" delta_r="0.05":
 bulk-cr-list:
     uv run python -m charged_fluids.bulk.cli --list
 
-# Generate all supported bulk artefacts (lj, ionic, cf1 digitised)
+# Generate all supported bulk artefacts (lj, ionic, cf1)
 bulk-cr-all:
     uv run python -m charged_fluids.bulk.cli --all
 
-# Build CF1 water bulk c(r) from digitised thesis Fig 3.12 (alias of bulk-cr h2o)
+# Build CF1 water bulk c(r) (live Ng/HNC anneal by default; see [h2o.bulk] source)
 bulk-cr-h2o:
     uv run python -m charged_fluids.bulk.cli h2o
 

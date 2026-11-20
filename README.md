@@ -21,7 +21,7 @@ The original thesis included electronic resources at the University of Sydney (F
 | **lj1** | Ready | `data/bulk/lj1.cr.dat` | One-component LJ |
 | **lj2** | Ready | `data/bulk/lj2.cr.dat` | Two-component LJ |
 | **kcl** | Experimental | `data/bulk/kcl.cr.dat` (Ng/PY) | Short-range tail improved; \(g(r)\) residual still elevated |
-| **h2o** | Experimental | `data/bulk/h2o.cr.dat` (digitised Fig 3.12) | **CF1** central-force water (O, H) |
+| **h2o** | Experimental | `data/bulk/h2o.cr.dat` (live CF1 Ng/HNC anneal) | **CF1** central-force water (O, H); digitised Fig 3.12 opt-in |
 | **2_2** | Experimental | `data/bulk/2_2.cr.dat` | Soft-core 2:2 electrolyte (Ng/PY) |
 | **1_1** | Experimental | `data/bulk/1_1.cr.dat` | Soft-core 1:1 aqueous electrolyte (Ng/HNC) |
 
@@ -39,7 +39,7 @@ just app             # Streamlit (localhost)
 just bulk-cr lj1     # write data/bulk/{symbol}.cr.dat (+ .meta.json; TOML defaults)
 just bulk-cr-all     # all bulk-capable fluids
 just bulk-cr-list    # list bulk symbols
-just marimo          # wall-fluid Marimo explorer (Plotly)
+just marimo          # wall–fluid Marimo analysis explorer (Plotly)
 just marimo-bulk     # bulk c(r) / parameters explorer (Plotly)
 just hooks-install   # prek git hooks
 ```
@@ -86,7 +86,7 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 
 - Tighten KCl bulk residual / \(g(r)\) and wall smoke with the Ng artefact
 - Literature benchmarks (e.g. Pihlajamaa & Janssen PRE 2024 closures; Hansen–McDonald LJ tables)
-- Full CF1 bulk OZ regeneration (beyond digitised c(r)); tighter 2-2 thermodynamics
+- CF1 bridge-function bulk IE (HNC under-associates); tighter wall vs thesis Fig 3.2; 2-2 thermodynamics
 - Optional further speed work on wall `calc_tw` pair convolutions
 - Refresh `WARP.md` to match this stack (tooling is ruff/ty/prek, not black/mypy)
 - Optional: attach a custom domain to the Render service (Cloud Run retired)
