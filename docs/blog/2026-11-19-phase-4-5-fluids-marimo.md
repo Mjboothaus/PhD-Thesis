@@ -11,8 +11,11 @@
 
 ## Marimo (Phase 5)
 
-- `notebooks/wall_fluid_explorer.py` — same `charged_fluids` core as Streamlit.
-- `just marimo` → `uv sync --group notebook` + `marimo edit`.
+- `notebooks/wall_fluid_explorer.py` — wall–fluid analysis explorer (Plotly):
+  setup stats, bulk inputs, Newton–Krylov solve, \(g_{wi}\) diagnostics / \(t_w\),
+  optional bulk OZ (including live CF1).
+- `notebooks/bulk_fluid_explorer.py` — bulk artefacts & parameters.
+- `just marimo` / `just marimo-bulk` → `uv sync --group notebook` + `marimo edit`.
 
 ## Fluid status matrix
 
@@ -20,5 +23,6 @@
 |--------|--------|-----------|
 | lj1 | ready | `data/bulk/lj1.cr.dat` |
 | lj2 | ready | `data/bulk/lj2.cr.dat` |
-| kcl | experimental | legacy fallback |
-| h2o / 2_2 | not_implemented | — |
+| kcl | experimental | Ng/PY artefact |
+| h2o | experimental | live CF1 Ng/HNC anneal |
+| 1_1 / 2_2 | experimental | Ng bulk artefacts |
