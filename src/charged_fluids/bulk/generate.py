@@ -159,8 +159,13 @@ def generate_bulk_cr(
             max_iter=int(bulk.get("max_iter", 2000)),
             tol=float(bulk.get("tol", 1e-6)),
             ng_alpha=float(bulk.get("ng_alpha", 1.2)),
+            anneal_steps=int(bulk.get("anneal_steps", 1)),
+            use_anderson=bool(bulk.get("use_anderson", True)),
+            t_hot=float(bulk["t_hot"]) if "t_hot" in bulk else None,
         )
-        result.meta["note"] = "Ng bulk OZ; c_short uses wall-fluid charge_pair Coulomb scale"
+        result.meta["note"] = (
+            "Ng bulk OZ (+ optional T anneal); c_short uses wall-fluid charge_pair Coulomb scale"
+        )
     elif pot_type == "cf1":
         from charged_fluids.bulk.oz_solver import solve_bulk_cf1
 

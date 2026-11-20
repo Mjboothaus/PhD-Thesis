@@ -11,7 +11,7 @@ concentration = [19.5, 19.5]
 epsilon_r = 1.0
 index = 1
 cr_filename = "kcl.cr.dat"  # resolved via data/bulk/ first (legacy dump retained under data/)
-status = "experimental"  # Ng/PY bulk c_short available; g(r) residual still elevated
+status = "experimental"  # Ng/PY + T anneal bulk; wall still experimental vs melt data
 
 [kcl.potential]
 type = "ionic"
@@ -115,11 +115,13 @@ cap_d = [1.0e-18, 1.0e-18, 1.0e-18]
 n_points = 512
 delta_r = 0.05
 closure = "py"
-epsilon_kJ_mol = 1.0
+epsilon_kJ_mol = 2.0
 mix = 0.08
 ng_alpha = 1.2
-max_iter = 2000
+max_iter = 2500
 tol = 1.0e-5
+anneal_steps = 6
+use_anderson = true
 
 [lj1.bulk]
 # Match historical pyoz nrcg-lj-1comp (sigma 0.5 nm, eps 0.1 kJ/mol)
@@ -133,12 +135,15 @@ closure = "hnc"
 n_points = 512
 delta_r = 0.05
 closure = "py"
-# Soft LJ core (kJ/mol) + Ng mixing for melt-density ionic OZ
+# Soft LJ core (kJ/mol) + Ng + temperature anneal for melt-density ionic OZ
 epsilon_kJ_mol = 5.0
-mix = 0.03
+mix = 0.04
 ng_alpha = 1.2
-max_iter = 3000
+max_iter = 4000
 tol = 1.0e-5
+anneal_steps = 10
+use_anderson = true
+t_hot = 3000.0
 
 [lj2.bulk]
 sigma_A = 5.0
@@ -174,8 +179,11 @@ cap_d = [5.0e-19, 5.0e-19, 5.0e-19]
 n_points = 512
 delta_r = 0.05
 closure = "hnc"
-epsilon_kJ_mol = 0.5
-mix = 0.15
+# Stronger soft core so g(r) shows RPM-like contact structure at 1 M
+epsilon_kJ_mol = 2.5
+mix = 0.12
 ng_alpha = 1.2
-max_iter = 2000
+max_iter = 2500
 tol = 1.0e-6
+anneal_steps = 6
+use_anderson = true
