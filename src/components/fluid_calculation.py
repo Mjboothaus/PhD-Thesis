@@ -84,6 +84,7 @@ def create_calculation_tab(
                         d,
                         beta_phiw,
                         beta_psi_charge,
+                        track_history=True,
                     )
                     tw_solution = solution.x
 
@@ -93,14 +94,22 @@ def create_calculation_tab(
                 nit = int(getattr(solution, "nit", 0) or 0)
                 ok = bool(getattr(solution, "success", False))
                 msg = str(getattr(solution, "message", "") or "")
+                summary = getattr(solution, "convergence_summary", {}) or {}
+                f_final = summary.get("final_residual")
+                extra = f" · final |F|₂={f_final:.3e}" if f_final is not None else ""
                 if ok:
-                    st.success(f"Converged after {nit} iterations. SciPy: {msg}")
+                    st.success(f"Converged after {nit} iterations{extra}. SciPy: {msg}")
                 else:
-                    st.warning(f"Finished after {nit} iterations (success={ok}). SciPy: {msg}")
+                    st.warning(
+                        f"Finished after {nit} iterations (success={ok}){extra}. SciPy: {msg}"
+                    )
                 st.markdown("__Convergence plot:__")
                 from plotting import plot_convergence
 
-                plot_convergence(solver_output_filepath)
+                plot_convergence(
+                    solver_output_filepath,
+                    history=getattr(solution, "convergence_history", None),
+                )
                 update_memory_display(mem_container, initial_memory)
 
         except ValueError as err_message:

@@ -7,8 +7,22 @@ Australian English. Parameter source of truth: `data/fluid_parameters.toml`.
 | Status | Meaning |
 |--------|---------|
 | `ready` | Wall + bulk path trusted for demos (LJ1, LJ2) |
-| `experimental` | Runnable end-to-end; physics still under active check (KCl, CF1 water, electrolytes) |
+| `experimental` | Runnable end-to-end; physics still under active check (KCl, CF1 water, 1-1 / 2-2) |
 | `not_implemented` | Parameters only; no bulk artefact / wall path |
+
+## Current fluid matrix
+
+| Symbol | Potential | Bulk | Wall UI |
+|--------|-----------|------|---------|
+| `lj1` | LJ | live HNC artefact | Streamlit + Marimo |
+| `lj2` | LJ (equal 2-comp) | live HNC artefact | Streamlit + Marimo |
+| `kcl` | ionic melt | Ng/PY artefact | Streamlit + Marimo |
+| `h2o` | CF1 | Ng/HNC temperature anneal | Streamlit + Marimo |
+| `1_1` | soft-core RPM | Ng/HNC artefact | Streamlit + Marimo |
+| `2_2` | soft-core RPM | Ng/PY artefact | Streamlit + Marimo |
+
+All six symbols are bulk- and wall-wired. Remaining physics work is quality
+(bridge functions, melt residuals, thesis Fig 3.2), not missing fluid types.
 
 ## Minimum steps to add a fluid
 

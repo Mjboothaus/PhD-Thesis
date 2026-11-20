@@ -55,7 +55,7 @@ def test_set_fluid_parameters_lj1_shape():
     assert fluid is not None
     assert fluid.n_component == 1
     assert fluid.n_pair == 1
-    assert fluid.cr_filename == "lj1-cr.data"
+    assert fluid.cr_filename == "lj1.cr.dat"
 
 
 def test_set_fluid_parameters_does_not_mutate_global_table():

@@ -75,8 +75,13 @@ def test_lj1_solver_smoke_converges(lj1_fluid, lj1_params, lj1_cr_path, small_gr
         lj1_discrete,
         beta_phiw,
         beta_psi_charge,
+        track_history=True,
+        disp=False,
     )
     assert solution.success, f"LJ smoke solve failed: {solution.message}"
+    hist = getattr(solution, "convergence_history", None)
+    assert hist is not None and len(hist.iterations) >= 1
+    assert hist.residuals[-1] < hist.residuals[0] or hist.residuals[-1] < 1e-3
     hw = calc_hw(solution.x, n_component, beta_phiw)
     g = hw + 1.0
     assert np.isfinite(g).all()
@@ -84,3 +89,13 @@ def test_lj1_solver_smoke_converges(lj1_fluid, lj1_params, lj1_cr_path, small_gr
     assert (g >= 0).all()
     # Far from the wall, g should be nearer bulk (order-1)
     assert g[-1, 0] == pytest.approx(1.0, abs=0.5)
+
+
+def test_convergence_history_update_unit():
+    from charged_fluids import ConvergenceHistory
+
+    h = ConvergenceHistory()
+    h.update(1, np.array([3.0, 4.0]), step=0.5)
+    assert h.residuals[0] == pytest.approx(5.0)
+    assert h.max_abs[0] == pytest.approx(4.0)
+    assert h.summary()["final_step_size"] == pytest.approx(0.5)

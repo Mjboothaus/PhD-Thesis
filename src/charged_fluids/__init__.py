@@ -5,6 +5,7 @@ duplicating solver logic.
 """
 
 from charged_fluids.modelling import (
+    ConvergenceHistory,
     Model,
     calc_beta,
     calc_beta_pauling,
@@ -44,6 +45,7 @@ from charged_fluids.parameters import (
 from charged_fluids.setup import FluidRun, enrich_fluid, prepare_fluid_run
 
 __all__ = [
+    "ConvergenceHistory",
     "Discretisation",
     "Fluid",
     "FluidRun",

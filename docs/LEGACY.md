@@ -14,7 +14,7 @@ Safe deletes applied: 2026-11-20 (`src/phd_thesis/`, `src/tests/`, `src/non_app_
 
 | Path | Role | Recommendation |
 |------|------|----------------|
-| `src/oo_refactoring/` | Half-finished OO Streamlit rewrite | **Keep frozen** or delete in a dedicated PR after confirming nothing links it (`just app-opt` only) |
+| `src/oo_refactoring/` | Half-finished OO Streamlit rewrite | **Removed** — Krylov residual history lifted into `charged_fluids.ConvergenceHistory` / `solve_model` |
 | `src/bulk/` (~380K) | Early bulk OZ / DFT experiment | **Superseded** by `charged_fluids.bulk` — candidate to remove |
 | `src/pyoz/` (~15M) | Vendored PyOZ | **Reference only** (`just bulk-fluid-pyoz`) — keep until bulk science is trusted, then archive off-repo |
 | `src/tests/` | Old nested tests | **Removed** 2026-11-20 — use top-level `tests/` |
@@ -84,9 +84,9 @@ Safe deletes applied: 2026-11-20 (`src/phd_thesis/`, `src/tests/`, `src/non_app_
 ## Suggested cleanup PRs (ordered, optional)
 
 1. **Safe deletes:** ~~done 2026-11-20~~ (`src/phd_thesis/`, `src/tests/`, `src/non_app_plotting.py`, `data/pyOZ_bulk_fluid/`, `logs/` ignored).
-2. **Data hygiene:** move `nrcg-cr-approx-maybe.dat` → `data/legacy/`; point LJ1 tests/`cr_filename` at `data/bulk/lj1.cr.dat` only; drop or archive `fluid_parameters.json`.
-3. **Remove experiment trees:** `src/bulk/` after one more confirmation nothing imports it.
-4. **Retire `oo_refactoring/` + `just app-opt`** when confident Streamlit multipage is sole UI.
+2. **Retire `oo_refactoring/` + `just app-opt`:** ~~done~~ — history callback ported to `charged_fluids`.
+3. **Data hygiene:** move `nrcg-cr-approx-maybe.dat` → `data/legacy/`; point LJ1 tests/`cr_filename` at `data/bulk/lj1.cr.dat` only; drop or archive `fluid_parameters.json`.
+4. **Remove experiment trees:** `src/bulk/` after one more confirmation nothing imports it.
 5. **Defer `src/pyoz/`** until bulk OZ is fully trusted for all fluids.
 6. **Collapse shims:** Streamlit imports `charged_fluids` directly; delete `src/modelling.py` / `parameters.py` / `numerics.py` shims.
 

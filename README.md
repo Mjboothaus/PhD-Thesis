@@ -84,11 +84,11 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 
 ## Open work
 
-- Tighten KCl bulk residual / \(g(r)\) and wall smoke with the Ng artefact
+- Tighten KCl bulk residual / \(g(r)\) and wall profiles with the Ng artefact
 - Literature benchmarks (e.g. Pihlajamaa & Janssen PRE 2024 closures; Hansen–McDonald LJ tables)
-- CF1 bridge-function bulk IE (HNC under-associates); tighter wall vs thesis Fig 3.2; 2-2 thermodynamics
+- CF1 bridge-function bulk IE (HNC under-associates); tighter wall vs thesis Fig 3.2; electrolyte thermodynamics
 - Optional further speed work on wall `calc_tw` pair convolutions
-- Refresh `WARP.md` to match this stack (tooling is ruff/ty/prek, not black/mypy)
+- Optional: remove superseded `src/bulk/` experiment tree; collapse Streamlit shims
 - Optional: attach a custom domain to the Render service (Cloud Run retired)
 
 ## License
