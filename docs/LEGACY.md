@@ -1,30 +1,105 @@
-# Legacy trees
+# Legacy and redundant inventory
 
-These directories remain for reference and historical behaviour. **Do not expand them.**
-Active science code lives in **`src/charged_fluids/`**.
+**Do not expand legacy trees.** Active science lives in **`src/charged_fluids/`**.  
+Active UI: Streamlit under `src/Main.py` + `src/pages/` + `src/components/`.  
+Active explorers: `notebooks/wall_fluid_explorer.py`, `notebooks/bulk_fluid_explorer.py`.  
+**Production:** Render — https://phd-thesis-mjb.onrender.com (Cloud Run deprecated).
 
-| Path | Role | Status |
-|------|------|--------|
-| `src/oo_refactoring/` | Partial object-oriented Streamlit rewrite | Legacy; use main Streamlit + `charged_fluids` |
-| `src/bulk/` | Early bulk OZ / DFT experiment tree | Superseded by `charged_fluids.bulk` |
-| `src/pyoz/` | Vendored PyOZ bulk solver | Reference only (`just bulk-fluid-pyoz`) |
-| `src/tests/` | Old nested tests | Superseded by top-level `tests/` |
-| `notebooks/legacy/` | Pre-Marimo Jupyter notebooks | Archival; use `just marimo` / `just marimo-bulk` |
-| `data/fluid_parameters.toml` | Fluid parameter table | **Current** single source of truth (loaded by `charged_fluids.parameters`) |
-| `requirements*.txt` (removed) | Pre-uv freezes | Use `uv.lock`; `just export-reqs` writes a freeze on demand |
+Reviewed: 2026-11-19 (post PRs #22–#36).
 
-Streamlit entrypoints under `src/Main.py` and `src/pages/` import thin shims that delegate to `charged_fluids`.
+---
+
+## Already documented legacy (keep for now, do not grow)
+
+| Path | Role | Recommendation |
+|------|------|----------------|
+| `src/oo_refactoring/` | Half-finished OO Streamlit rewrite | **Keep frozen** or delete in a dedicated PR after confirming nothing links it (`just app-opt` only) |
+| `src/bulk/` (~380K) | Early bulk OZ / DFT experiment | **Superseded** by `charged_fluids.bulk` — candidate to remove |
+| `src/pyoz/` (~15M) | Vendored PyOZ | **Reference only** (`just bulk-fluid-pyoz`) — keep until bulk science is trusted, then archive off-repo |
+| `src/tests/` | Old nested tests (`test_modelling.py`) | **Superseded** by top-level `tests/` — safe to delete |
+| `notebooks/legacy/` | Pre-Marimo Jupyter | **Archival** — keep; see `notebooks/legacy/README.md` |
+
+---
+
+## Compatibility shims (still used by Streamlit edge)
+
+| Path | Role | Recommendation |
+|------|------|----------------|
+| `src/modelling.py` | Re-exports `charged_fluids.modelling` | Keep until pages/components import `charged_fluids` only |
+| `src/parameters.py` | Re-exports `charged_fluids.parameters` | Same |
+| `src/numerics.py` | Re-exports `charged_fluids.numerics` | Same |
+| `src/plotting.py` | Streamlit Plotly helpers | **Active** — not legacy |
+| `src/sidebar.py` | Streamlit sidebar | **Active** |
+| `src/helper_functions.py` | Markdown render helper | **Active** (Main + Theory pages) |
+| `src/st_redirect.py` | Capture solver stdout in UI | **Active** |
+| `src/components/*` | Shared fluid page shell | **Active** |
+| `src/non_app_plotting.py` | Non-Streamlit plotting stub | **Likely redundant** — no active imports found; candidate to delete |
+| `src/phd_thesis/` | Empty package (`__init__.py` only) | **Redundant** — delete |
+| `src/utils/` | Logger + memory helpers for app | **Active** (calculation tab memory) |
+
+---
+
+## Data artefacts
+
+| Path | Role | Recommendation |
+|------|------|----------------|
+| `data/bulk/*.cr.dat` + `.meta.json` | **Canonical** bulk c(r) | Keep |
+| `data/fluid_parameters.toml` | **Canonical** fluid table | Keep |
+| `data/fluid_parameters.json` | Old JSON parameters | **Redundant** if unused — prefer TOML only; verify then delete |
+| `data/lj1-cr.data` | Legacy LJ1 c(r); still fixture/fallback | Keep until tests + TOML `cr_filename` point only at `data/bulk/lj1.cr.dat` |
+| `data/nrcg-cr-approx-maybe.dat` | Old KCl approx dump | **Legacy** — no longer the KCl fixture; optional delete or move under `data/legacy/` |
+| `data/Fig3.12_*` | Digitised CF1 figure inputs | Keep (h2o bulk build) |
+| `data/pyOZ_bulk_fluid/` | Empty-ish pyOZ test mirror | **Redundant** with `src/pyoz/tests` — candidate to remove |
+| `data/solver_out.txt` | Runtime solver log | Gitignored / local only — fine |
+| `data/bulk/` (directory) | Current bulk dir | Keep |
+
+---
+
+## Top-level / tooling noise
+
+| Path | Role | Recommendation |
+|------|------|----------------|
+| `.coverage` | Local coverage output | Should stay gitignored; delete from disk if present |
+| `logs/phd_thesis_app.log` | Old app log | **Local noise** — delete or gitignore `logs/` |
+| `output/` | Empty placeholder | Keep or drop |
+| `.devcontainer/` (2023) | Old Codespaces config | **Stale** (Python/tooling outdated) — refresh or remove |
+| `.vscode/` | Editor settings | Personal; keep if useful |
+| `requirements*.txt` | Already removed | Prefer `uv.lock` + `just export-reqs` |
+
+---
 
 ## Deployment
 
-- **Current production:** Render service `PhD-Thesis-MJB` — https://phd-thesis-mjb.onrender.com
-- **Deprecated:** Google Cloud Run (and any former custom-domain path that depended on it). Do not target Cloud Run for new deploys.
+| Item | Status |
+|------|--------|
+| **Render** `PhD-Thesis-MJB` | **Current production** |
+| Google Cloud Run | **Deprecated** |
+| `phd.databooth.com.au` | Not serving this app (404); optional custom domain on Render later |
+| `render.yaml` + `Dockerfile` | Current deploy path |
+| `just deploy-render-service` | CLI redeploy helper |
 
-## Notebooks
+---
 
-Active Marimo explorers (Plotly figures):
+## Suggested cleanup PRs (ordered, optional)
 
-- `notebooks/wall_fluid_explorer.py` — wall singlet + bulk inputs (`just marimo`)
-- `notebooks/bulk_fluid_explorer.py` — bulk artefacts / parameters / OZ (`just marimo-bulk`)
+1. **Safe deletes (no behaviour change):** `src/phd_thesis/`, `src/tests/`, `src/non_app_plotting.py` (if grep-clean), `data/pyOZ_bulk_fluid/`, local `logs/`, `.coverage`.
+2. **Data hygiene:** move `nrcg-cr-approx-maybe.dat` → `data/legacy/`; point LJ1 tests/`cr_filename` at `data/bulk/lj1.cr.dat` only; drop or archive `fluid_parameters.json`.
+3. **Remove experiment trees:** `src/bulk/` after one more confirmation nothing imports it.
+4. **Retire `oo_refactoring/` + `just app-opt`** when confident Streamlit multipage is sole UI.
+5. **Defer `src/pyoz/`** until bulk OZ is fully trusted for all fluids.
+6. **Collapse shims:** Streamlit imports `charged_fluids` directly; delete `src/modelling.py` / `parameters.py` / `numerics.py` shims.
 
-See `notebooks/legacy/README.md` for the mapping from old `.ipynb` files.
+---
+
+## Active layout (canonical)
+
+```
+src/charged_fluids/     # science core
+src/components/         # Streamlit shared UI
+src/pages/              # Streamlit multipage
+src/Main.py             # entry
+data/fluid_parameters.toml
+data/bulk/              # c(r) artefacts
+tests/                  # pytest
+notebooks/*_explorer.py # Marimo
+```
