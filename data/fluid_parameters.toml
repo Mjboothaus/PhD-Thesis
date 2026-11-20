@@ -71,16 +71,23 @@ concentration = [55.508, 111.017]
 epsilon_r = 1.0
 index = 2
 cr_filename = "h2o.cr.dat"
-status = "experimental"  # bulk c from digitised thesis Fig 3.12; full OZ bulk still open
+status = "experimental"  # live CF1 bulk OZ (Ng/HNC); wall residual still experimental
 
 [h2o.potential]
 type = "cf1"
 
 [h2o.bulk]
-# Prefer thesis digitised bulk c(r); n_points used when regenerating grids
-n_points = 512
+# Live CF1 bulk OZ (Ng + HNC + temperature anneal). Opt-in digitised: source = "digitised_fig3_12".
+n_points = 1024
 delta_r = 0.025
-source = "digitised_fig3_12"
+closure = "hnc"
+mix = 0.03
+ng_alpha = 1.5
+max_iter = 4000
+tol = 5.0e-5
+anneal_steps = 24
+use_anderson = true
+source = "oz"
 
 [2_2]
 # Soft-core primitive-model 2:2 electrolyte in continuum water (epsilon_r = 78.3).

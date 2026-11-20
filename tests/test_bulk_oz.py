@@ -12,6 +12,7 @@ from charged_fluids.bulk.oz_solver import (
     apply_closure,
     coulomb_potential,
     solve_bulk_lj,
+    _cf1_temperature_ladder,
 )
 from charged_fluids.bulk.transforms import forward_sine, inverse_sine, radial_grids
 
@@ -123,3 +124,10 @@ def test_closure_registry_lists_hnc_py():
     from charged_fluids.bulk.closures import list_closures
 
     assert list_closures() == ["hnc", "py"]
+
+
+def test_cf1_temperature_ladder_cools_to_target():
+    temps = _cf1_temperature_ladder(298.15, 24)
+    assert temps[0] >= 5000.0
+    assert temps[-1] == pytest.approx(298.15)
+    assert all(temps[i] >= temps[i + 1] for i in range(len(temps) - 1))
