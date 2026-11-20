@@ -145,3 +145,4 @@ dmypy.json
 
 # marimo local session / cache
 notebooks/__marimo__/
+logs/

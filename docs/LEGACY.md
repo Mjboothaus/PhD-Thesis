@@ -5,7 +5,8 @@ Active UI: Streamlit under `src/Main.py` + `src/pages/` + `src/components/`.
 Active explorers: `notebooks/wall_fluid_explorer.py`, `notebooks/bulk_fluid_explorer.py`.  
 **Production:** Render — https://phd-thesis-mjb.onrender.com (Cloud Run deprecated).
 
-Reviewed: 2026-11-19 (post PRs #22–#36).
+Reviewed: 2026-11-19 (post PRs #22–#36).  
+Safe deletes applied: 2026-11-20 (`src/phd_thesis/`, `src/tests/`, `src/non_app_plotting.py`, `data/pyOZ_bulk_fluid/`; `logs/` gitignored).
 
 ---
 
@@ -16,7 +17,7 @@ Reviewed: 2026-11-19 (post PRs #22–#36).
 | `src/oo_refactoring/` | Half-finished OO Streamlit rewrite | **Keep frozen** or delete in a dedicated PR after confirming nothing links it (`just app-opt` only) |
 | `src/bulk/` (~380K) | Early bulk OZ / DFT experiment | **Superseded** by `charged_fluids.bulk` — candidate to remove |
 | `src/pyoz/` (~15M) | Vendored PyOZ | **Reference only** (`just bulk-fluid-pyoz`) — keep until bulk science is trusted, then archive off-repo |
-| `src/tests/` | Old nested tests (`test_modelling.py`) | **Superseded** by top-level `tests/` — safe to delete |
+| `src/tests/` | Old nested tests | **Removed** 2026-11-20 — use top-level `tests/` |
 | `notebooks/legacy/` | Pre-Marimo Jupyter | **Archival** — keep; see `notebooks/legacy/README.md` |
 
 ---
@@ -33,8 +34,8 @@ Reviewed: 2026-11-19 (post PRs #22–#36).
 | `src/helper_functions.py` | Markdown render helper | **Active** (Main + Theory pages) |
 | `src/st_redirect.py` | Capture solver stdout in UI | **Active** |
 | `src/components/*` | Shared fluid page shell | **Active** |
-| `src/non_app_plotting.py` | Non-Streamlit plotting stub | **Likely redundant** — no active imports found; candidate to delete |
-| `src/phd_thesis/` | Empty package (`__init__.py` only) | **Redundant** — delete |
+| `src/non_app_plotting.py` | Non-Streamlit plotting stub | **Removed** 2026-11-20 |
+| `src/phd_thesis/` | Empty package | **Removed** 2026-11-20 |
 | `src/utils/` | Logger + memory helpers for app | **Active** (calculation tab memory) |
 
 ---
@@ -49,7 +50,7 @@ Reviewed: 2026-11-19 (post PRs #22–#36).
 | `data/lj1-cr.data` | Legacy LJ1 c(r); still fixture/fallback | Keep until tests + TOML `cr_filename` point only at `data/bulk/lj1.cr.dat` |
 | `data/nrcg-cr-approx-maybe.dat` | Old KCl approx dump | **Legacy** — no longer the KCl fixture; optional delete or move under `data/legacy/` |
 | `data/Fig3.12_*` | Digitised CF1 figure inputs | Keep (h2o bulk build) |
-| `data/pyOZ_bulk_fluid/` | Empty-ish pyOZ test mirror | **Redundant** with `src/pyoz/tests` — candidate to remove |
+| `data/pyOZ_bulk_fluid/` | pyOZ test mirror | **Removed** 2026-11-20 — use `src/pyoz/tests` if needed |
 | `data/solver_out.txt` | Runtime solver log | Gitignored / local only — fine |
 | `data/bulk/` (directory) | Current bulk dir | Keep |
 
@@ -60,7 +61,7 @@ Reviewed: 2026-11-19 (post PRs #22–#36).
 | Path | Role | Recommendation |
 |------|------|----------------|
 | `.coverage` | Local coverage output | Should stay gitignored; delete from disk if present |
-| `logs/phd_thesis_app.log` | Old app log | **Local noise** — delete or gitignore `logs/` |
+| `logs/` | App logs | **Gitignored** 2026-11-20 |
 | `output/` | Empty placeholder | Keep or drop |
 | `.devcontainer/` (2023) | Old Codespaces config | **Stale** (Python/tooling outdated) — refresh or remove |
 | `.vscode/` | Editor settings | Personal; keep if useful |
@@ -82,7 +83,7 @@ Reviewed: 2026-11-19 (post PRs #22–#36).
 
 ## Suggested cleanup PRs (ordered, optional)
 
-1. **Safe deletes (no behaviour change):** `src/phd_thesis/`, `src/tests/`, `src/non_app_plotting.py` (if grep-clean), `data/pyOZ_bulk_fluid/`, local `logs/`, `.coverage`.
+1. **Safe deletes:** ~~done 2026-11-20~~ (`src/phd_thesis/`, `src/tests/`, `src/non_app_plotting.py`, `data/pyOZ_bulk_fluid/`, `logs/` ignored).
 2. **Data hygiene:** move `nrcg-cr-approx-maybe.dat` → `data/legacy/`; point LJ1 tests/`cr_filename` at `data/bulk/lj1.cr.dat` only; drop or archive `fluid_parameters.json`.
 3. **Remove experiment trees:** `src/bulk/` after one more confirmation nothing imports it.
 4. **Retire `oo_refactoring/` + `just app-opt`** when confident Streamlit multipage is sole UI.
