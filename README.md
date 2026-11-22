@@ -20,14 +20,16 @@ The original thesis included electronic resources at the University of Sydney (F
 |-------|------------|--------------------------------------|--------|
 | **lj1** | Ready | `data/bulk/lj1.cr.dat` | One-component LJ |
 | **lj2** | Ready | `data/bulk/lj2.cr.dat` | Two-component LJ |
-| **kcl** | Experimental | `data/bulk/kcl.cr.dat` (Ng/PY) | Short-range tail improved; \(g(r)\) residual still elevated |
-| **h2o** | Experimental | `data/bulk/h2o.cr.dat` (live CF1 Ng/HNC anneal) | **CF1** central-force water (O, H); digitised Fig 3.12 opt-in |
-| **2_2** | Experimental | `data/bulk/2_2.cr.dat` | Soft-core 2:2 electrolyte (Ng/PY) |
-| **1_1** | Experimental | `data/bulk/1_1.cr.dat` | Soft-core 1:1 aqueous electrolyte (Ng/HNC) |
+| **kcl** | Experimental | `data/bulk/kcl.cr.dat` (Ng/PY + T anneal) | Melt bulk residual small with anneal; soft LJ+Coulomb core |
+| **h2o** | Experimental | `data/bulk/h2o.cr.dat` (CF1 Ng/HNC anneal) | Bridge IE open; digitised Fig 3.12 opt-in |
+| **2_2** | Experimental | `data/bulk/2_2.cr.dat` | Soft-core 2:2 (Ng/PY + anneal) |
+| **1_1** | Experimental | `data/bulk/1_1.cr.dat` | Soft-core 1:1 (Ng/HNC + anneal) |
 
 Core package: **`src/charged_fluids/`** (Python 3.14). Streamlit pages under `src/pages/` are thin shims. Shared preparation: `prepare_fluid_run` → `FluidRun`.
 
-Architecture (one line): TOML parameters → bulk Picard OZ (HNC/PY, optional Ng) → wall singlet residual (Newton–Krylov) → Streamlit / Marimo.
+Architecture (one line): TOML parameters → bulk Picard OZ (HNC/PY, Ng, optional T anneal) → wall singlet residual (Newton–Krylov) → Streamlit / Marimo.
+
+Physics status: **`docs/PHYSICS.md`**.
 
 ## Development (uv + Just)
 
@@ -84,12 +86,11 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 
 ## Open work
 
-- Tighten KCl bulk residual / \(g(r)\) and wall profiles with the Ng artefact
-- Literature benchmarks (e.g. Pihlajamaa & Janssen PRE 2024 closures; Hansen–McDonald LJ tables)
-- CF1 bridge-function bulk IE (HNC under-associates); tighter wall vs thesis Fig 3.2; electrolyte thermodynamics
-- Optional further speed work on wall `calc_tw` pair convolutions
-- Optional: remove superseded `src/bulk/` experiment tree; collapse Streamlit shims
-- Optional: attach a custom domain to the Render service (Cloud Run retired)
+- CF1 **bridge** bulk IE (coord_OH → 2); **match digitised Fig 3.2** wall peaks (data in-repo; live wall residual still fails)
+- Full Pauling ionic core in bulk OZ (beyond soft LJ+Coulomb); melt g(r) vs MC
+- Literature table benchmarks (Hansen–McDonald LJ; modern closures)
+- Electrolyte thermodynamics (pressure / energy routes) beyond c_short artefacts
+- Optional: collapse Streamlit import shims; custom domain on Render
 
 ## License
 

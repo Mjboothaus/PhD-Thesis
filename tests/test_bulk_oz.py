@@ -93,7 +93,7 @@ def test_generate_lj1_writes_artefact(tmp_path):
 
 @pytest.mark.slow
 def test_kcl_generated_c_short_tail_small(tmp_path):
-    """Ng/PY ionic bulk: short-range c must vanish at large r (thesis)."""
+    """Ng/PY + T anneal ionic bulk: short-range c vanishes; residual converges."""
     result, _cr_path, _ = generate_bulk_cr(
         "kcl",
         bulk_dir=tmp_path,
@@ -105,6 +105,11 @@ def test_kcl_generated_c_short_tail_small(tmp_path):
     tail = np.abs(result.c_short[:, -max(10, result.r.size // 20) :])
     tail_max = float(tail.max())
     assert tail_max < 1e-2, f"KCl |c_short| tail max={tail_max}"
+    assert result.converged or result.residual < 1e-2
+    g_peak = result.meta.get("g_peak") or [float(np.max(result.g[i])) for i in range(result.g.shape[0])]
+    # Annealed melt: unlike-pair peak elevated; avoid historical blow-ups (g ≫ 50)
+    assert max(g_peak) < 20.0
+    assert g_peak[1] > g_peak[0]  # K–Cl peak above K–K
 
 
 def test_fft_sine_matches_direct():

@@ -43,6 +43,8 @@ from charged_fluids.parameters import (
     wall_ready_symbols,
 )
 from charged_fluids.setup import FluidRun, enrich_fluid, prepare_fluid_run
+from charged_fluids.wall_metrics import contact_and_bulk_g, wall_solution_report
+from charged_fluids.fig32 import compare_to_fig32, load_fig32_profiles
 
 __all__ = [
     "ConvergenceHistory",
@@ -67,6 +69,8 @@ __all__ = [
     "calc_u",
     "calc_u_lj",
     "clear_fluid_cache",
+    "compare_to_fig32",
+    "contact_and_bulk_g",
     "enrich_fluid",
     "fluid_specific_parameters",
     "fluids_with_status",
@@ -75,6 +79,7 @@ __all__ = [
     "interpolate_cr",
     "list_fluid_symbols",
     "load_and_interpolate_cr",
+    "load_fig32_profiles",
     "load_fluid_table",
     "n_pairs",
     "opt_func",
@@ -83,6 +88,7 @@ __all__ = [
     "set_num_parameters",
     "solve_model",
     "wall_ready_symbols",
+    "wall_solution_report",
 ]
 
 __version__ = "0.2.0"

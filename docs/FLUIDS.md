@@ -16,13 +16,13 @@ Australian English. Parameter source of truth: `data/fluid_parameters.toml`.
 |--------|-----------|------|---------|
 | `lj1` | LJ | live HNC artefact | Streamlit + Marimo |
 | `lj2` | LJ (equal 2-comp) | live HNC artefact | Streamlit + Marimo |
-| `kcl` | ionic melt | Ng/PY artefact | Streamlit + Marimo |
-| `h2o` | CF1 | Ng/HNC temperature anneal | Streamlit + Marimo |
-| `1_1` | soft-core RPM | Ng/HNC artefact | Streamlit + Marimo |
-| `2_2` | soft-core RPM | Ng/PY artefact | Streamlit + Marimo |
+| `kcl` | ionic melt | Ng/PY + T anneal | Streamlit + Marimo |
+| `h2o` | CF1 | Ng/HNC + T anneal | Streamlit + Marimo |
+| `1_1` | soft-core RPM | Ng/HNC + T anneal | Streamlit + Marimo |
+| `2_2` | soft-core RPM | Ng/PY + T anneal | Streamlit + Marimo |
 
-All six symbols are bulk- and wall-wired. Remaining physics work is quality
-(bridge functions, melt residuals, thesis Fig 3.2), not missing fluid types.
+All six symbols are bulk- and wall-wired. See **`docs/PHYSICS.md`** for methods,
+validation status, and open gaps (CF1 bridge, Fig 3.2, ionic cores).
 
 ## Minimum steps to add a fluid
 

@@ -187,6 +187,9 @@ def solve_bulk_binary_coulomb_lj(
     max_iter: int = 1500,
     tol: float = 1e-6,
     ng_alpha: float = 1.2,
+    anneal_steps: int = 1,
+    use_anderson: bool = True,
+    t_hot: float | None = None,
 ) -> BulkResult:
     """Two-component LJ + Coulomb bulk OZ with Ng long-range renormalisation.
 
@@ -196,17 +199,22 @@ def solve_bulk_binary_coulomb_lj(
     ``u_long ~ erf(alpha r)/r`` so the iterated potential is short-ranged;
     final ``c_short = c_full + beta u_c`` (thesis) vanishes at large r when
     ``c_full -> -beta u_c``.
+
+    For dense melts (e.g. KCl), set ``anneal_steps > 1`` to cool from a hot
+    start with continuous ``gamma`` (rescaled by β). Optional Anderson mixing
+    stabilises the late Picard iterations.
     """
     from scipy.special import erf
 
-    beta = beta_from_temperature(temperature)
+    t_final = float(temperature)
+    beta_final = beta_from_temperature(t_final)
     r, k, delta_k = radial_grids(n_points, delta_r)
     n_comp = 2
     n_pair = n_pairs(n_comp)
     rho = np.asarray(densities, dtype=float)
-    charge_pair = np.asarray(charge_pair, dtype=float).ravel()
-    if charge_pair.size != n_pair:
-        raise ValueError(f"charge_pair must have length {n_pair}, got {charge_pair.size}")
+    charge_pair_final = np.asarray(charge_pair, dtype=float).ravel()
+    if charge_pair_final.size != n_pair:
+        raise ValueError(f"charge_pair must have length {n_pair}, got {charge_pair_final.size}")
 
     pair_list = [(0, 0), (0, 1), (1, 1)]
     eps_lj = {
@@ -215,100 +223,132 @@ def solve_bulk_binary_coulomb_lj(
         (1, 1): epsilons_lj[2],
     }
 
-    beta_u_c = dimensionless_coulomb_from_charge_pair(r, charge_pair)
-    # Ng long-range piece (screened Coulomb)
-    beta_u_long = np.zeros_like(beta_u_c)
-    beta_u_short_c = np.zeros_like(beta_u_c)
-    erf_term = np.where(r > 0, erf(ng_alpha * r) / (2.0 * r), ng_alpha / np.sqrt(np.pi))
-    beta_u_long = charge_pair[:, None] * erf_term[None, :]
-    beta_u_short_c = beta_u_c - beta_u_long
+    if anneal_steps <= 1:
+        temps = [t_final]
+    else:
+        hot = float(t_hot) if t_hot is not None else max(t_final * 2.5, t_final + 800.0)
+        temps = list(np.geomspace(hot, t_final, int(anneal_steps)))
 
+    gamma = np.zeros((n_pair, n_points))
+    c = np.zeros((n_pair, n_points))
+    g = np.zeros((n_pair, n_points))
+    converged = False
+    residual = np.inf
+    n_iter_total = 0
+    prev_t: float | None = None
+
+    for i_t, t_step in enumerate(temps):
+        t_step = float(t_step)
+        beta = beta_from_temperature(t_step)
+        scale = beta / beta_final
+        cp = charge_pair_final * scale
+        erf_term = np.where(r > 0, erf(ng_alpha * r) / (2.0 * r), ng_alpha / np.sqrt(np.pi))
+        beta_u_c = dimensionless_coulomb_from_charge_pair(r, cp)
+        beta_u_long = cp[:, None] * erf_term[None, :]
+        beta_u_short_c = beta_u_c - beta_u_long
+
+        beta_u_s = np.zeros((n_pair, n_points))
+        for i, j in pair_list:
+            l = pair_index(i, j)
+            sig = 0.5 * (sigmas[i] + sigmas[j])
+            u_lj = lj_potential(r, eps_lj[(i, j)], sig)
+            beta_u_s[l] = beta * u_lj + beta_u_short_c[l]
+
+        if prev_t is None:
+            # γ=0 is more stable for the first hot stage than −βu_long at melt density
+            gamma = np.zeros((n_pair, n_points))
+        else:
+            gamma = gamma * (beta / beta_from_temperature(prev_t))
+        prev_t = t_step
+
+        is_final = i_t == len(temps) - 1
+        if is_final:
+            mix_stage, stage_iters, stage_tol = mix, max_iter, tol
+        elif t_step >= max(t_final * 1.4, 1500.0):
+            # Hot stages: larger Picard steps (melt KCl needs ~0.2 here)
+            mix_stage = min(0.35, max(mix * 5.0, 0.2))
+            stage_iters = min(max_iter, 800)
+            stage_tol = max(tol * 100.0, 1e-3)
+        else:
+            mix_stage = min(0.15, max(mix * 2.0, 0.08))
+            stage_iters = min(max_iter, 2000)
+            stage_tol = max(tol * 20.0, 2e-4)
+
+        hist_g: list[np.ndarray] = []
+        hist_f: list[np.ndarray] = []
+        best: tuple[float, np.ndarray, np.ndarray, np.ndarray] | None = None
+
+        for _iteration in range(1, stage_iters + 1):
+            n_iter_total += 1
+            for l in range(n_pair):
+                c[l], g[l] = apply_closure(closure, beta_u_s[l], gamma[l])
+                g[l] = np.maximum(g[l], 0.0)
+
+            c_k = np.zeros((n_comp, n_comp, n_points))
+            for i, j in pair_list:
+                l = pair_index(i, j)
+                ck = forward_sine(c[l], r, k, delta_r)
+                c_k[i, j] = ck
+                c_k[j, i] = ck
+
+            gamma_k = _binary_oz_gamma_k(c_k, rho)
+            gamma_new = np.zeros_like(gamma)
+            for i, j in pair_list:
+                l = pair_index(i, j)
+                gamma_new[l] = inverse_sine(gamma_k[i, j], r, k, delta_k)
+
+            if not np.isfinite(gamma_new).all():
+                if best is not None:
+                    residual, gamma, c, g = best[0], best[1].copy(), best[2].copy(), best[3].copy()
+                converged = False
+                break
+
+            residual = float(np.sqrt(np.mean((gamma_new - gamma) ** 2)))
+            if best is None or residual < best[0]:
+                best = (residual, gamma.copy(), c.copy(), g.copy())
+
+            if use_anderson and stage_tol < residual < 1.0:
+                gamma = _anderson_mix(
+                    gamma, gamma_new, hist_g, hist_f, m_hist=6, damp=mix_stage
+                )
+            else:
+                if residual > 10.0:
+                    step = mix_stage * 0.1
+                elif residual > 1.0:
+                    step = mix_stage * 0.4
+                else:
+                    step = mix_stage
+                gamma = (1.0 - step) * gamma + step * gamma_new
+                hist_g.clear()
+                hist_f.clear()
+
+            if residual < stage_tol:
+                converged = is_final
+                break
+        else:
+            converged = False
+            if best is not None:
+                residual, gamma, c, g = best[0], best[1].copy(), best[2].copy(), best[3].copy()
+
+    # Final closure at target T
+    beta = beta_final
+    erf_term = np.where(r > 0, erf(ng_alpha * r) / (2.0 * r), ng_alpha / np.sqrt(np.pi))
+    beta_u_c = dimensionless_coulomb_from_charge_pair(r, charge_pair_final)
+    beta_u_long = charge_pair_final[:, None] * erf_term[None, :]
+    beta_u_short_c = beta_u_c - beta_u_long
     beta_u_s = np.zeros((n_pair, n_points))
     for i, j in pair_list:
         l = pair_index(i, j)
         sig = 0.5 * (sigmas[i] + sigmas[j])
         u_lj = lj_potential(r, eps_lj[(i, j)], sig)
         beta_u_s[l] = beta * u_lj + beta_u_short_c[l]
-
-    # Initial gamma: cancel long-range so first closure is better conditioned
-    gamma = -beta_u_long.copy()
-    c = np.zeros((n_pair, n_points))
-    g = np.zeros((n_pair, n_points))
-    converged = False
-    residual = np.inf
-    n_iter = 0
-
-    for iteration in range(1, max_iter + 1):
-        n_iter = iteration
-        for l in range(n_pair):
-            # HNC/PY on short-range potential + short-range gamma
-            c[l], g[l] = apply_closure(closure, beta_u_s[l], gamma[l])
-
-        c_k = np.zeros((n_comp, n_comp, n_points))
-        for i, j in pair_list:
-            l = pair_index(i, j)
-            ck = forward_sine(c[l], r, k, delta_r)
-            c_k[i, j] = ck
-            c_k[j, i] = ck
-
-        # OZ in k-space: H = (I - C R)^{-1} C, gamma = H - C
-        # For binary fluids use a vectorised 2x2 inverse (hot path).
-        gamma_k = np.zeros((n_comp, n_comp, n_points))
-        if n_comp == 2:
-            r0, r1 = float(rho[0]), float(rho[1])
-            c00, c01 = c_k[0, 0], c_k[0, 1]
-            c10, c11 = c_k[1, 0], c_k[1, 1]
-            # A = I - C @ diag(rho)
-            a00 = 1.0 - c00 * r0
-            a01 = -c01 * r1
-            a10 = -c10 * r0
-            a11 = 1.0 - c11 * r1
-            det = a00 * a11 - a01 * a10
-            det = np.where(np.abs(det) < 1e-14, np.sign(det) * 1e-14 + 1e-14, det)
-            inv00 = a11 / det
-            inv01 = -a01 / det
-            inv10 = -a10 / det
-            inv11 = a00 / det
-            h00 = inv00 * c00 + inv01 * c10
-            h01 = inv00 * c01 + inv01 * c11
-            h10 = inv10 * c00 + inv11 * c10
-            h11 = inv10 * c01 + inv11 * c11
-            gamma_k[0, 0] = h00 - c00
-            gamma_k[0, 1] = h01 - c01
-            gamma_k[1, 0] = h10 - c10
-            gamma_k[1, 1] = h11 - c11
-        else:
-            for ik in range(n_points):
-                C = c_k[:, :, ik]
-                A = np.eye(n_comp) - C @ np.diag(rho)
-                try:
-                    H = np.linalg.solve(A, C)
-                except np.linalg.LinAlgError:
-                    H = C
-                gamma_k[:, :, ik] = H - C
-
-        gamma_new = np.zeros_like(gamma)
-        for i, j in pair_list:
-            l = pair_index(i, j)
-            gamma_new[l] = inverse_sine(gamma_k[i, j], r, k, delta_k)
-
-        residual = float(np.sqrt(np.mean((gamma_new - gamma) ** 2)))
-        # Adaptive mix when residual grows
-        step = mix if residual < 1.0 else mix * 0.25
-        gamma = (1.0 - step) * gamma + step * gamma_new
-        if residual < tol:
-            converged = True
-            break
-
     for l in range(n_pair):
         c[l], g[l] = apply_closure(closure, beta_u_s[l], gamma[l])
+        g[l] = np.maximum(g[l], 0.0)
 
-    # Full direct correlation approx: short-range c minus long-range beta u
-    # (Ng: c = c_s - beta u_long). Thesis wall input wants c_short = c + beta u_c
-    # with beta u_c full Coulomb, equivalent to c_s + beta u_short_c when
-    # c = c_s - beta u_long and beta u_c = beta u_long + beta u_short_c.
     c_full = c - beta_u_long
     c_short = c + beta_u_short_c  # = c_full + beta_u_c
+    tail = float(np.max(np.abs(c_short[:, -max(5, n_points // 20) :])))
 
     return BulkResult(
         r=r,
@@ -316,7 +356,7 @@ def solve_bulk_binary_coulomb_lj(
         c_short=c_short,
         g=g,
         gamma=gamma,
-        n_iter=n_iter,
+        n_iter=n_iter_total,
         converged=converged,
         residual=residual,
         beta=beta,
@@ -324,14 +364,18 @@ def solve_bulk_binary_coulomb_lj(
         meta={
             "fluid": "binary_coulomb_lj_ng",
             "closure": closure,
-            "temperature": temperature,
+            "temperature": t_final,
             "densities": list(map(float, densities)),
-            "charge_pair": charge_pair.tolist(),
+            "charge_pair": charge_pair_final.tolist(),
             "sigmas": list(sigmas),
             "epsilons_lj": list(epsilons_lj),
             "n_points": n_points,
             "delta_r": delta_r,
             "ng_alpha": ng_alpha,
+            "anneal_steps": len(temps),
+            "use_anderson": use_anderson,
+            "tail_abs_max_c_short": tail,
+            "g_peak": [float(np.max(g[l])) for l in range(n_pair)],
             "c_short_definition": "c_s + beta_u_c_short (= c_full + beta_u_coulomb)",
         },
     )

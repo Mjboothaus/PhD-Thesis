@@ -78,7 +78,6 @@ target-version = "py314"
 line-length = 100
 src = ["src/charged_fluids", "tests"]
 extend-exclude = [
-    "src/bulk",
     "src/pyoz",
     "notebooks",
     "docs",
@@ -115,7 +114,6 @@ python-version = "3.14"
 [tool.ty.src]
 include = ["src/charged_fluids", "tests"]
 exclude = [
-    "src/bulk/**",
     "src/pyoz/**",
     "src/pages/**",
     "notebooks/**",

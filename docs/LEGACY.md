@@ -15,7 +15,7 @@ Safe deletes applied: 2026-11-20 (`src/phd_thesis/`, `src/tests/`, `src/non_app_
 | Path | Role | Recommendation |
 |------|------|----------------|
 | `src/oo_refactoring/` | Half-finished OO Streamlit rewrite | **Removed** — Krylov residual history lifted into `charged_fluids.ConvergenceHistory` / `solve_model` |
-| `src/bulk/` (~380K) | Early bulk OZ / DFT experiment | **Superseded** by `charged_fluids.bulk` — candidate to remove |
+| `src/bulk/` | Early bulk OZ / DFT experiment | **Removed** — use `charged_fluids.bulk` |
 | `src/pyoz/` (~15M) | Vendored PyOZ | **Reference only** (`just bulk-fluid-pyoz`) — keep until bulk science is trusted, then archive off-repo |
 | `src/tests/` | Old nested tests | **Removed** 2026-11-20 — use top-level `tests/` |
 | `notebooks/legacy/` | Pre-Marimo Jupyter | **Archival** — keep; see `notebooks/legacy/README.md` |
@@ -86,7 +86,7 @@ Safe deletes applied: 2026-11-20 (`src/phd_thesis/`, `src/tests/`, `src/non_app_
 1. **Safe deletes:** ~~done 2026-11-20~~ (`src/phd_thesis/`, `src/tests/`, `src/non_app_plotting.py`, `data/pyOZ_bulk_fluid/`, `logs/` ignored).
 2. **Retire `oo_refactoring/` + `just app-opt`:** ~~done~~ — history callback ported to `charged_fluids`.
 3. **Data hygiene:** move `nrcg-cr-approx-maybe.dat` → `data/legacy/`; point LJ1 tests/`cr_filename` at `data/bulk/lj1.cr.dat` only; drop or archive `fluid_parameters.json`.
-4. **Remove experiment trees:** `src/bulk/` after one more confirmation nothing imports it.
+4. **Remove experiment trees:** ~~`src/bulk/`~~ done.
 5. **Defer `src/pyoz/`** until bulk OZ is fully trusted for all fluids.
 6. **Collapse shims:** Streamlit imports `charged_fluids` directly; delete `src/modelling.py` / `parameters.py` / `numerics.py` shims.
 
