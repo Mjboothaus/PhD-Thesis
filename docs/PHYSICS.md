@@ -3,6 +3,8 @@
 Australian English. This note tracks **what the code solves**, **what is trusted**,
 and **known gaps** versus the 1998 thesis and literature.
 
+Prioritised plans and parked options: [`ROADMAP.md`](ROADMAP.md).
+
 ## Pipeline
 
 ```text
