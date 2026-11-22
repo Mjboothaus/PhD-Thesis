@@ -68,9 +68,11 @@ src/charged_fluids/
 data/fluid_parameters.toml   # single source of truth for fluids
 data/bulk/                  # generated c(r) artefacts
 tests/                      # pytest suite for charged_fluids
+docs/ROADMAP.md             # open items, plans, parked options
+docs/PHYSICS.md             # methods + thesis/lit gaps
 docs/blog/                  # progressive notes + capstone
 docs/LEGACY.md              # historical trees (do not expand)
-docs/FLUIDS.md               # how to add a fluid
+docs/FLUIDS.md              # how to add a fluid
 ```
 
 ## Bulk correlation heritage
@@ -79,18 +81,20 @@ Historical bulk solvers: [pyOZ](http://pyoz.vrbka.net) (discontinued), fork [ctk
 
 ## Documentation and blog
 
+- **Roadmap (open items + plans):** [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- Physics status: [`docs/PHYSICS.md`](docs/PHYSICS.md)
 - Capstone before/after: `docs/blog/2026-11-19-capstone-before-after.md`
 - Other notes: `docs/blog/`
 - Legacy paths: `docs/LEGACY.md`
-- Agent-oriented project notes: `WARP.md` (may lag; prefer this README + `charged_fluids` for current behaviour)
+- Agent-oriented project notes: `WARP.md` (may lag; prefer this README + ROADMAP + `charged_fluids`)
 
 ## Open work
 
-- CF1 **bridge** bulk IE (coord_OH → 2); **match digitised Fig 3.2** wall peaks (data in-repo; live wall residual still fails)
-- Full Pauling ionic core in bulk OZ (beyond soft LJ+Coulomb); melt g(r) vs MC
-- Literature table benchmarks (Hansen–McDonald LJ; modern closures)
-- Electrolyte thermodynamics (pressure / energy routes) beyond c_short artefacts
-- Optional: collapse Streamlit import shims; custom domain on Render
+See **[`docs/ROADMAP.md`](docs/ROADMAP.md)** for prioritised open items, parked evaluations (including Marimo Studio), and stretch ideas. Short list:
+
+- CF1 wall residual vs digitised **Fig 3.2** (P0); CF1 bulk **bridge** (P1)
+- Pauling ionic bulk core; electrolyte thermodynamics (P2)
+- LJ table benchmarks; shim/data hygiene (P3)
 
 ## License
 
