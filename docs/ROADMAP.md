@@ -101,17 +101,32 @@ TOML → bulk Picard OZ (HNC/PY, Ng, optional T anneal) → c_short artefact
 
 ### Marimo Studio
 
-**Status:** Evaluated; **not adopted**. Plain Marimo explorers remain the research UI.
+**Status:** **Presentation pilot shipped** (not a production replacement).
 
 | Option | Verdict |
 |--------|---------|
 | Replace Streamlit production with Studio | **No** — Render stays Streamlit |
-| Day-to-day science / OZ solves | Keep **plain Marimo** (`just marimo`) + local SciPy |
-| Teaching / thesis narrative (HTML, slides, PDF) | **Optional later** — good fit for presentation views only |
-| molab / pure WASM export | Weak (needs `data/bulk` + installed package) |
+| Day-to-day science / OZ solves | Keep **plain Marimo** explorers (`just marimo`) |
+| Teaching / thesis narrative | **Pilot done** — see below |
+| molab / pure WASM export | Weak for full OZ (bulk data + package) |
 | marimohub multi-user | Overkill unless a shared hub is required |
 
-**If revisited:** pilot only — `uv add --group notebook 'marimo-studio[deno]'`, one explainer view on `notebooks/wall_fluid_explorer.py`, views under e.g. `studio/`. Do not migrate production.
+**Pilot layout**
+
+| Path | Role |
+|------|------|
+| `notebooks/wall_fluid_presentation.py` | Narrative notebook (Fig 3.2, stack, open work) |
+| `notebooks/studio/.../explainer/` | Vanilla HTML scrolly explainer |
+| `notebooks/studio/.../lecture/` | React + Reveal.js slide deck |
+
+```bash
+just marimo-presentation          # edit notebook with Studio watch
+just marimo-studio-validate       # static check of view bindings
+# In the editor: open Explainer or Lecture from the Studio toolbar
+```
+
+Dep: `marimo-studio[deno]` in the `notebook` dependency group. Do **not** put
+solves or production UI in Studio views.
 
 ### Other parked cleanups
 
@@ -128,7 +143,7 @@ TOML → bulk Picard OZ (HNC/PY, Ng, optional T anneal) → c_short artefact
 3. Pauling ionic bulk           ──►  KCl / electrolyte structure
 4. LJ table benchmarks          ──►  “ready” confidence band
 5. Shim collapse + data hygiene ──►  thinner repo
-6. Optional Marimo Studio pilot ──►  presentation only
+6. ~~Optional Marimo Studio pilot~~ ──►  presentation pilot done (explainer + lecture)
 ```
 
 Parallel-safe anytime: docs, Render tweaks, shim collapse, data hygiene (no physics dependency).

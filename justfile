@@ -137,6 +137,14 @@ marimo: sync-notebook
 marimo-bulk: sync-notebook
     uv run marimo edit notebooks/bulk_fluid_explorer.py
 
+# Presentation notebook + Marimo Studio views (explainer / lecture)
+marimo-presentation: sync-notebook
+    uv run marimo edit notebooks/wall_fluid_presentation.py --watch
+
+# Validate Studio views without opening the editor
+marimo-studio-validate: sync-notebook
+    uv run marimo-studio validate --target notebooks/wall_fluid_presentation.py
+
 # --- Blog notes ---
 
 blog-list:

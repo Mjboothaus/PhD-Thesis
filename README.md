@@ -41,8 +41,9 @@ just app             # Streamlit (localhost)
 just bulk-cr lj1     # write data/bulk/{symbol}.cr.dat (+ .meta.json; TOML defaults)
 just bulk-cr-all     # all bulk-capable fluids
 just bulk-cr-list    # list bulk symbols
-just marimo          # wall–fluid Marimo analysis explorer (Plotly)
-just marimo-bulk     # bulk c(r) / parameters explorer (Plotly)
+just marimo              # wall–fluid Marimo analysis explorer (Plotly)
+just marimo-bulk         # bulk c(r) / parameters explorer (Plotly)
+just marimo-presentation # presentation notebook + Studio views pilot
 just hooks-install   # prek git hooks
 ```
 

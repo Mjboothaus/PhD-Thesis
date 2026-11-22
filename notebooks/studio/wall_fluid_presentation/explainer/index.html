@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wall–fluid presentation · Explainer</title>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@unocss/runtime@66.10.5/uno.global.js"
+      integrity="sha384-iX+gEyr2u+Tmd8XxbySu2iimH7dOfTZn9xahADx38mJHYzAI2CJUCo5+PPGOSU2b"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/iconify-icon@3.0.3/dist/iconify-icon.min.js"
+      integrity="sha384-jypoV+nlFXLykSFUJkpVjPG/eid90inFxyvUI1corcUR778eMGexPBFzNC94eOc+"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      body {
+        margin: 0;
+        background: var(--background, Canvas);
+        color: var(--foreground, CanvasText);
+        font-family: var(--text-font, system-ui, sans-serif);
+      }
+
+      .view-header {
+        margin-bottom: 3rem;
+      }
+
+      .view-header p {
+        color: var(--muted-foreground, color-mix(in srgb, currentColor 66%, transparent));
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+    </style>
+  </head>
+  <body>
+    <main id="app-shell" class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <header class="view-header">
+        <p>Charged fluids near interfaces · presentation pilot</p>
+        <h1>Wall–fluid explainer</h1>
+        <p style="text-transform:none;letter-spacing:normal;font-weight:400;margin-top:0.75rem;max-width:40rem">
+          Narrative view of the modern stack and digitised thesis Fig 3.2.
+          Interactive solves live in <code>just marimo</code> / Streamlit — not here.
+        </p>
+      </header>
+      <section class="grid gap-6" aria-label="Notebook results">
+        <marimo-cell name="title"></marimo-cell>
+        <marimo-cell name="agenda"></marimo-cell>
+        <marimo-cell name="problem"></marimo-cell>
+        <marimo-cell name="method"></marimo-cell>
+        <marimo-cell name="stack"></marimo-cell>
+        <marimo-cell name="fluids_table"></marimo-cell>
+        <marimo-cell name="fig32_intro"></marimo-cell>
+        <marimo-cell name="fig32_plot"></marimo-cell>
+        <marimo-cell name="fig32_stats"></marimo-cell>
+        <marimo-cell name="open_work"></marimo-cell>
+        <marimo-cell name="try_explorer"></marimo-cell>
+        <marimo-cell name="closing"></marimo-cell>
+      </section>
+    </main>
+    <script type="module">
+      /** Subscribe an explicit `mo-value` host to current values and later updates. */
+      const observeMarimoValue = (host, { onValue, onError = () => {} }) => {
+        const sync = (event) => onValue(event.detail.value);
+        const fail = (event) => onError(event.detail);
+        host.addEventListener("marimo-value-updated", sync);
+        host.addEventListener("marimo-value-error", fail);
+        if (host.dataset.marimoError !== undefined) {
+          onError({
+            selector: host.getAttribute("mo-value")?.trim() ?? "",
+            code: host.dataset.marimoErrorCode,
+            message: host.dataset.marimoError,
+            hint: host.dataset.marimoDiagnosticHint,
+          });
+        } else if (host.marimoValue !== undefined) {
+          onValue(host.marimoValue);
+        }
+        return () => {
+          host.removeEventListener("marimo-value-updated", sync);
+          host.removeEventListener("marimo-value-error", fail);
+        };
+      };
+
+      document.querySelector("#app-shell")?.setAttribute("data-ready", "");
+    </script>
+  </body>
+</html>
